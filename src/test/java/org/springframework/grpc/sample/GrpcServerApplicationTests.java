@@ -19,7 +19,6 @@ import org.springframework.grpc.sample.proto.SimpleGrpc;
 import org.springframework.test.annotation.DirtiesContext;
 
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
-import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.FileDescriptor;
 
 import io.grpc.BindableService;
@@ -34,8 +33,10 @@ import io.grpc.ServerServiceDefinition;
 import io.grpc.ServiceDescriptor;
 import io.grpc.protobuf.ProtoServiceDescriptorSupplier;
 
-@SpringBootTest(properties = { "spring.grpc.server.port=0",
-		"spring.grpc.client.default-channel.address=0.0.0.0:${local.grpc.port}" }, useMainMethod = UseMainMethod.ALWAYS)
+@SpringBootTest(
+		properties = { "spring.grpc.server.port=0",
+				"spring.grpc.client.default-channel.address=0.0.0.0:${local.grpc.port}" },
+		useMainMethod = UseMainMethod.ALWAYS)
 @DirtiesContext
 public class GrpcServerApplicationTests {
 
@@ -65,12 +66,12 @@ public class GrpcServerApplicationTests {
 		@Bean
 		BindableService runner() {
 			MethodDescriptor<Object, Object> method = MethodDescriptor.newBuilder()
-					.setFullMethodName("Foo/Echo")
-					.setRequestMarshaller(new FooMarshaller())
-					.setResponseMarshaller(new FooMarshaller())
-					.setSchemaDescriptor(new FooDescriptor())
-					.setType(MethodType.UNARY)
-					.build();
+				.setFullMethodName("Foo/Echo")
+				.setRequestMarshaller(new FooMarshaller())
+				.setResponseMarshaller(new FooMarshaller())
+				.setSchemaDescriptor(new FooDescriptor())
+				.setType(MethodType.UNARY)
+				.build();
 			ServerCallHandler<Object, Object> handler = new ServerCallHandler<Object, Object>() {
 				@Override
 				public Listener<Object> startCall(ServerCall<Object, Object> call, Metadata headers) {
@@ -78,12 +79,12 @@ public class GrpcServerApplicationTests {
 				}
 			};
 			ServerServiceDefinition service = ServerServiceDefinition
-					.builder(ServiceDescriptor.newBuilder("Foo")
-							.setSchemaDescriptor(new FooDescriptor())
-							.addMethod(method)
-							.build())
-					.addMethod(method, handler)
-					.build();
+				.builder(ServiceDescriptor.newBuilder("Foo")
+					.setSchemaDescriptor(new FooDescriptor())
+					.addMethod(method)
+					.build())
+				.addMethod(method, handler)
+				.build();
 			return () -> service;
 		}
 
@@ -98,19 +99,18 @@ public class GrpcServerApplicationTests {
 		@java.lang.Override
 		public com.google.protobuf.Descriptors.FileDescriptor getFileDescriptor() {
 			try {
-				return com.google.protobuf.Descriptors.FileDescriptor
-						.buildFrom(FileDescriptorProto.parseFrom(
-								"""
-								syntax = "proto3";
-								service Foo {
-									rpc Echo (EchoRequest) returns (EchoRequest) {
-									}
-								}
-								message EchoRequest {
-									string name = 1;
-								}
-										""".getBytes()), new FileDescriptor[0]);
-			} catch (Exception e) {
+				return com.google.protobuf.Descriptors.FileDescriptor.buildFrom(FileDescriptorProto.parseFrom("""
+						syntax = "proto3";
+						service Foo {
+							rpc Echo (EchoRequest) returns (EchoRequest) {
+							}
+						}
+						message EchoRequest {
+							string name = 1;
+						}
+								""".getBytes()), new FileDescriptor[0]);
+			}
+			catch (Exception e) {
 				throw new IllegalStateException(e);
 			}
 		}
@@ -143,19 +143,18 @@ public class GrpcServerApplicationTests {
 		@java.lang.Override
 		public com.google.protobuf.Descriptors.FileDescriptor getFileDescriptor() {
 			try {
-				return com.google.protobuf.Descriptors.FileDescriptor
-						.buildFrom(FileDescriptorProto.parseFrom(
-								"""
-								syntax = "proto3";
-								service Foo {
-									rpc Echo (EchoRequest) returns (EchoRequest) {
-									}
-								}
-								message EchoRequest {
-									string name = 1;
-								}
-										""".getBytes()), new FileDescriptor[0]);
-			} catch (Exception e) {
+				return com.google.protobuf.Descriptors.FileDescriptor.buildFrom(FileDescriptorProto.parseFrom("""
+						syntax = "proto3";
+						service Foo {
+							rpc Echo (EchoRequest) returns (EchoRequest) {
+							}
+						}
+						message EchoRequest {
+							string name = 1;
+						}
+								""".getBytes()), new FileDescriptor[0]);
+			}
+			catch (Exception e) {
 				throw new IllegalStateException(e);
 			}
 		}
