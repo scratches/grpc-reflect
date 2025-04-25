@@ -2,6 +2,9 @@ package org.springframework.grpc.sample;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.logging.Log;
@@ -18,9 +21,14 @@ import org.springframework.grpc.sample.proto.HelloRequest;
 import org.springframework.grpc.sample.proto.SimpleGrpc;
 import org.springframework.test.annotation.DirtiesContext;
 
+import com.google.protobuf.DescriptorProtos;
+import com.google.protobuf.DescriptorProtos.DescriptorProto;
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
-import com.google.protobuf.Descriptors.DescriptorValidationException;
+import com.google.protobuf.Descriptors;
+import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
+import com.google.protobuf.DynamicMessage;
 
 import io.grpc.BindableService;
 import io.grpc.Metadata;
@@ -32,6 +40,8 @@ import io.grpc.ServerCall.Listener;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.ServiceDescriptor;
+import io.grpc.Status;
+import io.grpc.protobuf.ProtoMethodDescriptorSupplier;
 import io.grpc.protobuf.ProtoServiceDescriptorSupplier;
 
 @SpringBootTest(properties = { "spring.grpc.server.port=0",
@@ -64,22 +74,23 @@ public class GrpcServerApplicationTests {
 
 		@Bean
 		BindableService runner() {
-			MethodDescriptor<Object, Object> method = MethodDescriptor.newBuilder()
+			MethodDescriptor<DynamicMessage, DynamicMessage> method = MethodDescriptor.<DynamicMessage, DynamicMessage>newBuilder()
 					.setFullMethodName("Foo/Echo")
 					.setRequestMarshaller(new FooMarshaller())
 					.setResponseMarshaller(new FooMarshaller())
-					.setSchemaDescriptor(new FooDescriptor())
+					.setSchemaDescriptor(new SimpleBaseDescriptorSupplier())
 					.setType(MethodType.UNARY)
 					.build();
-			ServerCallHandler<Object, Object> handler = new ServerCallHandler<Object, Object>() {
+			ServerCallHandler<DynamicMessage, DynamicMessage> handler = new ServerCallHandler<DynamicMessage, DynamicMessage>() {
 				@Override
-				public Listener<Object> startCall(ServerCall<Object, Object> call, Metadata headers) {
+				public Listener<DynamicMessage> startCall(ServerCall<DynamicMessage, DynamicMessage> call, Metadata headers) {
+					call.request(2);
 					return new FooListener(call, headers);
 				}
 			};
 			ServerServiceDefinition service = ServerServiceDefinition
 					.builder(ServiceDescriptor.newBuilder("Foo")
-							.setSchemaDescriptor(new FooDescriptor())
+							.setSchemaDescriptor(new EchoDescriptor("Echo"))
 							.addMethod(method)
 							.build())
 					.addMethod(method, handler)
@@ -89,41 +100,61 @@ public class GrpcServerApplicationTests {
 
 	}
 
-	private static abstract class SimpleBaseDescriptorSupplier
-			implements io.grpc.protobuf.ProtoServiceDescriptorSupplier {
+	private static class SimpleBaseDescriptorSupplier
+			implements ProtoServiceDescriptorSupplier {
+
+		private FileDescriptor descriptor;
 
 		SimpleBaseDescriptorSupplier() {
-		}
-
-		@java.lang.Override
-		public com.google.protobuf.Descriptors.FileDescriptor getFileDescriptor() {
 			try {
-				return com.google.protobuf.Descriptors.FileDescriptor
-						.buildFrom(FileDescriptorProto.parseFrom(
-								"""
-								syntax = "proto3";
-								service Foo {
-									rpc Echo (EchoRequest) returns (EchoRequest) {
-									}
-								}
-								message EchoRequest {
-									string name = 1;
-								}
-										""".getBytes()), new FileDescriptor[0]);
+				var foot = DescriptorProto.newBuilder()
+						.setName("FooRequest")
+						.addField(
+								FieldDescriptorProto.newBuilder()
+										.setName("name")
+										.setNumber(1)
+										.setType(FieldDescriptorProto.Type.TYPE_STRING))
+						.addField(
+								FieldDescriptorProto.newBuilder()
+										.setName("age")
+										.setNumber(2)
+										.setType(FieldDescriptorProto.Type.TYPE_INT32))
+						.build();
+				var echo = DescriptorProtos.ServiceDescriptorProto.newBuilder()
+						.setName("Foo")
+						.addMethod(
+								DescriptorProtos.MethodDescriptorProto.newBuilder()
+										.setName("Echo")
+										.setInputType("FooRequest")
+										.setOutputType("FooRequest")
+										.build())
+						.build();
+				var food = FileDescriptorProto.newBuilder()
+						.setName("foo.proto")
+						.setSyntax("proto3")
+						.addMessageType(foot)
+						.addService(echo).build();
+				this.descriptor = FileDescriptor
+						.buildFrom(food, new FileDescriptor[0]);
 			} catch (Exception e) {
 				throw new IllegalStateException(e);
 			}
 		}
 
-		@java.lang.Override
-		public com.google.protobuf.Descriptors.ServiceDescriptor getServiceDescriptor() {
+		@Override
+		public FileDescriptor getFileDescriptor() {
+			return this.descriptor;
+		}
+
+		@Override
+		public Descriptors.ServiceDescriptor getServiceDescriptor() {
 			return getFileDescriptor().findServiceByName("Foo");
 		}
 
 	}
 
 	static class EchoDescriptor extends SimpleBaseDescriptorSupplier
-			implements io.grpc.protobuf.ProtoMethodDescriptorSupplier {
+			implements ProtoMethodDescriptorSupplier {
 
 		private final String methodName;
 
@@ -132,63 +163,55 @@ public class GrpcServerApplicationTests {
 		}
 
 		@java.lang.Override
-		public com.google.protobuf.Descriptors.MethodDescriptor getMethodDescriptor() {
+		public Descriptors.MethodDescriptor getMethodDescriptor() {
 			return getServiceDescriptor().findMethodByName(methodName);
 		}
 
 	}
 
-	static class FooDescriptor implements ProtoServiceDescriptorSupplier {
+	static class FooMarshaller implements ReflectableMarshaller<DynamicMessage> {
 
-		@java.lang.Override
-		public com.google.protobuf.Descriptors.FileDescriptor getFileDescriptor() {
+		private Descriptor type;
+
+		FooMarshaller() {
+			this.type = new SimpleBaseDescriptorSupplier().getFileDescriptor().getMessageTypes().get(0);
+		}
+
+		@Override
+		public InputStream stream(DynamicMessage value) {
 			try {
-				return com.google.protobuf.Descriptors.FileDescriptor
-						.buildFrom(FileDescriptorProto.parseFrom(
-								"""
-								syntax = "proto3";
-								service Foo {
-									rpc Echo (EchoRequest) returns (EchoRequest) {
-									}
-								}
-								message EchoRequest {
-									string name = 1;
-								}
-										""".getBytes()), new FileDescriptor[0]);
+				ByteArrayOutputStream output = new ByteArrayOutputStream();
+				value.writeTo(output);
+				return new ByteArrayInputStream(output.toByteArray());
+			} catch (IOException e) {
+				throw new IllegalStateException(e);
+			}
+		}
+
+		@Override
+		public DynamicMessage parse(InputStream stream) {
+			DynamicMessage.Builder builder = DynamicMessage.newBuilder(type);
+			try {
+				return builder.mergeFrom(stream).build();
 			} catch (Exception e) {
 				throw new IllegalStateException(e);
 			}
 		}
 
-		@java.lang.Override
-		public com.google.protobuf.Descriptors.ServiceDescriptor getServiceDescriptor() {
-			return getFileDescriptor().findServiceByName("Foo");
+		@Override
+		public Class<DynamicMessage> getMessageClass() {
+			return DynamicMessage.class;
 		}
 
 	}
 
-	static class FooMarshaller implements ReflectableMarshaller<Object> {
-
-		@Override
-		public InputStream stream(Object value) {
-			throw new UnsupportedOperationException("Unimplemented method 'stream'");
-		}
-
-		@Override
-		public Object parse(InputStream stream) {
-			throw new UnsupportedOperationException("Unimplemented method 'parse'");
-		}
-
-		@Override
-		public Class<Object> getMessageClass() {
-			return Object.class;
-		}
-
-	}
-
-	static class FooListener extends ServerCall.Listener<Object> {
-
-		public FooListener(ServerCall<Object, Object> call, Metadata headers) {
+	static class FooListener extends ServerCall.Listener<DynamicMessage> {
+		
+		private ServerCall<DynamicMessage, DynamicMessage> call;
+		
+		public FooListener(ServerCall<DynamicMessage, DynamicMessage> call, Metadata headers) {
+			this.call = call;
+			call.sendHeaders(headers);
 		}
 
 		@Override
@@ -207,8 +230,10 @@ public class GrpcServerApplicationTests {
 		}
 
 		@Override
-		public void onMessage(Object message) {
+		public void onMessage(DynamicMessage message) {
 			super.onMessage(message);
+			this.call.sendMessage(message);
+			this.call.close(Status.OK, new Metadata());
 		}
 
 		@Override
