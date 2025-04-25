@@ -208,37 +208,34 @@ public class GrpcServerApplicationTests {
 	static class FooListener extends ServerCall.Listener<DynamicMessage> {
 		
 		private ServerCall<DynamicMessage, DynamicMessage> call;
+		private Metadata headers;
 		
 		public FooListener(ServerCall<DynamicMessage, DynamicMessage> call, Metadata headers) {
 			this.call = call;
-			call.sendHeaders(headers);
+			this.headers = headers;
 		}
-
+		
 		@Override
 		public void onCancel() {
-			super.onCancel();
 		}
 
 		@Override
 		public void onComplete() {
-			super.onComplete();
 		}
 
 		@Override
 		public void onHalfClose() {
-			super.onHalfClose();
 		}
-
+		
 		@Override
 		public void onMessage(DynamicMessage message) {
-			super.onMessage(message);
 			this.call.sendMessage(message);
 			this.call.close(Status.OK, new Metadata());
 		}
-
+		
 		@Override
 		public void onReady() {
-			super.onReady();
+			call.sendHeaders(this.headers);
 		}
 
 	}
