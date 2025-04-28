@@ -18,7 +18,6 @@ package org.springframework.grpc.sample;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.util.ClassUtils;
 
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
@@ -29,10 +28,20 @@ public class DescriptorRegistryTests {
 	public void testRegisterMethod() throws Exception {
 		DescriptorRegistry registry = new DescriptorRegistry(
 				clazz -> DescriptorProto.newBuilder().setName(clazz.getSimpleName()).build(),
-				method -> MethodDescriptorProto.newBuilder().setName("echo").setOutputType("Foo").setInputType("Foo")
+				method -> MethodDescriptorProto.newBuilder().setName("Echo").setOutputType("Foo").setInputType("Foo")
 						.build());
 		registry.register(DescriptorRegistryTests.class.getMethod("echo", Foo.class));
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
+		assertThat(registry.method("DescriptorRegistryTests/Echo")).isNotNull();
+	}
+
+	@Test
+	public void testRegisterUnownedMethod() throws Exception {
+		DescriptorRegistry registry = new DescriptorRegistry();
+		registry.register("Service/Spam", Foo.class, Bar.class);
+		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
+		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
+		assertThat(registry.method("Service/Spam")).isNotNull();
 	}
 
 	@Test

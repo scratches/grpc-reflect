@@ -17,6 +17,8 @@ package org.springframework.grpc.sample;
 
 import java.lang.reflect.Method;
 
+import org.springframework.util.StringUtils;
+
 import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
 
 public interface MethodDescriptorProtoProvider {
@@ -33,7 +35,7 @@ public interface MethodDescriptorProtoProvider {
 		String inputType = method.getParameterTypes()[0].getSimpleName();
 		String outputType = method.getReturnType().getSimpleName();
 		return MethodDescriptorProto.newBuilder()
-				.setName(method.getName())
+				.setName(StringUtils.capitalize(method.getName()))
 				.setInputType(inputType)
 				.setOutputType(outputType)
 				.build();

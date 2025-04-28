@@ -16,9 +16,12 @@
 package org.springframework.grpc.sample;
 
 import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.MethodDescriptor;
 
 public interface DescriptorProvider {
 
 	Descriptor descriptor(Class<?> clazz);
-	
+
+	MethodDescriptor method(String fullMethodName);
+
 }
