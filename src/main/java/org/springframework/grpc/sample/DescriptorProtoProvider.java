@@ -29,6 +29,7 @@ public interface DescriptorProtoProvider {
 		for (var field : clazz.getDeclaredFields()) {
 			builder.addField(DescriptorProtos.FieldDescriptorProto.newBuilder().setName(field.getName())
 					.setNumber(count).setType(findType(field.getType())).build());
+			count++;
 		}
 		return builder.build();
 	};
