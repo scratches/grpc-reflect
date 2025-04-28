@@ -69,12 +69,36 @@ public class GrpcServerApplicationTests {
 		assertEquals("Hello ==> Alien", response.getMessage());
 	}
 
+	@Test
+	void pojoCall() {
+		DescriptorRegistry registry = new DescriptorRegistry();
+		registry.register(Hello.class);
+		DynamicStub stub = new DynamicStub(registry, new MessageConverter(registry), this.stub.getChannel());
+		Hello request = new Hello();
+		request.setName("Alien");
+		Hello response = stub.call("Simple/SayHello", request, Hello.class);
+		assertEquals("Hello ==> Alien", response.getName());
+	}
+
+	static class Hello {
+		private String name;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+	}
+
 	@TestConfiguration(proxyBeanMethods = false)
 	static class ExtraConfiguration {
 
 		@Bean
 		BindableService runner() {
-			MethodDescriptor<DynamicMessage, DynamicMessage> method = MethodDescriptor.<DynamicMessage, DynamicMessage>newBuilder()
+			MethodDescriptor<DynamicMessage, DynamicMessage> method = MethodDescriptor
+					.<DynamicMessage, DynamicMessage>newBuilder()
 					.setFullMethodName("Foo/Echo")
 					.setRequestMarshaller(new FooMarshaller())
 					.setResponseMarshaller(new FooMarshaller())
@@ -83,7 +107,8 @@ public class GrpcServerApplicationTests {
 					.build();
 			ServerCallHandler<DynamicMessage, DynamicMessage> handler = new ServerCallHandler<DynamicMessage, DynamicMessage>() {
 				@Override
-				public Listener<DynamicMessage> startCall(ServerCall<DynamicMessage, DynamicMessage> call, Metadata headers) {
+				public Listener<DynamicMessage> startCall(ServerCall<DynamicMessage, DynamicMessage> call,
+						Metadata headers) {
 					call.request(2);
 					return new FooListener(call, headers);
 				}
@@ -206,15 +231,15 @@ public class GrpcServerApplicationTests {
 	}
 
 	static class FooListener extends ServerCall.Listener<DynamicMessage> {
-		
+
 		private ServerCall<DynamicMessage, DynamicMessage> call;
 		private Metadata headers;
-		
+
 		public FooListener(ServerCall<DynamicMessage, DynamicMessage> call, Metadata headers) {
 			this.call = call;
 			this.headers = headers;
 		}
-		
+
 		@Override
 		public void onCancel() {
 		}
@@ -226,13 +251,13 @@ public class GrpcServerApplicationTests {
 		@Override
 		public void onHalfClose() {
 		}
-		
+
 		@Override
 		public void onMessage(DynamicMessage message) {
 			this.call.sendMessage(message);
 			this.call.close(Status.OK, new Metadata());
 		}
-		
+
 		@Override
 		public void onReady() {
 			call.sendHeaders(this.headers);
