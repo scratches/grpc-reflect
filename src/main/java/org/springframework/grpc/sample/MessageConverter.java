@@ -16,6 +16,7 @@
 package org.springframework.grpc.sample;
 
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.ReflectionUtils;
@@ -49,7 +50,9 @@ public class MessageConverter {
 				if (value instanceof AbstractMessage) {
 					value = convert((AbstractMessage) value, propertyDescriptor.getPropertyType());
 				}
-				ReflectionUtils.invokeMethod(propertyDescriptor.getWriteMethod(), instance, value);
+				Method method = propertyDescriptor.getWriteMethod();
+				ReflectionUtils.makeAccessible(method);
+				ReflectionUtils.invokeMethod(method, instance, value);
 			}
 		}
 		return instance;
@@ -71,12 +74,14 @@ public class MessageConverter {
 			String propertyName = propertyDescriptor.getName();
 			FieldDescriptor field = descriptor.findFieldByName(propertyName);
 			if (field != null) {
+				Method method = propertyDescriptor.getReadMethod();
+				ReflectionUtils.makeAccessible(method);
 				if (field.getType() == FieldDescriptor.Type.MESSAGE) {
-					Object nestedValue = ReflectionUtils.invokeMethod(propertyDescriptor.getReadMethod(), value);
+					Object nestedValue = ReflectionUtils.invokeMethod(method, value);
 					AbstractMessage nestedMessage = convert(nestedValue);
 					builder.setField(field, nestedMessage);
 				} else {
-					Object fieldValue = ReflectionUtils.invokeMethod(propertyDescriptor.getReadMethod(), value);
+					Object fieldValue = ReflectionUtils.invokeMethod(method, value);
 					builder.setField(field, fieldValue);
 				}
 			}

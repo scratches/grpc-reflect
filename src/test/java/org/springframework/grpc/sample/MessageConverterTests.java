@@ -102,7 +102,7 @@ public class MessageConverterTests {
 		assertThat(nestedMessage.getField(desc.findFieldByName("age"))).isEqualTo(30);
 	}
 
-	public static class Bar {
+	static class Bar {
 		private Foo foo;
 
 		public Foo getFoo() {
