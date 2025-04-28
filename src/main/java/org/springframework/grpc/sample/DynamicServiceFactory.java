@@ -31,17 +31,17 @@ import io.grpc.ServiceDescriptor;
 import io.grpc.Status;
 import io.grpc.protobuf.ProtoUtils;
 
-public class DynamicService {
+public class DynamicServiceFactory {
 
 	private final MessageConverter converter;
 	private final DescriptorRegistry registry;
 
-	public DynamicService(DescriptorRegistry registry) {
+	public DynamicServiceFactory(DescriptorRegistry registry) {
 		this.registry = registry;
 		this.converter = new MessageConverter(registry);
 	}
 
-	public <I, O> BindableService call(String fullMethodName, Class<I> requestType, Class<O> responseType,
+	public <I, O> BindableService service(String fullMethodName, Class<I> requestType, Class<O> responseType,
 			Function<I, O> function) {
 		if (function == null) {
 			throw new IllegalArgumentException("Handler cannot be null");
