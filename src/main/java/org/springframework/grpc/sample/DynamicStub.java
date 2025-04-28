@@ -30,18 +30,30 @@ public class DynamicStub {
 	private final Channel channel;
 	private final DescriptorRegistry registry;
 
-	public DynamicStub(DescriptorRegistry registry, MessageConverter converter, Channel channel) {
+	public DynamicStub(DescriptorRegistry registry, Channel channel) {
 		this.registry = registry;
 		this.channel = channel;
-		this.converter = converter;
+		this.converter = new MessageConverter(registry);
 	}
 
 	public <T> T call(String fullMethodName, Object request, Class<T> responseType) {
+		if (request == null) {
+			throw new IllegalArgumentException("Request cannot be null");
+		}
+		if (responseType == null) {
+			throw new IllegalArgumentException("Response type cannot be null");
+		}
+		if (this.registry.descriptor(responseType) == null) {
+			this.registry.register(responseType);
+		}
+		if (this.registry.descriptor(request.getClass()) == null) {
+			this.registry.register(request.getClass());
+		}
 		Marshaller<DynamicMessage> marshaller = ProtoUtils
 				.marshaller(DynamicMessage.newBuilder(registry.descriptor(responseType)).build());
 		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
 				.<DynamicMessage, DynamicMessage>newBuilder()
-				.setType(MethodDescriptor.MethodType.UNKNOWN)
+				.setType(MethodDescriptor.MethodType.UNARY)
 				.setFullMethodName(fullMethodName)
 				.setRequestMarshaller(marshaller)
 				.setResponseMarshaller(marshaller)

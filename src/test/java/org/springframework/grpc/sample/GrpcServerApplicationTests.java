@@ -71,9 +71,7 @@ public class GrpcServerApplicationTests {
 
 	@Test
 	void pojoCall() {
-		DescriptorRegistry registry = new DescriptorRegistry();
-		registry.register(Hello.class);
-		DynamicStub stub = new DynamicStub(registry, new MessageConverter(registry), this.stub.getChannel());
+		DynamicStub stub = new DynamicStub(new DescriptorRegistry(), this.stub.getChannel());
 		Hello request = new Hello();
 		request.setName("Alien");
 		Hello response = stub.call("Simple/SayHello", request, Hello.class);

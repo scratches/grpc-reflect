@@ -34,4 +34,12 @@ public class DescriptorProtoProviderTests {
 		assertThat(proto.getField(0).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_STRING);
 		assertThat(proto.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_INT32);
 	}
+
+	@Test
+	public void testVoidType() throws Exception {
+		DescriptorProtoProvider provider = DescriptorProtoProvider.DEFAULT_INSTANCE;
+		DescriptorProto proto = provider.proto(Void.class);
+		assertThat(proto.getName()).isEqualTo("Void");
+		assertThat(proto.getFieldCount()).isEqualTo(0);
+	}
 }

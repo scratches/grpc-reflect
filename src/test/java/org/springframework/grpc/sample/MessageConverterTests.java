@@ -66,6 +66,17 @@ public class MessageConverterTests {
 	}
 
 	@Test
+	public void testConvertToVoid() {
+		MessageConverter converter = new MessageConverter(registry);
+		registry.register(Void.class);
+		var foo = DynamicMessage.newBuilder(registry.descriptor(Void.class))
+				.build();
+		Object message = converter.convert(foo, Void.class);
+
+		assertThat(message).isNull();
+	}
+
+	@Test
 	public void testConvertToMessage() {
 		MessageConverter converter = new MessageConverter(registry);
 		registry.register(Foo.class);
@@ -100,6 +111,17 @@ public class MessageConverterTests {
 				.getField(registry.descriptor(Bar.class).findFieldByName("foo"));
 		assertThat(nestedMessage.getField(desc.findFieldByName("name"))).isEqualTo("foo");
 		assertThat(nestedMessage.getField(desc.findFieldByName("age"))).isEqualTo(30);
+	}
+
+	@Test
+	public void testConvertVoidToMessage() {
+		MessageConverter converter = new MessageConverter(registry);
+		registry.register(Void.class);
+
+		AbstractMessage message = converter.convert(null);
+
+		assertThat(message).isNotNull();
+		assertThat(message.getDescriptorForType().getFields()).isEmpty();
 	}
 
 	static class Bar {

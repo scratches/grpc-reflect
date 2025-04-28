@@ -35,7 +35,7 @@ public class MessageConverter {
 	}
 
 	public <T> T convert(AbstractMessage message, Class<T> targetType) {
-		if (message == null) {
+		if (message == null || targetType == null || targetType == Void.class) {
 			return null;
 		}
 		if (targetType.isInstance(message)) {
@@ -44,6 +44,9 @@ public class MessageConverter {
 		T instance = BeanUtils.instantiateClass(targetType);
 		for (PropertyDescriptor propertyDescriptor : BeanUtils.getPropertyDescriptors(targetType)) {
 			String propertyName = propertyDescriptor.getName();
+			if (propertyDescriptor.getWriteMethod() == null) {
+				continue;
+			}
 			FieldDescriptor field = message.getDescriptorForType().findFieldByName(propertyName);
 			if (field != null && message.hasField(field)) {
 				Object value = message.getField(message.getDescriptorForType().findFieldByName(propertyName));
@@ -60,6 +63,9 @@ public class MessageConverter {
 
 	public <T> AbstractMessage convert(T value) {
 		if (value == null) {
+			if (this.descriptors.descriptor(Void.class) != null) {
+				return DynamicMessage.newBuilder(this.descriptors.descriptor(Void.class)).build();
+			}
 			return null;
 		}
 		if (value instanceof AbstractMessage) {

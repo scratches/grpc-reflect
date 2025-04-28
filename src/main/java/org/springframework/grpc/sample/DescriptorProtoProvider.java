@@ -26,6 +26,9 @@ public interface DescriptorProtoProvider {
 	public DescriptorProtoProvider DEFAULT_INSTANCE = clazz -> {
 		DescriptorProto.Builder builder = DescriptorProto.newBuilder();
 		builder.setName(clazz.getSimpleName());
+		if (clazz == Void.class || clazz == Void.TYPE) {
+			return builder.build();
+		}
 		int count = 1;
 		for (var field : clazz.getDeclaredFields()) {
 			Type type = findType(field.getType());
