@@ -17,6 +17,7 @@ package org.springframework.grpc.sample;
 
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type;
 
 public interface DescriptorProtoProvider {
 
@@ -27,8 +28,13 @@ public interface DescriptorProtoProvider {
 		builder.setName(clazz.getSimpleName());
 		int count = 1;
 		for (var field : clazz.getDeclaredFields()) {
-			builder.addField(DescriptorProtos.FieldDescriptorProto.newBuilder().setName(field.getName())
-					.setNumber(count).setType(findType(field.getType())).build());
+			Type type = findType(field.getType());
+			DescriptorProtos.FieldDescriptorProto.Builder fb = DescriptorProtos.FieldDescriptorProto.newBuilder().setName(field.getName())
+			.setNumber(count).setType(type);
+			if (type == Type.TYPE_MESSAGE) {
+				fb.setTypeName(field.getType().getSimpleName());
+			}
+			builder.addField(fb.build());
 			count++;
 		}
 		return builder.build();

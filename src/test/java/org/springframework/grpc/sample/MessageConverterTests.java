@@ -25,15 +25,16 @@ import com.google.protobuf.DynamicMessage;
 
 public class MessageConverterTests {
 
+	private DescriptorRegistry registry = new DescriptorRegistry();
+
 	@Test
 	public void testConvertToPojo() {
-		MessageConverter converter = new MessageConverter();
-		DescriptorRegistry registry = new DescriptorRegistry();
+		MessageConverter converter = new MessageConverter(registry);
 		registry.register(Foo.class);
 		Descriptor desc = registry.descriptor(Foo.class);
-		var foo = DynamicMessage.newBuilder(desc).setField(
-				desc.findFieldByName("name"), "foo").setField(
-						desc.findFieldByName("age"), 30)
+		var foo = DynamicMessage.newBuilder(desc)
+				.setField(desc.findFieldByName("name"), "foo")
+				.setField(desc.findFieldByName("age"), 30)
 				.build();
 
 		Foo convertedFoo = converter.convert(foo, Foo.class);
@@ -44,19 +45,72 @@ public class MessageConverterTests {
 	}
 
 	@Test
+	public void testConvertToPojoWithNested() {
+		MessageConverter converter = new MessageConverter(registry);
+		registry.register(Foo.class);
+		registry.register(Bar.class);
+		Descriptor desc = registry.descriptor(Foo.class);
+		var foo = DynamicMessage.newBuilder(desc)
+				.setField(desc.findFieldByName("name"), "foo")
+				.setField(desc.findFieldByName("age"), 30)
+				.build();
+		var bar = DynamicMessage.newBuilder(registry.descriptor(Bar.class))
+				.setField(registry.descriptor(Bar.class).findFieldByName("foo"), foo)
+				.build();
+
+		Foo convertedFoo = converter.convert(bar, Bar.class).getFoo();
+
+		assertThat(convertedFoo).isNotNull();
+		assertThat(convertedFoo.getName()).isEqualTo("foo");
+		assertThat(convertedFoo.getAge()).isEqualTo(30);
+	}
+
+	@Test
 	public void testConvertToMessage() {
-		MessageConverter converter = new MessageConverter();
-		DescriptorRegistry registry = new DescriptorRegistry();
+		MessageConverter converter = new MessageConverter(registry);
 		registry.register(Foo.class);
 		Descriptor desc = registry.descriptor(Foo.class);
 		Foo foo = new Foo();
 		foo.setName("foo");
 		foo.setAge(30);
 
-		AbstractMessage message = converter.convert(foo, desc);
+		AbstractMessage message = converter.convert(foo);
 
 		assertThat(message).isNotNull();
 		assertThat(message.getField(desc.findFieldByName("name"))).isEqualTo("foo");
 		assertThat(message.getField(desc.findFieldByName("age"))).isEqualTo(30);
+	}
+
+	@Test
+	public void testConvertToNestedMessage() {
+		MessageConverter converter = new MessageConverter(registry);
+		registry.register(Foo.class);
+		registry.register(Bar.class);
+		Descriptor desc = registry.descriptor(Foo.class);
+		Foo foo = new Foo();
+		foo.setName("foo");
+		foo.setAge(30);
+		Bar bar = new Bar();
+		bar.setFoo(foo);
+
+		AbstractMessage message = converter.convert(bar);
+
+		assertThat(message).isNotNull();
+		AbstractMessage nestedMessage = (AbstractMessage) message
+				.getField(registry.descriptor(Bar.class).findFieldByName("foo"));
+		assertThat(nestedMessage.getField(desc.findFieldByName("name"))).isEqualTo("foo");
+		assertThat(nestedMessage.getField(desc.findFieldByName("age"))).isEqualTo(30);
+	}
+
+	public static class Bar {
+		private Foo foo;
+
+		public Foo getFoo() {
+			return foo;
+		}
+
+		public void setFoo(Foo foo) {
+			this.foo = foo;
+		}
 	}
 }

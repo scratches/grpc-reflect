@@ -27,6 +27,12 @@ import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.DynamicMessage.Builder;
 
 public class MessageConverter {
+
+	private final DescriptorProvider descriptors;
+	public MessageConverter(DescriptorProvider descriptors) {
+		this.descriptors = descriptors;
+	}
+
 	public <T> T convert(AbstractMessage message, Class<T> targetType) {
 		if (message == null) {
 			return null;
@@ -40,26 +46,39 @@ public class MessageConverter {
 			FieldDescriptor field = message.getDescriptorForType().findFieldByName(propertyName);
 			if (field != null && message.hasField(field)) {
 				Object value = message.getField(message.getDescriptorForType().findFieldByName(propertyName));
+				if (value instanceof AbstractMessage) {
+					value = convert((AbstractMessage) value, propertyDescriptor.getPropertyType());
+				}
 				ReflectionUtils.invokeMethod(propertyDescriptor.getWriteMethod(), instance, value);
 			}
 		}
 		return instance;
 	}
 
-	public <T> AbstractMessage convert(T value, Descriptor descriptor) {
+	public <T> AbstractMessage convert(T value) {
 		if (value == null) {
 			return null;
 		}
 		if (value instanceof AbstractMessage) {
 			return (AbstractMessage) value;
 		}
+		Descriptor descriptor = this.descriptors.descriptor(value.getClass());
+		if (descriptor == null) {
+			throw new IllegalArgumentException("No descriptor found for class: " + value.getClass());
+		}
 		Builder builder = DynamicMessage.newBuilder(descriptor);
 		for (PropertyDescriptor propertyDescriptor : BeanUtils.getPropertyDescriptors(value.getClass())) {
 			String propertyName = propertyDescriptor.getName();
 			FieldDescriptor field = descriptor.findFieldByName(propertyName);
 			if (field != null) {
-				Object fieldValue = ReflectionUtils.invokeMethod(propertyDescriptor.getReadMethod(), value);
-				builder.setField(field, fieldValue);
+				if (field.getType() == FieldDescriptor.Type.MESSAGE) {
+					Object nestedValue = ReflectionUtils.invokeMethod(propertyDescriptor.getReadMethod(), value);
+					AbstractMessage nestedMessage = convert(nestedValue);
+					builder.setField(field, nestedMessage);
+				} else {
+					Object fieldValue = ReflectionUtils.invokeMethod(propertyDescriptor.getReadMethod(), value);
+					builder.setField(field, fieldValue);
+				}
 			}
 		}
 		return builder.build();
