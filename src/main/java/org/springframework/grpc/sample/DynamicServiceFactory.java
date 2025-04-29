@@ -15,7 +15,11 @@
  */
 package org.springframework.grpc.sample;
 
+import java.lang.reflect.Method;
 import java.util.function.Function;
+
+import org.springframework.util.ReflectionUtils;
+import org.springframework.util.StringUtils;
 
 import com.google.protobuf.DynamicMessage;
 
@@ -39,6 +43,30 @@ public class DynamicServiceFactory {
 	public DynamicServiceFactory(DescriptorRegistry registry) {
 		this.registry = registry;
 		this.converter = new MessageConverter(registry);
+	}
+
+	public <T> BindableService service(T instance, String methodName) {
+		String fullMethodName = instance.getClass().getSimpleName() + "/" + StringUtils.capitalize(methodName);
+		return service(instance, methodName, fullMethodName);
+	}
+
+	public <T> BindableService service(T instance, String methodName, String fullMethodName) {
+		Class<?> owner = instance.getClass();
+		Method method = ReflectionUtils.findMethod(owner, methodName, (Class<?>[]) null);
+		if (method == null) {
+			throw new IllegalArgumentException("Method " + methodName + " not found in class " + owner.getName());
+		}
+		if (method.getParameterTypes().length != 1) {
+			throw new IllegalArgumentException("Method must have exactly one parameter");
+		}
+		Class<?> requestType = method.getParameterTypes()[0];
+		Class<?> responseType = method.getReturnType();
+		return service(fullMethodName, requestType, responseType, request -> invoker(instance, method, request));
+	}
+
+	@SuppressWarnings("unchecked")
+	private <I, O> O invoker(Object instance, Method method, I request) {
+		return (O) ReflectionUtils.invokeMethod(method, instance, request);
 	}
 
 	public <I, O> BindableService service(String fullMethodName, Class<I> requestType, Class<O> responseType,

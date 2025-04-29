@@ -1,5 +1,6 @@
 package org.springframework.grpc.sample;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.function.Function;
@@ -46,12 +47,20 @@ public class GrpcServerApplicationTests {
 	}
 
 	@Test
-	void dynamicService() {
+	void dynamicServiceFromFunction() {
 		DynamicStub stub = new DynamicStub(new DescriptorRegistry(), this.stub.getChannel());
 		Hello request = new Hello();
 		request.setName("Alien");
 		Hello response = stub.call("Foo/Echo", request, Hello.class);
 		assertEquals("Alien", response.getName());
+	}
+
+	@Test
+	void dynamicServiceFromInstance() {
+		DynamicStub stub = new DynamicStub(new DescriptorRegistry(), this.stub.getChannel());
+		Input request = new Input();
+		Output response = stub.call("FooService/Process", request, Output.class);
+		assertThat(response).isNotNull();
 	}
 
 	@Test
@@ -84,11 +93,25 @@ public class GrpcServerApplicationTests {
 		}
 
 		@Bean
-		BindableService runner(DynamicServiceFactory factory) {
+		BindableService echoService(DynamicServiceFactory factory) {
 			return factory.service("Foo/Echo",
 				Foo.class, Foo.class, Function.identity());
 		}
 
+		@Bean
+		BindableService fooService(DynamicServiceFactory factory) {
+			return factory.service(new FooService(), "process");
+		}
+
+	}
+
+	static class Input {}
+	static class Output {}
+
+	static class FooService {
+		public Output process(Input input) {
+			return new Output();
+		}
 	}
 
 }
