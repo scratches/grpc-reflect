@@ -36,10 +36,62 @@ public class DescriptorRegistryTests {
 	}
 
 	@Test
+	public void testRegisterTwoMethods() throws Exception {
+		DescriptorRegistry registry = new DescriptorRegistry();
+		registry.register(DescriptorRegistryTests.class.getMethod("echo", Foo.class));
+		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
+		assertThat(registry.method("DescriptorRegistryTests/Echo")).isNotNull();
+		registry.register(DescriptorRegistryTests.class.getMethod("translate", Foo.class));
+		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
+		assertThat(registry.method("DescriptorRegistryTests/Echo")).isNotNull();
+		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
+		assertThat(registry.method("DescriptorRegistryTests/Translate")).isNotNull();
+	}
+
+	@Test
 	public void testRegisterUnownedMethod() throws Exception {
 		DescriptorRegistry registry = new DescriptorRegistry();
 		registry.register("Service/Spam", Foo.class, Bar.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
+		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
+		assertThat(registry.method("Service/Spam")).isNotNull();
+	}
+
+	@Test
+	public void testRegisterTwoUnownedMethods() throws Exception {
+		DescriptorRegistry registry = new DescriptorRegistry();
+		registry.register("Service/Echo", Foo.class, Foo.class);
+		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
+		assertThat(registry.method("Service/Echo")).isNotNull();
+		registry.register("Service/Spam", Foo.class, Bar.class);
+		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
+		assertThat(registry.method("Service/Echo")).isNotNull();
+		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
+		assertThat(registry.method("Service/Spam")).isNotNull();
+	}
+
+	@Test
+	public void testRegisterTwoUnownedMethodsFromDifferentServices() throws Exception {
+		DescriptorRegistry registry = new DescriptorRegistry();
+		registry.register("EchoService/Echo", Foo.class, Foo.class);
+		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
+		assertThat(registry.method("EchoService/Echo")).isNotNull();
+		registry.register("Service/Spam", Foo.class, Bar.class);
+		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
+		assertThat(registry.method("EchoService/Echo")).isNotNull();
+		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
+		assertThat(registry.method("Service/Spam")).isNotNull();
+	}
+
+	@Test
+	public void testRegisterTwoMixedMethods() throws Exception {
+		DescriptorRegistry registry = new DescriptorRegistry();
+		registry.register(DescriptorRegistryTests.class.getMethod("echo", Foo.class));
+		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
+		assertThat(registry.method("DescriptorRegistryTests/Echo")).isNotNull();
+		registry.register("Service/Spam", Foo.class, Bar.class);
+		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
+		assertThat(registry.method("DescriptorRegistryTests/Echo")).isNotNull();
 		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
 		assertThat(registry.method("Service/Spam")).isNotNull();
 	}

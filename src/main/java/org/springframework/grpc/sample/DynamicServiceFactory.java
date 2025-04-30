@@ -21,6 +21,8 @@ import java.util.function.Function;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
+import com.google.protobuf.Descriptors;
+import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.DynamicMessage;
 
 import io.grpc.BindableService;
@@ -33,6 +35,8 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.ServiceDescriptor;
 import io.grpc.Status;
+import io.grpc.protobuf.ProtoMethodDescriptorSupplier;
+import io.grpc.protobuf.ProtoServiceDescriptorSupplier;
 import io.grpc.protobuf.ProtoUtils;
 
 public class DynamicServiceFactory {
@@ -80,6 +84,10 @@ public class DynamicServiceFactory {
 		if (this.registry.descriptor(requestType) == null) {
 			this.registry.register(requestType);
 		}
+		String serviceName = fullMethodName.substring(0, fullMethodName.indexOf('/'));
+		if (this.registry.file(serviceName) == null) {
+			this.registry.register(fullMethodName, requestType, responseType);
+		}
 		Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
 				.marshaller(DynamicMessage.newBuilder(registry.descriptor(responseType)).build());
 		Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
@@ -90,6 +98,7 @@ public class DynamicServiceFactory {
 				.setFullMethodName(fullMethodName)
 				.setRequestMarshaller(requestMarshaller)
 				.setResponseMarshaller(responseMarshaller)
+				.setSchemaDescriptor(new SimpleBaseDescriptorSupplier(registry.file(serviceName), serviceName))
 				.build();
 		ServerCallHandler<DynamicMessage, DynamicMessage> handler = new ServerCallHandler<DynamicMessage, DynamicMessage>() {
 			@Override
@@ -99,15 +108,55 @@ public class DynamicServiceFactory {
 				return new DynamicListener<I, O>(requestType, function, call, headers);
 			}
 		};
-		String serviceName = fullMethodName.substring(0, fullMethodName.indexOf('/'));
+		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
 		ServerServiceDefinition service = ServerServiceDefinition
 				.builder(ServiceDescriptor.newBuilder(serviceName)
-						.setSchemaDescriptor(this.registry.method(fullMethodName))
+						.setSchemaDescriptor(
+								new SimpleMethodDescriptor(registry.file(serviceName), serviceName, methodName))
 						.addMethod(methodDescriptor)
 						.build())
 				.addMethod(methodDescriptor, handler)
 				.build();
 		return () -> service;
+	}
+
+	static class SimpleBaseDescriptorSupplier implements ProtoServiceDescriptorSupplier {
+
+		private FileDescriptor file;
+		private String serviceName;
+
+		public SimpleBaseDescriptorSupplier(FileDescriptor file, String serviceName) {
+			this.file = file;
+			this.serviceName = serviceName;
+		}
+
+		@Override
+		public FileDescriptor getFileDescriptor() {
+			return this.file;
+		}
+
+		@Override
+		public Descriptors.ServiceDescriptor getServiceDescriptor() {
+			return this.file.findServiceByName(this.serviceName);
+		}
+
+	}
+
+	static class SimpleMethodDescriptor extends SimpleBaseDescriptorSupplier
+			implements ProtoMethodDescriptorSupplier {
+
+		private final String methodName;
+
+		SimpleMethodDescriptor(FileDescriptor file, String serviceName, String methodName) {
+			super(file, serviceName);
+			this.methodName = methodName;
+		}
+
+		@java.lang.Override
+		public Descriptors.MethodDescriptor getMethodDescriptor() {
+			return getServiceDescriptor().findMethodByName(methodName);
+		}
+
 	}
 
 	class DynamicListener<I, O> extends ServerCall.Listener<DynamicMessage> {

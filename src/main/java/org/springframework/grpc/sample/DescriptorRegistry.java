@@ -20,10 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.util.StringUtils;
-
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
+import com.google.protobuf.DescriptorProtos.FileDescriptorProto.Builder;
 import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
 import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -35,10 +34,12 @@ public class DescriptorRegistry implements DescriptorProvider {
 
 	private final DescriptorProtoProvider protos;
 	private final MethodDescriptorProtoProvider methods;
-	private Map<Class<?>, ServiceDescriptorProto> serviceProtos = new HashMap<>();
+	private Map<Class<?>, List<ServiceDescriptorProto>> serviceProtos = new HashMap<>();
 	private Map<Class<?>, List<Class<?>>> types = new HashMap<>();
 	private Map<Class<?>, Descriptor> descriptors = new HashMap<>();
 	private Map<String, MethodDescriptor> methodDescriptors = new HashMap<>();
+	private Map<Class<?>, FileDescriptor> fileDescriptors = new HashMap<>();
+	private Map<String, Class<?>> owners = new HashMap<>();
 
 	public DescriptorRegistry() {
 		this(DescriptorProtoProvider.DEFAULT_INSTANCE, MethodDescriptorProtoProvider.DEFAULT_INSTANCE);
@@ -71,7 +72,7 @@ public class DescriptorRegistry implements DescriptorProvider {
 	private void register(Class<?> owner, String serviceName, String methodName, MethodDescriptorProto proto,
 			Class<?> input,
 			Class<?> output) {
-		ServiceDescriptorProto service = this.serviceProtos.get(owner);
+		ServiceDescriptorProto service = findService(owner, serviceName);
 		if (service == null) {
 			service = ServiceDescriptorProto.newBuilder().setName(serviceName).build();
 		}
@@ -81,10 +82,22 @@ public class DescriptorRegistry implements DescriptorProvider {
 		ServiceDescriptorProto.Builder builder = service.toBuilder();
 		builder.addMethod(proto);
 		service = builder.build();
-		this.serviceProtos.put(owner, service);
+		this.serviceProtos.computeIfAbsent(owner, key -> new java.util.ArrayList<>()).add(service);
 		register(owner, input);
 		register(owner, output);
 		process(owner);
+	}
+
+	private ServiceDescriptorProto findService(Class<?> owner, String serviceName) {
+		List<ServiceDescriptorProto> services = this.serviceProtos.get(owner);
+		if (services != null) {
+			for (ServiceDescriptorProto service : services) {
+				if (service.getName().equals(serviceName)) {
+					return service;
+				}
+			}
+		}
+		return null;
 	}
 
 	private MethodDescriptorProto findMethod(ServiceDescriptorProto service, String name) {
@@ -98,16 +111,23 @@ public class DescriptorRegistry implements DescriptorProvider {
 
 	private void process(Class<?> owner) {
 		FileDescriptorProto.Builder builder = FileDescriptorProto.newBuilder();
-		builder.setName(owner.getName() + ".proto");
-		builder.setSyntax("proto3");
-		ServiceDescriptorProto service = this.serviceProtos.get(owner);
-		if (service != null) {
-			builder.addService(service);
+		if (this.fileDescriptors.containsKey(owner)) {
+			builder = this.fileDescriptors.get(owner).toProto().toBuilder();
+		} else {
+			builder.setName(owner.getName() + ".proto");
+			builder.setSyntax("proto3");
+		}
+		List<ServiceDescriptorProto> services = this.serviceProtos.get(owner);
+		if (services != null) {
+			for (ServiceDescriptorProto service : services) {
+				removeService(builder, service.getName());
+				builder.addService(service);
+			}
 		}
 		Map<String, Class<?>> types = new HashMap<>();
 		for (Class<?> type : this.types.get(owner)) {
 			DescriptorProto message = this.protos.proto(type);
-			if (types.containsKey(message.getName())) {
+			if (findMessage(builder, message.getName()) != null) {
 				continue;
 			}
 			builder.addMessageType(message);
@@ -121,9 +141,29 @@ public class DescriptorRegistry implements DescriptorProvider {
 				for (MethodDescriptor method : descriptor.getMethods()) {
 					this.methodDescriptors.put(descriptor.getName() + "/" + method.getName(), method);
 				}
+				this.owners.put(descriptor.getName(), owner);
 			});
+			this.fileDescriptors.put(owner, proto);
 		} catch (DescriptorValidationException e) {
 			throw new IllegalStateException(e);
+		}
+	}
+
+	private DescriptorProto findMessage(Builder builder, String name) {
+		for (int i = 0; i < builder.getMessageTypeCount(); i++) {
+			if (builder.getMessageType(i).getName().equals(name)) {
+				return builder.getMessageType(i);
+			}
+		}
+		return null;
+	}
+
+	private void removeService(Builder builder, String name) {
+		for (int i = 0; i < builder.getServiceCount(); i++) {
+			if (builder.getService(i).getName().equals(name)) {
+				builder.removeService(i);
+				break;
+			}
 		}
 	}
 
@@ -150,5 +190,10 @@ public class DescriptorRegistry implements DescriptorProvider {
 	@Override
 	public MethodDescriptor method(String fullMethodName) {
 		return this.methodDescriptors.get(fullMethodName);
+	}
+
+	@Override
+	public FileDescriptor file(String serviceName) {
+		return this.fileDescriptors.get(this.owners.get(serviceName));
 	}
 }

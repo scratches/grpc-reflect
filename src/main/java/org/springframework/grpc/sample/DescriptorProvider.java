@@ -16,6 +16,7 @@
 package org.springframework.grpc.sample;
 
 import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 
 public interface DescriptorProvider {
@@ -24,4 +25,5 @@ public interface DescriptorProvider {
 
 	MethodDescriptor method(String fullMethodName);
 
+	FileDescriptor file(String serviceName);
 }

@@ -51,7 +51,7 @@ public class GrpcServerApplicationTests {
 		DynamicStub stub = new DynamicStub(new DescriptorRegistry(), this.stub.getChannel());
 		Hello request = new Hello();
 		request.setName("Alien");
-		Hello response = stub.call("Foo/Echo", request, Hello.class);
+		Hello response = stub.call("EchoService/Echo", request, Hello.class);
 		assertEquals("Alien", response.getName());
 	}
 
@@ -94,7 +94,8 @@ public class GrpcServerApplicationTests {
 
 		@Bean
 		BindableService echoService(DynamicServiceFactory factory) {
-			return factory.service("Foo/Echo",
+			// TODO: support adding Echo to FooService (can't duplicate another bindable service)
+			return factory.service("EchoService/Echo",
 				Foo.class, Foo.class, Function.identity());
 		}
 
