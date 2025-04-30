@@ -70,6 +70,7 @@ public class DynamicServiceFactory {
 
 	@SuppressWarnings("unchecked")
 	private <I, O> O invoker(Object instance, Method method, I request) {
+		ReflectionUtils.makeAccessible(method);
 		return (O) ReflectionUtils.invokeMethod(method, instance, request);
 	}
 
@@ -78,12 +79,12 @@ public class DynamicServiceFactory {
 		if (function == null) {
 			throw new IllegalArgumentException("Handler cannot be null");
 		}
-		if (this.registry.descriptor(responseType) == null) {
-			this.registry.register(responseType);
-		}
-		if (this.registry.descriptor(requestType) == null) {
-			this.registry.register(requestType);
-		}
+		// if (this.registry.descriptor(responseType) == null) {
+		// 	this.registry.register(responseType);
+		// }
+		// if (this.registry.descriptor(requestType) == null) {
+		// 	this.registry.register(requestType);
+		// }
 		String serviceName = fullMethodName.substring(0, fullMethodName.indexOf('/'));
 		if (this.registry.file(serviceName) == null) {
 			this.registry.register(fullMethodName, requestType, responseType);
