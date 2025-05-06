@@ -37,7 +37,6 @@ public class DescriptorRegistry implements DescriptorProvider {
 	private Map<String, ServiceDescriptorProto> serviceProtos = new HashMap<>();
 	private Map<String, List<Class<?>>> types = new HashMap<>();
 	private Map<Class<?>, Descriptor> descriptors = new HashMap<>();
-	private Map<String, MethodDescriptor> methodDescriptors = new HashMap<>();
 	private Map<String, FileDescriptor> fileDescriptors = new HashMap<>();
 
 	public DescriptorRegistry() {
@@ -123,9 +122,6 @@ public class DescriptorRegistry implements DescriptorProvider {
 			proto.getMessageTypes()
 					.forEach(descriptor -> this.descriptors.put(types.get(descriptor.getName()), descriptor));
 			proto.getServices().forEach(descriptor -> {
-				for (MethodDescriptor method : descriptor.getMethods()) {
-					this.methodDescriptors.put(descriptor.getName() + "/" + method.getName(), method);
-				}
 				this.fileDescriptors.put(descriptor.getName(), proto);
 			});
 		} catch (DescriptorValidationException e) {
@@ -174,7 +170,18 @@ public class DescriptorRegistry implements DescriptorProvider {
 
 	@Override
 	public MethodDescriptor method(String fullMethodName) {
-		return this.methodDescriptors.get(fullMethodName);
+		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
+		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
+		FileDescriptor file = file(serviceName);
+		if (file == null) {
+			return null;
+		}
+		for (MethodDescriptor method : file.findServiceByName(serviceName).getMethods()) {
+			if (method.getName().equals(methodName)) {
+				return method;
+			}
+		}
+		return null;
 	}
 
 	@Override
