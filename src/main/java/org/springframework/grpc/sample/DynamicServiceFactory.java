@@ -16,6 +16,8 @@
 package org.springframework.grpc.sample;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 
 import org.springframework.util.ReflectionUtils;
@@ -34,6 +36,7 @@ import io.grpc.ServerCall.Listener;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.ServiceDescriptor;
+import io.grpc.ServiceDescriptor.Builder;
 import io.grpc.Status;
 import io.grpc.protobuf.ProtoMethodDescriptorSupplier;
 import io.grpc.protobuf.ProtoServiceDescriptorSupplier;
@@ -49,76 +52,18 @@ public class DynamicServiceFactory {
 		this.converter = new MessageConverter(registry);
 	}
 
-	public <T> BindableService service(T instance, String methodName) {
-		String fullMethodName = instance.getClass().getSimpleName() + "/" + StringUtils.capitalize(methodName);
-		return service(instance, methodName, fullMethodName);
+	public <T> BindableServiceBuilder service(String serviceName) {
+		return new BindableServiceBuilder(serviceName, this.registry, this.converter);
 	}
 
-	public <T> BindableService service(T instance, String methodName, String fullMethodName) {
-		Class<?> owner = instance.getClass();
-		Method method = ReflectionUtils.findMethod(owner, methodName, (Class<?>[]) null);
-		if (method == null) {
-			throw new IllegalArgumentException("Method " + methodName + " not found in class " + owner.getName());
-		}
-		if (method.getParameterTypes().length != 1) {
-			throw new IllegalArgumentException("Method must have exactly one parameter");
-		}
-		Class<?> requestType = method.getParameterTypes()[0];
-		Class<?> responseType = method.getReturnType();
-		return service(fullMethodName, requestType, responseType, request -> invoker(instance, method, request));
+	public <T> BindableServiceInstanceBuilder service(T instance) {
+		return new BindableServiceInstanceBuilder(instance, instance.getClass().getSimpleName(), this.registry,
+				this.converter);
 	}
 
-	@SuppressWarnings("unchecked")
-	private <I, O> O invoker(Object instance, Method method, I request) {
-		ReflectionUtils.makeAccessible(method);
-		return (O) ReflectionUtils.invokeMethod(method, instance, request);
-	}
-
-	public <I, O> BindableService service(String fullMethodName, Class<I> requestType, Class<O> responseType,
-			Function<I, O> function) {
-		if (function == null) {
-			throw new IllegalArgumentException("Handler cannot be null");
-		}
-		// if (this.registry.descriptor(responseType) == null) {
-		// 	this.registry.register(responseType);
-		// }
-		// if (this.registry.descriptor(requestType) == null) {
-		// 	this.registry.register(requestType);
-		// }
-		String serviceName = fullMethodName.substring(0, fullMethodName.indexOf('/'));
-		if (this.registry.file(serviceName) == null) {
-			this.registry.register(fullMethodName, requestType, responseType);
-		}
-		Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
-				.marshaller(DynamicMessage.newBuilder(registry.descriptor(responseType)).build());
-		Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
-				.marshaller(DynamicMessage.newBuilder(registry.descriptor(requestType)).build());
-		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
-				.<DynamicMessage, DynamicMessage>newBuilder()
-				.setType(MethodDescriptor.MethodType.UNARY)
-				.setFullMethodName(fullMethodName)
-				.setRequestMarshaller(requestMarshaller)
-				.setResponseMarshaller(responseMarshaller)
-				.setSchemaDescriptor(new SimpleBaseDescriptorSupplier(registry.file(serviceName), serviceName))
-				.build();
-		ServerCallHandler<DynamicMessage, DynamicMessage> handler = new ServerCallHandler<DynamicMessage, DynamicMessage>() {
-			@Override
-			public Listener<DynamicMessage> startCall(ServerCall<DynamicMessage, DynamicMessage> call,
-					Metadata headers) {
-				call.request(2);
-				return new DynamicListener<I, O>(requestType, function, call, headers);
-			}
-		};
-		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
-		ServerServiceDefinition service = ServerServiceDefinition
-				.builder(ServiceDescriptor.newBuilder(serviceName)
-						.setSchemaDescriptor(
-								new SimpleMethodDescriptor(registry.file(serviceName), serviceName, methodName))
-						.addMethod(methodDescriptor)
-						.build())
-				.addMethod(methodDescriptor, handler)
-				.build();
-		return () -> service;
+	public <T> BindableServiceInstanceBuilder service(String serviceName, T instance) {
+		return new BindableServiceInstanceBuilder(instance, serviceName, this.registry,
+				this.converter);
 	}
 
 	static class SimpleBaseDescriptorSupplier implements ProtoServiceDescriptorSupplier {
@@ -160,44 +105,151 @@ public class DynamicServiceFactory {
 
 	}
 
-	class DynamicListener<I, O> extends ServerCall.Listener<DynamicMessage> {
+	public static class BindableServiceInstanceBuilder {
+		private BindableServiceBuilder builder;
+		private Object instance;
 
-		private ServerCall<DynamicMessage, DynamicMessage> call;
-		private Metadata headers;
-		private Class<I> requestType;
-		private Function<I, O> function;
-
-		public DynamicListener(Class<I> requestType, Function<I, O> function,
-				ServerCall<DynamicMessage, DynamicMessage> call, Metadata headers) {
-			this.requestType = requestType;
-			this.function = function;
-			this.call = call;
-			this.headers = headers;
+		private <T> BindableServiceInstanceBuilder(T instance, String serviceName, DescriptorRegistry registry,
+				MessageConverter converter) {
+			this.instance = instance;
+			this.builder = new BindableServiceBuilder(serviceName, registry, converter);
 		}
 
-		@Override
-		public void onCancel() {
+		public BindableServiceInstanceBuilder method(String methodName) {
+			Class<?> owner = instance.getClass();
+			Method method = ReflectionUtils.findMethod(owner, methodName, (Class<?>[]) null);
+			if (method == null) {
+				throw new IllegalArgumentException("Method " + methodName + " not found in class " + owner.getName());
+			}
+			if (method.getParameterTypes().length != 1) {
+				throw new IllegalArgumentException("Method must have exactly one parameter");
+			}
+			Class<?> requestType = method.getParameterTypes()[0];
+			Class<?> responseType = method.getReturnType();
+			this.builder.method(StringUtils.capitalize(methodName), requestType, responseType,
+					request -> invoker(instance, method, request));
+			return this;
 		}
 
-		@Override
-		public void onComplete() {
+		public <I, O> BindableServiceInstanceBuilder method(String methodName, Class<I> requestType,
+				Class<O> responseType, Function<I, O> function) {
+			this.builder.method(methodName, requestType, responseType, function);
+			return this;
 		}
 
-		@Override
-		public void onHalfClose() {
+		@SuppressWarnings("unchecked")
+		private <I, O> O invoker(Object instance, Method method, I request) {
+			ReflectionUtils.makeAccessible(method);
+			return (O) ReflectionUtils.invokeMethod(method, instance, request);
 		}
 
-		@Override
-		public void onMessage(DynamicMessage message) {
-			I input = converter.convert(message, requestType);
-			O output = function.apply(input);
-			this.call.sendMessage((DynamicMessage) converter.convert(output));
-			this.call.close(Status.OK, new Metadata());
+		public BindableService build() {
+			return this.builder.build();
+		}
+	}
+
+	public static class BindableServiceBuilder {
+
+		private String serviceName;
+		private DescriptorRegistry registry;
+		private MessageConverter converter;
+		private Map<String, ServerCallHandler<DynamicMessage, DynamicMessage>> handlers = new HashMap<>();
+		private Map<String, MethodDescriptor<DynamicMessage, DynamicMessage>> descriptors = new HashMap<>();
+
+		private BindableServiceBuilder(String serviceName, DescriptorRegistry registry, MessageConverter converter) {
+			this.serviceName = serviceName;
+			this.registry = registry;
+			this.converter = converter;
 		}
 
-		@Override
-		public void onReady() {
-			call.sendHeaders(this.headers);
+		public <I, O> BindableServiceBuilder method(String methodName, Class<I> requestType, Class<O> responseType,
+				Function<I, O> function) {
+			String fullMethodName = serviceName + "/" + methodName;
+			if (this.registry.file(serviceName) == null) {
+				this.registry.register(fullMethodName, requestType, responseType);
+			}
+			Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
+					.marshaller(DynamicMessage.newBuilder(registry.descriptor(responseType)).build());
+			Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
+					.marshaller(DynamicMessage.newBuilder(registry.descriptor(requestType)).build());
+			MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
+					.<DynamicMessage, DynamicMessage>newBuilder()
+					.setType(MethodDescriptor.MethodType.UNARY)
+					.setFullMethodName(fullMethodName)
+					.setRequestMarshaller(requestMarshaller)
+					.setResponseMarshaller(responseMarshaller)
+					.setSchemaDescriptor(new SimpleBaseDescriptorSupplier(registry.file(serviceName), serviceName))
+					.build();
+			ServerCallHandler<DynamicMessage, DynamicMessage> handler = new ServerCallHandler<DynamicMessage, DynamicMessage>() {
+				@Override
+				public Listener<DynamicMessage> startCall(ServerCall<DynamicMessage, DynamicMessage> call,
+						Metadata headers) {
+					call.request(2);
+					return new DynamicListener<I, O>(requestType, function, call, headers);
+				}
+			};
+			this.handlers.put(methodName, handler);
+			this.descriptors.put(methodName, methodDescriptor);
+			return this;
+		}
+
+		public BindableService build() {
+			Builder descriptor = ServiceDescriptor.newBuilder(serviceName);
+			for (Map.Entry<String, ServerCallHandler<DynamicMessage, DynamicMessage>> entry : handlers.entrySet()) {
+				String methodName = entry.getKey();
+				MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = descriptors.get(methodName);
+				descriptor.addMethod(methodDescriptor);
+			}
+			ServerServiceDefinition.Builder service = ServerServiceDefinition.builder(descriptor.build());
+			for (Map.Entry<String, ServerCallHandler<DynamicMessage, DynamicMessage>> entry : handlers.entrySet()) {
+				String methodName = entry.getKey();
+				ServerCallHandler<DynamicMessage, DynamicMessage> handler = entry.getValue();
+				MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = descriptors.get(methodName);
+				service.addMethod(methodDescriptor, handler);
+			}
+			return () -> service.build();
+		}
+
+		class DynamicListener<I, O> extends ServerCall.Listener<DynamicMessage> {
+
+			private ServerCall<DynamicMessage, DynamicMessage> call;
+			private Metadata headers;
+			private Class<I> requestType;
+			private Function<I, O> function;
+
+			public DynamicListener(Class<I> requestType, Function<I, O> function,
+					ServerCall<DynamicMessage, DynamicMessage> call, Metadata headers) {
+				this.requestType = requestType;
+				this.function = function;
+				this.call = call;
+				this.headers = headers;
+			}
+
+			@Override
+			public void onCancel() {
+			}
+
+			@Override
+			public void onComplete() {
+			}
+
+			@Override
+			public void onHalfClose() {
+			}
+
+			@Override
+			public void onMessage(DynamicMessage message) {
+				I input = converter.convert(message, requestType);
+				O output = function.apply(input);
+				this.call.sendMessage((DynamicMessage) converter.convert(output));
+				this.call.close(Status.OK, new Metadata());
+			}
+
+			@Override
+			public void onReady() {
+				call.sendHeaders(this.headers);
+			}
+
 		}
 
 	}

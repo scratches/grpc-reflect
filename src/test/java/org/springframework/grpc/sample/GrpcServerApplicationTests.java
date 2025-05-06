@@ -14,6 +14,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.UseMainMethod;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.grpc.sample.FooService.Input;
+import org.springframework.grpc.sample.FooService.Output;
 import org.springframework.grpc.sample.proto.HelloReply;
 import org.springframework.grpc.sample.proto.HelloRequest;
 import org.springframework.grpc.sample.proto.SimpleGrpc;
@@ -85,34 +87,36 @@ public class GrpcServerApplicationTests {
 	}
 
 	@TestConfiguration(proxyBeanMethods = false)
+	@EnableGrpcMapping
 	static class ExtraConfiguration {
 
 		@Bean
-		DynamicServiceFactory factory () {
-			return new DynamicServiceFactory(new DescriptorRegistry());
-		}
-
-		@Bean
 		BindableService echoService(DynamicServiceFactory factory) {
-			// TODO: support adding Echo to FooService (can't duplicate another bindable service)
-			return factory.service("EchoService/Echo",
-				Foo.class, Foo.class, Function.identity());
-		}
-
-		@Bean
-		BindableService fooService(DynamicServiceFactory factory) {
-			return factory.service(new FooService(), "process");
+			return factory.service("EchoService").method("Echo",
+					Foo.class, Foo.class, Function.identity()).build();
 		}
 
 	}
 
-	static class Input {}
-	static class Output {}
+}
 
-	static class FooService {
-		public Output process(Input input) {
-			return new Output();
-		}
+@GrpcController
+class FooService {
+
+	@GrpcMapping
+	public Foo echo(Foo input) {
+		return input;
 	}
 
+	@GrpcMapping
+	public Output process(Input input) {
+		return new Output();
+	}
+
+	static class Input {
+	}
+	
+	static class Output {
+	}
+	
 }
