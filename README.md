@@ -3,7 +3,7 @@
 This project is a copy one of the samples from the [gRPC Spring Boot Starter](https://github.com/yidongnan/grpc-spring-boot-starter/blob/master/examples/local-grpc-server/build.gradle). Build and run any way you like to run Spring Boot. E.g:
 
 ```
-$ ./mvnw spring-boot:run
+$ ./mvnw -pl app spring-boot:run
 ...
   .   ____          _            __ _ _
  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \

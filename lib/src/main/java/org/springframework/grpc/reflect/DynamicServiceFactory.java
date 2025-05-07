@@ -165,9 +165,7 @@ public class DynamicServiceFactory {
 		public <I, O> BindableServiceBuilder method(String methodName, Class<I> requestType, Class<O> responseType,
 				Function<I, O> function) {
 			String fullMethodName = serviceName + "/" + methodName;
-			if (this.registry.file(serviceName) == null) {
-				this.registry.register(fullMethodName, requestType, responseType);
-			}
+			this.registry.register(fullMethodName, requestType, responseType);
 			Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
 					.marshaller(DynamicMessage.newBuilder(registry.descriptor(responseType)).build());
 			Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
@@ -178,7 +176,7 @@ public class DynamicServiceFactory {
 					.setFullMethodName(fullMethodName)
 					.setRequestMarshaller(requestMarshaller)
 					.setResponseMarshaller(responseMarshaller)
-					.setSchemaDescriptor(new SimpleBaseDescriptorSupplier(registry.file(serviceName), serviceName))
+					.setSchemaDescriptor(new SimpleMethodDescriptor(registry.file(serviceName), serviceName, methodName))
 					.build();
 			ServerCallHandler<DynamicMessage, DynamicMessage> handler = new ServerCallHandler<DynamicMessage, DynamicMessage>() {
 				@Override
@@ -195,6 +193,7 @@ public class DynamicServiceFactory {
 
 		public BindableService build() {
 			Builder descriptor = ServiceDescriptor.newBuilder(serviceName);
+			descriptor.setSchemaDescriptor(new SimpleBaseDescriptorSupplier(registry.file(serviceName), serviceName));
 			for (Map.Entry<String, ServerCallHandler<DynamicMessage, DynamicMessage>> entry : handlers.entrySet()) {
 				String methodName = entry.getKey();
 				MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = descriptors.get(methodName);

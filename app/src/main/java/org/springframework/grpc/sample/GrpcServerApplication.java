@@ -2,10 +2,12 @@ package org.springframework.grpc.sample;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.grpc.reflect.EnableGrpcMapping;
 import org.springframework.grpc.reflect.GrpcController;
 import org.springframework.grpc.reflect.GrpcMapping;
 
 @SpringBootApplication
+@EnableGrpcMapping
 public class GrpcServerApplication {
 
 	public static void main(String[] args) {

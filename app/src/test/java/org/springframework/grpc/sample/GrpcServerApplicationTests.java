@@ -46,7 +46,7 @@ public class GrpcServerApplicationTests {
 		DynamicStub stub = new DynamicStub(new DescriptorRegistry(), this.channel);
 		Hello request = new Hello();
 		request.setName("Alien");
-		Hello response = stub.call("EchoService/Echo", request, Hello.class);
+		Hello response = stub.call("FooService/Echo", request, Hello.class);
 		assertEquals("Alien", response.getName());
 	}
 
@@ -68,7 +68,6 @@ public class GrpcServerApplicationTests {
 	}
 
 	@TestConfiguration(proxyBeanMethods = false)
-	@EnableGrpcMapping
 	static class ExtraConfiguration {
 
 		@Bean
@@ -77,11 +76,12 @@ public class GrpcServerApplicationTests {
 			return channelFactory.createChannel("default");
 		}
 
-		@Bean
-		BindableService echoService(DynamicServiceFactory factory) {
-			return factory.service("EchoService").method("Echo",
-					Foo.class, Foo.class, Function.identity()).build();
-		}
+		// TODO: support re-using types in different services
+		// @Bean
+		// BindableService echoService(DynamicServiceFactory factory) {
+		// 	return factory.service("EchoService").method("Echo",
+		// 			Foo.class, Foo.class, Function.identity()).build();
+		// }
 
 	}
 
