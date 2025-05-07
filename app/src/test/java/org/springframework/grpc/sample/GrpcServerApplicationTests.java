@@ -3,8 +3,10 @@ package org.springframework.grpc.sample;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -17,13 +19,17 @@ import org.springframework.grpc.client.GrpcChannelFactory;
 import org.springframework.grpc.reflect.DescriptorRegistry;
 import org.springframework.grpc.reflect.DynamicServiceFactory;
 import org.springframework.grpc.reflect.DynamicStub;
-import org.springframework.grpc.reflect.EnableGrpcMapping;
 import org.springframework.grpc.sample.FooService.Input;
 import org.springframework.grpc.sample.FooService.Output;
 import org.springframework.test.annotation.DirtiesContext;
 
 import io.grpc.BindableService;
 import io.grpc.Channel;
+import io.grpc.reflection.v1.ServerReflectionGrpc;
+import io.grpc.reflection.v1.ServerReflectionGrpc.ServerReflectionStub;
+import io.grpc.reflection.v1.ServerReflectionRequest;
+import io.grpc.reflection.v1.ServerReflectionResponse;
+import io.grpc.stub.StreamObserver;
 
 @SpringBootTest(properties = { "spring.grpc.server.port=0",
 		"spring.grpc.client.default-channel.address=0.0.0.0:${local.grpc.port}" }, useMainMethod = UseMainMethod.ALWAYS)
@@ -42,11 +48,48 @@ public class GrpcServerApplicationTests {
 	}
 
 	@Test
+	void reflectionService() {
+		ServerReflectionStub reflectionService = ServerReflectionGrpc.newStub(this.channel);
+		AtomicReference<Throwable> error = new AtomicReference<>();
+		AtomicReference<ServerReflectionResponse> response = new AtomicReference<>();
+		StreamObserver<ServerReflectionRequest> observer = reflectionService.serverReflectionInfo(
+				new StreamObserver<ServerReflectionResponse>() {
+					@Override
+					public void onNext(ServerReflectionResponse value) {
+						response.set(value);
+					}
+
+					@Override
+					public void onError(Throwable t) {
+						error.set(t);
+					}
+
+					@Override
+					public void onCompleted() {
+					}
+				});
+		observer.onNext(ServerReflectionRequest.newBuilder().setListServices("FooService").build());
+		Awaitility.await().until(() -> response.get() != null || error.get() != null);
+		observer.onCompleted();
+		assertThat(error.get()).isNull();
+		assertThat(response.get()).isNotNull();
+	}
+
+	@Test
 	void dynamicServiceFromFunction() {
 		DynamicStub stub = new DynamicStub(new DescriptorRegistry(), this.channel);
 		Hello request = new Hello();
 		request.setName("Alien");
 		Hello response = stub.call("FooService/Echo", request, Hello.class);
+		assertEquals("Alien", response.getName());
+	}
+
+	@Test
+	void duplicateServiceFromFunction() {
+		DynamicStub stub = new DynamicStub(new DescriptorRegistry(), this.channel);
+		Hello request = new Hello();
+		request.setName("Alien");
+		Hello response = stub.call("EchoService/Echo", request, Hello.class);
 		assertEquals("Alien", response.getName());
 	}
 
@@ -77,13 +120,12 @@ public class GrpcServerApplicationTests {
 		}
 
 		// TODO: support re-using types in different services
-		// @Bean
-		// BindableService echoService(DynamicServiceFactory factory) {
-		// 	return factory.service("EchoService").method("Echo",
-		// 			Foo.class, Foo.class, Function.identity()).build();
-		// }
+		@Bean
+		BindableService echoService(DynamicServiceFactory factory) {
+			return factory.service("EchoService").method("Echo",
+					Foo.class, Foo.class, Function.identity()).build();
+		}
 
 	}
 
 }
-
