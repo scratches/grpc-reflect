@@ -7,7 +7,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -49,8 +48,7 @@ public class GrpcServerApplicationTests {
 	}
 
 	@Test
-	@Disabled
-	void reflectionService() {
+	void reflectionServiceAllServices() {
 		ServerReflectionStub reflectionService = ServerReflectionGrpc.newStub(this.channel);
 		AtomicReference<Throwable> error = new AtomicReference<>();
 		AtomicReference<ServerReflectionResponse> response = new AtomicReference<>();
@@ -70,7 +68,35 @@ public class GrpcServerApplicationTests {
 					public void onCompleted() {
 					}
 				});
-		observer.onNext(ServerReflectionRequest.newBuilder().setListServices("FooService").build());
+		observer.onNext(ServerReflectionRequest.newBuilder().setListServices("").build());
+		Awaitility.await().until(() -> response.get() != null || error.get() != null);
+		observer.onCompleted();
+		assertThat(error.get()).isNull();
+		assertThat(response.get()).isNotNull();
+	}
+
+	@Test
+	void reflectionServiceService() {
+		ServerReflectionStub reflectionService = ServerReflectionGrpc.newStub(this.channel);
+		AtomicReference<Throwable> error = new AtomicReference<>();
+		AtomicReference<ServerReflectionResponse> response = new AtomicReference<>();
+		StreamObserver<ServerReflectionRequest> observer = reflectionService.serverReflectionInfo(
+				new StreamObserver<ServerReflectionResponse>() {
+					@Override
+					public void onNext(ServerReflectionResponse value) {
+						response.set(value);
+					}
+
+					@Override
+					public void onError(Throwable t) {
+						error.set(t);
+					}
+
+					@Override
+					public void onCompleted() {
+					}
+				});
+		observer.onNext(ServerReflectionRequest.newBuilder().setFileContainingSymbol("FooService").build());
 		Awaitility.await().until(() -> response.get() != null || error.get() != null);
 		observer.onCompleted();
 		assertThat(error.get()).isNull();

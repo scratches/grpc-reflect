@@ -18,8 +18,6 @@ package org.springframework.grpc.reflect;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.grpc.reflect.DescriptorRegistry;
-import org.springframework.grpc.reflect.MessageConverter;
 
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.Descriptors.Descriptor;

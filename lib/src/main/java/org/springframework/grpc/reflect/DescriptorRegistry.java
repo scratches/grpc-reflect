@@ -17,8 +17,10 @@ package org.springframework.grpc.reflect;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
@@ -35,8 +37,9 @@ public class DescriptorRegistry implements DescriptorProvider {
 	private final DescriptorProtoProvider protos;
 	private final MethodDescriptorProtoProvider methods;
 	private Map<String, ServiceDescriptorProto> serviceProtos = new HashMap<>();
-	private Map<String, List<Class<?>>> types = new HashMap<>();
+	private Map<String, List<Class<?>>> typesPerService = new HashMap<>();
 	private Map<Class<?>, Descriptor> descriptors = new HashMap<>();
+	private Map<Class<?>, FileDescriptor> types = new HashMap<>();
 	private Map<String, FileDescriptor> fileDescriptors = new HashMap<>();
 
 	public DescriptorRegistry() {
@@ -108,19 +111,17 @@ public class DescriptorRegistry implements DescriptorProvider {
 			removeService(builder, service.getName());
 			builder.addService(service);
 		}
-		Map<String, Class<?>> types = new HashMap<>();
-		for (Class<?> type : this.types.get(owner)) {
-			DescriptorProto message = this.protos.proto(type);
-			if (findMessage(builder, message.getName()) != null) {
+		Set<FileDescriptor> dependencies = new HashSet<>();
+		for (Class<?> type : this.typesPerService.get(owner)) {
+			FileDescriptor message = this.types.get(type);
+			dependencies.add(message);
+			if (builder.getDependencyList().contains(message.getName())) {
 				continue;
 			}
-			builder.addMessageType(message);
-			types.put(message.getName(), type);
+			builder.addDependency(message.getName());
 		}
 		try {
-			FileDescriptor proto = FileDescriptor.buildFrom(builder.build(), new FileDescriptor[0]);
-			proto.getMessageTypes()
-					.forEach(descriptor -> this.descriptors.put(types.get(descriptor.getName()), descriptor));
+			FileDescriptor proto = FileDescriptor.buildFrom(builder.build(), dependencies.toArray(new FileDescriptor[0]));
 			proto.getServices().forEach(descriptor -> {
 				this.fileDescriptors.put(descriptor.getName(), proto);
 			});
@@ -148,11 +149,12 @@ public class DescriptorRegistry implements DescriptorProvider {
 	}
 
 	private boolean register(String owner, Class<?> type) {
-		this.types.computeIfAbsent(owner, key -> new java.util.ArrayList<>());
-		if (this.types.get(owner).contains(type)) {
+		this.typesPerService.computeIfAbsent(owner, key -> new java.util.ArrayList<>());
+		if (this.typesPerService.get(owner).contains(type)) {
 			return false;
 		}
-		this.types.get(owner).add(type);
+		this.typesPerService.get(owner).add(type);
+		process(owner, type);
 		return true;
 	}
 
@@ -160,6 +162,41 @@ public class DescriptorRegistry implements DescriptorProvider {
 		String name = DescriptorRegistry.class.getName();
 		if (register(name, type)) {
 			process(name);
+		}
+	}
+
+	private void process(String owner, Class<?> type) {
+		FileDescriptorProto.Builder builder = FileDescriptorProto.newBuilder();
+		if (this.types.containsKey(type)) {
+			builder = this.types.get(type).toProto().toBuilder();
+		} else {
+			builder.setName(type.getSimpleName() + ".proto");
+			builder.setSyntax("proto3");
+		}
+		Map<String, Class<?>> types = new HashMap<>();
+		DescriptorProto message = this.protos.proto(type);
+		if (findMessage(builder, message.getName()) == null) {
+			builder.addMessageType(message);
+			types.put(message.getName(), type);
+		}
+		Set<FileDescriptor> dependencies = new HashSet<>();
+		for (Class<?> dep : this.typesPerService.get(owner)) {
+			FileDescriptor file = this.types.get(dep);
+			if (file == null) {
+				continue;
+			}
+			dependencies.add(file);
+		}
+		try {
+			FileDescriptor proto = FileDescriptor.buildFrom(builder.build(), dependencies.toArray(new FileDescriptor[0]));
+			proto.getMessageTypes()
+					.forEach(descriptor -> this.descriptors.put(types.get(descriptor.getName()), descriptor));
+			proto.getServices().forEach(descriptor -> {
+				this.fileDescriptors.put(descriptor.getName(), proto);
+			});
+			this.types.put(type, proto);
+		} catch (DescriptorValidationException e) {
+			throw new IllegalStateException(e);
 		}
 	}
 
