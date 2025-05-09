@@ -24,8 +24,14 @@ public class GrpcMappingConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	DynamicServiceFactory factory() {
-		return new DynamicServiceFactory(new DescriptorRegistry());
+	DynamicServiceFactory grpcDynamicServiceFactory(DescriptorRegistry descriptorRegistry) {
+		return new DynamicServiceFactory(descriptorRegistry);
+	}
+
+	@Bean
+	@ConditionalOnMissingBean
+	DescriptorRegistry grpcDescriptorRegistry() {
+		return new DescriptorRegistry();
 	}
 
 }

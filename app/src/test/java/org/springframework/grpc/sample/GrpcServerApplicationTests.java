@@ -43,6 +43,9 @@ public class GrpcServerApplicationTests {
 	@Autowired
 	private Channel channel;
 
+	@Autowired
+	private DescriptorRegistry registry;
+
 	@Test
 	void contextLoads() {
 	}
@@ -105,7 +108,7 @@ public class GrpcServerApplicationTests {
 
 	@Test
 	void dynamicServiceFromFunction() {
-		DynamicStub stub = new DynamicStub(new DescriptorRegistry(), this.channel);
+		DynamicStub stub = new DynamicStub(registry, this.channel);
 		Hello request = new Hello();
 		request.setName("Alien");
 		Hello response = stub.call("FooService/Echo", request, Hello.class);
@@ -114,7 +117,7 @@ public class GrpcServerApplicationTests {
 
 	@Test
 	void duplicateServiceFromFunction() {
-		DynamicStub stub = new DynamicStub(new DescriptorRegistry(), this.channel);
+		DynamicStub stub = new DynamicStub(registry, this.channel);
 		Hello request = new Hello();
 		request.setName("Alien");
 		Hello response = stub.call("EchoService/Echo", request, Hello.class);
@@ -123,7 +126,7 @@ public class GrpcServerApplicationTests {
 
 	@Test
 	void dynamicServiceFromInstance() {
-		DynamicStub stub = new DynamicStub(new DescriptorRegistry(), this.channel);
+		DynamicStub stub = new DynamicStub(registry, this.channel);
 		Input request = new Input();
 		Output response = stub.call("FooService/Process", request, Output.class);
 		assertThat(response).isNotNull();
@@ -131,7 +134,7 @@ public class GrpcServerApplicationTests {
 
 	@Test
 	void pojoCall() {
-		DynamicStub stub = new DynamicStub(new DescriptorRegistry(), this.channel);
+		DynamicStub stub = new DynamicStub(registry, this.channel);
 		Hello request = new Hello();
 		request.setName("Alien");
 		Hello response = stub.call("Simple/SayHello", request, Hello.class);
