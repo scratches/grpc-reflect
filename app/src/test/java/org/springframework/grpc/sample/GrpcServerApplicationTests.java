@@ -27,8 +27,6 @@ import org.springframework.grpc.sample.FooService.Input;
 import org.springframework.grpc.sample.FooService.Output;
 import org.springframework.test.annotation.DirtiesContext;
 
-import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Dynamic;
-
 import io.grpc.BindableService;
 import io.grpc.Channel;
 import io.grpc.reflection.v1.ServerReflectionGrpc;
@@ -180,6 +178,6 @@ interface FooClient {
 	@GrpcMapping(path = "Echo")
 	Hello ping(Hello request);
 
-	Hello process(Input request);
+	Output process(Input request);
 
 }
