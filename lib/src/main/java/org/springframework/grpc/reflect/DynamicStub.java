@@ -73,7 +73,7 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 
 	@Override
 	protected DynamicStub build(Channel channel, CallOptions callOptions) {
-		return new DynamicStub(this.registry, channel);
+		return new DynamicStub(this.registry, channel, callOptions);
 	}
 
 }

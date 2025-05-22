@@ -16,12 +16,18 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.grpc.client.GrpcChannelFactory;
+import org.springframework.grpc.client.ImportGrpcClients;
 import org.springframework.grpc.reflect.DescriptorRegistry;
 import org.springframework.grpc.reflect.DynamicServiceFactory;
 import org.springframework.grpc.reflect.DynamicStub;
+import org.springframework.grpc.reflect.DynamicStubFactory;
+import org.springframework.grpc.reflect.GrpcClient;
+import org.springframework.grpc.reflect.GrpcMapping;
 import org.springframework.grpc.sample.FooService.Input;
 import org.springframework.grpc.sample.FooService.Output;
 import org.springframework.test.annotation.DirtiesContext;
+
+import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Dynamic;
 
 import io.grpc.BindableService;
 import io.grpc.Channel;
@@ -42,6 +48,9 @@ public class GrpcServerApplicationTests {
 
 	@Autowired
 	private Channel channel;
+
+	@Autowired
+	private FooClient fooClient;
 
 	@Autowired
 	private DescriptorRegistry registry;
@@ -108,10 +117,9 @@ public class GrpcServerApplicationTests {
 
 	@Test
 	void dynamicServiceFromFunction() {
-		DynamicStub stub = new DynamicStub(registry, this.channel);
 		Hello request = new Hello();
 		request.setName("Alien");
-		Hello response = stub.call("FooService/Echo", request, Hello.class);
+		Hello response = fooClient.ping(request);
 		assertEquals("Alien", response.getName());
 	}
 
@@ -142,6 +150,7 @@ public class GrpcServerApplicationTests {
 	}
 
 	@TestConfiguration(proxyBeanMethods = false)
+	@ImportGrpcClients(factory = DynamicStubFactory.class, types = FooClient.class)
 	static class ExtraConfiguration {
 
 		@Bean
@@ -150,13 +159,27 @@ public class GrpcServerApplicationTests {
 			return channelFactory.createChannel("default");
 		}
 
-		// TODO: support re-using types in different services
 		@Bean
 		BindableService echoService(DynamicServiceFactory factory) {
 			return factory.service("EchoService").method("Echo",
 					Foo.class, Foo.class, Function.identity()).build();
 		}
 
+		@Bean
+		DynamicStubFactory dynamicStubFactory(DescriptorRegistry registry) {
+			return new DynamicStubFactory(registry);
+		}
+
 	}
+
+}
+
+@GrpcClient(service = "FooService")
+interface FooClient {
+
+	@GrpcMapping(path = "Echo")
+	Hello ping(Hello request);
+
+	Hello process(Input request);
 
 }
