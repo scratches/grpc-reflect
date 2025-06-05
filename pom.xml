@@ -15,8 +15,9 @@
 	<name>Parent Demo</name>
 
 	<modules>
-		<module>app</module>
 		<module>lib</module>
+		<module>app</module>
+		<module>web</module>
 	</modules>
 
 	<properties>

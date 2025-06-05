@@ -1,0 +1,38 @@
+package org.springframework.grpc.sample;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.UseMainMethod;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.grpc.sample.proto.HelloReply;
+import org.springframework.grpc.sample.proto.HelloRequest;
+import org.springframework.grpc.sample.proto.SimpleGrpc;
+import org.springframework.test.annotation.DirtiesContext;
+
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
+		"spring.grpc.client.default-channel.address=0.0.0.0:${local.server.port}" })
+@DirtiesContext
+public class GrpcServerApplicationTests {
+
+	public static void main(String[] args) {
+		new SpringApplicationBuilder(GrpcServerApplication.class).run();
+	}
+
+	@Autowired
+	private SimpleGrpc.SimpleBlockingStub stub;
+
+	@Test
+	void contextLoads() {
+	}
+
+	@Test
+	void serverResponds() {
+		HelloReply response = stub.sayHello(HelloRequest.newBuilder().setName("Alien").build());
+		assertEquals("Hello ==> Alien", response.getMessage());
+	}
+
+}
