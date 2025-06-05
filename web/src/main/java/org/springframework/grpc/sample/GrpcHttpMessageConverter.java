@@ -17,6 +17,7 @@ import org.springframework.http.converter.AbstractHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.http.server.DelegatingServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
@@ -26,6 +27,8 @@ import org.springframework.util.StreamUtils;
 import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.Message;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 public class GrpcHttpMessageConverter extends AbstractHttpMessageConverter<Message> {
 
@@ -149,7 +152,6 @@ public class GrpcHttpMessageConverter extends AbstractHttpMessageConverter<Messa
 			charset = DEFAULT_CHARSET;
 		}
 
-
 		setProtoHeader(outputMessage, message);
 		outputMessage.getHeaders().set("Grpc-Encoding", "identity");
 		outputMessage.getHeaders().set("Grpc-Accept-Encoding", "identity");
@@ -174,12 +176,25 @@ public class GrpcHttpMessageConverter extends AbstractHttpMessageConverter<Messa
 	}
 
 	private void setTrailers(HttpOutputMessage outputMessage, Message message) {
-		if (outputMessage instanceof ServletServerHttpResponse response) {
-			response.getServletResponse().setTrailerFields(() -> {
+		HttpServletResponse servlet = getServletResponse(outputMessage);
+		if (servlet != null) {
+			servlet.setTrailerFields(() -> {
 				// gRPC requires a trailer with the message status
-				return Map.of("grpc-status", status(response.getServletResponse().getStatus()));
+				return Map.of("grpc-status", status(servlet.getStatus()));
 			});
 		}
+	}
+
+	private HttpServletResponse getServletResponse(HttpOutputMessage outputMessage) {
+		HttpServletResponse servlet = null;
+		if (outputMessage instanceof ServletServerHttpResponse response) {
+			servlet = response.getServletResponse();
+		} else if (outputMessage instanceof DelegatingServerHttpResponse response) {
+			if (response.getDelegate() instanceof ServletServerHttpResponse servletResponse) {
+				servlet = servletResponse.getServletResponse();
+			}
+		}
+		return servlet;
 	}
 
 	private String status(int status) {
