@@ -15,7 +15,7 @@ public class GrpcServerService {
 
 	private static Log log = LogFactory.getLog(GrpcServerService.class);
 
-	@PostMapping(path = "Simple/SayHello", consumes = "application/grpc")
+	@PostMapping("Simple/SayHello")
 	public ResponseEntity<HelloReply> sayHello(@RequestBody HelloRequest req) {
 		log.info("Hello " + req.getName());
 		if (req.getName().startsWith("error")) {
