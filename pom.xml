@@ -18,6 +18,7 @@
 		<module>lib</module>
 		<module>app</module>
 		<module>web</module>
+		<module>webflux</module>
 	</modules>
 
 	<properties>
