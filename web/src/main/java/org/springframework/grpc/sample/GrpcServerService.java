@@ -18,8 +18,8 @@ public class GrpcServerService {
 
 	private static Log log = LogFactory.getLog(GrpcServerService.class);
 
-	@PostMapping("Simple/SayHello")
-	public ResponseEntity<HelloReply> sayHello(@RequestBody HelloRequest req) {
+	@PostMapping(path = "Simple/SayHello", produces = "application/grpc")
+	public HelloReply sayHello(@RequestBody HelloRequest req) {
 		log.info("Hello " + req.getName());
 		if (req.getName().startsWith("error")) {
 			throw new IllegalArgumentException("Bad name: " + req.getName());
@@ -30,9 +30,10 @@ public class GrpcServerService {
 		HelloReply response = HelloReply.newBuilder()
 				.setMessage("Hello ==> " + req.getName())
 				.build();
-		return ResponseEntity.ok().contentType(MediaType.valueOf("application/grpc")).body(response);
+		return response;
 	}
 
+	// TODO: why does this one have to use ResponseEntity?
 	@PostMapping("Simple/StreamHello")
 	public ResponseEntity<ResponseBodyEmitter> streamHello(@RequestBody HelloRequest req) {
 		if (req.getName().startsWith("error")) {
