@@ -42,8 +42,9 @@ public class GrpcDecoderTests {
 		HelloReply message = HelloReply.newBuilder()
 				.setMessage("Hello World")
 				.build();
-		DataBuffer data = DefaultDataBufferFactory.sharedInstance.allocateBuffer(128);
-		ByteBuffer buffer = ByteBuffer.allocate(128);
+		int capacity = message.getSerializedSize() + 5;
+		DataBuffer data = DefaultDataBufferFactory.sharedInstance.allocateBuffer(capacity);
+		ByteBuffer buffer = ByteBuffer.allocate(capacity);
 		buffer.order(ByteOrder.BIG_ENDIAN);
 		buffer.put((byte) 0); // gRPC header
 		buffer.putInt(message.getSerializedSize());
@@ -51,7 +52,8 @@ public class GrpcDecoderTests {
 		buffer.position(0);
 		buffer.limit(message.getSerializedSize() + 5); // 5 for header
 		data.write(buffer);
-		HelloReply reply = (HelloReply) decoder.decode(data, ResolvableType.forClass(HelloReply.class), MimeType.valueOf("application/grpc"), null);
+		HelloReply reply = (HelloReply) decoder.decode(data, ResolvableType.forClass(HelloReply.class),
+				MimeType.valueOf("application/grpc"), null);
 		assertThat(reply).isNotNull();
 		assertThat(reply.getMessage()).isEqualTo("Hello World");
 	}

@@ -18,17 +18,14 @@ package org.springframework.grpc.sample;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.reactivestreams.Publisher;
 import org.springframework.core.ResolvableType;
+import org.springframework.core.codec.Encoder;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
-import org.springframework.http.MediaType;
-import org.springframework.http.codec.HttpMessageEncoder;
 import org.springframework.lang.Nullable;
 import org.springframework.util.FastByteArrayOutputStream;
 import org.springframework.util.MimeType;
@@ -37,12 +34,7 @@ import com.google.protobuf.Message;
 
 import reactor.core.publisher.Flux;
 
-public class GrpcEncoder extends GrpcCodecSupport implements HttpMessageEncoder<Message> {
-
-	private static final List<MediaType> streamingMediaTypes = Arrays.stream(MIME_TYPES)
-			.map(mimeType -> new MediaType(mimeType.getType(), mimeType.getSubtype(),
-					Collections.singletonMap(DELIMITED_KEY, DELIMITED_VALUE)))
-			.toList();
+public class GrpcEncoder extends GrpcCodecSupport implements Encoder<Message> {
 
 	@Override
 	public boolean canEncode(ResolvableType elementType, @Nullable MimeType mimeType) {
@@ -79,11 +71,6 @@ public class GrpcEncoder extends GrpcCodecSupport implements HttpMessageEncoder<
 		} catch (IOException ex) {
 			throw new IllegalStateException("Unexpected I/O error while writing to data buffer", ex);
 		}
-	}
-
-	@Override
-	public List<MediaType> getStreamingMediaTypes() {
-		return streamingMediaTypes;
 	}
 
 	@Override
