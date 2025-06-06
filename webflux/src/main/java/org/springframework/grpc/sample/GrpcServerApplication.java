@@ -51,17 +51,6 @@ class ContentTypeWebFilter implements WebFilter {
 		MediaType type = exchange.getRequest().getHeaders().getContentType();
 		ServerWebExchange active = exchange;
 		boolean isGrpc = type != null && MediaType.valueOf("application/grpc").isCompatibleWith(type);
-		// if (isGrpc) {
-		// 	active = exchange.mutate().request(request -> request
-		// 			.headers(headers -> headers.setContentType(MediaType.valueOf("application/x-protobuf")))).build();
-		// 	active.getResponse().beforeCommit(() -> Mono.fromRunnable(() -> {
-		// 		MediaType responseType = active.getResponse().getHeaders().getContentType();
-		// 		if (responseType != null
-		// 				&& MediaType.valueOf("application/x-protobuf").isCompatibleWith(responseType)) {
-		// 			active.getResponse().getHeaders().setContentType(MediaType.valueOf("application/grpc"));
-		// 		}
-		// 	}));
-		// }
 		return chain.filter(active).doOnSubscribe((item) -> {
 			if (isGrpc) {
 				addTrailer(active.getResponse());
