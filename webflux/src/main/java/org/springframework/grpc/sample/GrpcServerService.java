@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RestController
 public class GrpcServerService {
@@ -18,7 +19,7 @@ public class GrpcServerService {
 	private static Log log = LogFactory.getLog(GrpcServerService.class);
 
 	@PostMapping(path = "Simple/SayHello", produces = "application/grpc")
-	public Flux<HelloReply> sayHello(@RequestBody HelloRequest req) {
+	public Mono<HelloReply> sayHello(@RequestBody HelloRequest req) {
 		log.info("Hello " + req.getName());
 		if (req.getName().startsWith("error")) {
 			throw new IllegalArgumentException("Bad name: " + req.getName());
@@ -29,7 +30,7 @@ public class GrpcServerService {
 		HelloReply response = HelloReply.newBuilder()
 				.setMessage("Hello ==> " + req.getName())
 				.build();
-		return Flux.just(response);
+		return Mono.just(response);
 	}
 
 	@PostMapping(path = "Simple/StreamHello", produces = "application/grpc")

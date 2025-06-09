@@ -1,15 +1,13 @@
 package org.springframework.grpc.sample;
 
-import static org.springframework.web.reactive.function.server.RequestPredicates.headers;
+import java.util.Map;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerCodecConfigurer;
+import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.http.server.reactive.AbstractServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
@@ -19,8 +17,8 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 
+import jakarta.servlet.http.HttpServletResponse;
 import reactor.core.publisher.Mono;
-import reactor.netty.http.server.HttpServerResponse;
 
 @SpringBootApplication
 public class GrpcServerApplication {
@@ -65,11 +63,17 @@ class ContentTypeWebFilter implements WebFilter {
 		}
 		if (response instanceof AbstractServerHttpResponse) {
 			String grpcStatus = status(response.getStatusCode().value());
-			HttpServerResponse httpServerResponse = (HttpServerResponse) ((AbstractServerHttpResponse) response)
+			HttpServletResponse servletResponse = (HttpServletResponse) ((AbstractServerHttpResponse) response)
 					.getNativeResponse();
-			httpServerResponse.trailerHeaders(h -> {
-				h.set(GRPC_STATUS_HEADER, grpcStatus);
+			servletResponse.setTrailerFields(() -> {
+				return Map.of(GRPC_STATUS_HEADER, grpcStatus);
 			});
+			// HttpServerResponse httpServerResponse = (HttpServerResponse)
+			// ((AbstractServerHttpResponse) response)
+			// .getNativeResponse();
+			// httpServerResponse.trailerHeaders(h -> {
+			// h.set(GRPC_STATUS_HEADER, grpcStatus);
+			// });
 		}
 	}
 
