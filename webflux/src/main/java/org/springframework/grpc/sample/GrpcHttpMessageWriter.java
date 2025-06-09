@@ -75,7 +75,9 @@ public class GrpcHttpMessageWriter extends EncoderHttpMessageWriter<Message> {
 			message.getHeaders().add(X_PROTOBUF_SCHEMA_HEADER, descriptor.getFile().getName());
 			message.getHeaders().add(X_PROTOBUF_MESSAGE_HEADER, descriptor.getFullName());
 			addTrailer(message);
-
+			if (inputStream instanceof Mono) {
+				inputStream = Flux.from(inputStream);
+			}
 			return super.write(inputStream, elementType, mediaType, message, hints);
 		} catch (Exception ex) {
 			return Mono.error(new EncodingException("Could not write Protobuf message: " + ex.getMessage(), ex));
