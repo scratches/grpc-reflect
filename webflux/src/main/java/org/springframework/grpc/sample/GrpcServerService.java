@@ -19,7 +19,7 @@ public class GrpcServerService {
 	private static Log log = LogFactory.getLog(GrpcServerService.class);
 
 	@PostMapping(path = "Simple/SayHello", produces = "application/grpc")
-	public Mono<HelloReply> sayHello(@RequestBody HelloRequest req) {
+	public HelloReply sayHello(@RequestBody HelloRequest req) {
 		log.info("Hello " + req.getName());
 		if (req.getName().startsWith("error")) {
 			throw new IllegalArgumentException("Bad name: " + req.getName());
@@ -30,7 +30,7 @@ public class GrpcServerService {
 		HelloReply response = HelloReply.newBuilder()
 				.setMessage("Hello ==> " + req.getName())
 				.build();
-		return Mono.just(response);
+		return response;
 	}
 
 	@PostMapping(path = "Simple/StreamHello", produces = "application/grpc")
