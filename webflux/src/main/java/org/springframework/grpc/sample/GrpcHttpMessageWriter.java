@@ -26,7 +26,6 @@ import org.springframework.core.codec.EncodingException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ReactiveHttpOutputMessage;
 import org.springframework.http.codec.EncoderHttpMessageWriter;
-import org.springframework.http.codec.HttpMessageEncoder;
 import org.springframework.http.server.reactive.AbstractServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
 import org.springframework.lang.Nullable;
@@ -75,15 +74,8 @@ public class GrpcHttpMessageWriter extends EncoderHttpMessageWriter<Message> {
 			Descriptors.Descriptor descriptor = builder.getDescriptorForType();
 			message.getHeaders().add(X_PROTOBUF_SCHEMA_HEADER, descriptor.getFile().getName());
 			message.getHeaders().add(X_PROTOBUF_MESSAGE_HEADER, descriptor.getFullName());
-			if (inputStream instanceof Flux) {
-				message.getHeaders()
-						.setContentType(((HttpMessageEncoder<?>) getEncoder()).getStreamingMediaTypes().get(0));
-			}
-			boolean isGrpc = mediaType != null && MediaType.valueOf("application/grpc").isCompatibleWith(mediaType);
-			if (isGrpc) {
-				addTrailer(message);
-			}
-	
+			addTrailer(message);
+
 			return super.write(inputStream, elementType, mediaType, message, hints);
 		} catch (Exception ex) {
 			return Mono.error(new EncodingException("Could not write Protobuf message: " + ex.getMessage(), ex));

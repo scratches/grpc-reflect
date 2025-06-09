@@ -18,17 +18,14 @@ package org.springframework.grpc.sample;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.reactivestreams.Publisher;
 import org.springframework.core.ResolvableType;
+import org.springframework.core.codec.Encoder;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
-import org.springframework.http.MediaType;
-import org.springframework.http.codec.HttpMessageEncoder;
 import org.springframework.lang.Nullable;
 import org.springframework.util.FastByteArrayOutputStream;
 import org.springframework.util.MimeType;
@@ -37,11 +34,7 @@ import com.google.protobuf.Message;
 
 import reactor.core.publisher.Flux;
 
-public class GrpcEncoder extends GrpcCodecSupport implements HttpMessageEncoder<Message> {
-
-	private static final List<MediaType> streamingMediaTypes = Arrays.stream(MIME_TYPES)
-			.map(mimeType -> new MediaType(mimeType.getType(), mimeType.getSubtype(), mimeType.getParameters()))
-			.collect(Collectors.toList());
+public class GrpcEncoder extends GrpcCodecSupport implements Encoder<Message> {
 
 	@Override
 	public boolean canEncode(ResolvableType elementType, @Nullable MimeType mimeType) {
@@ -83,11 +76,6 @@ public class GrpcEncoder extends GrpcCodecSupport implements HttpMessageEncoder<
 	@Override
 	public List<MimeType> getEncodableMimeTypes() {
 		return getMimeTypes();
-	}
-
-	@Override
-	public List<MediaType> getStreamingMediaTypes() {
-		return streamingMediaTypes;
 	}
 
 }
