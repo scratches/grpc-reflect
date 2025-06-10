@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebExceptionHandler;
 
+import io.grpc.Status.Code;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.server.HttpServerResponse;
 
@@ -52,7 +53,7 @@ public class GrpcExceptionHandler extends GrpcCodecSupport implements WebExcepti
 			response = ((ServerHttpResponseDecorator) response).getDelegate();
 		}
 		if (response instanceof AbstractServerHttpResponse server) {
-			String grpcStatus = "13"; // INTERNAL error code";
+			String grpcStatus = "" + Code.INTERNAL.ordinal(); // INTERNAL error code";
 			HttpServerResponse httpServerResponse = (HttpServerResponse) (server).getNativeResponse();
 			httpServerResponse.trailerHeaders(h -> {
 				h.set(GRPC_STATUS_HEADER, grpcStatus);
