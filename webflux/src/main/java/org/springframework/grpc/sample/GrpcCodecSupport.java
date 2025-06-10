@@ -23,6 +23,8 @@ import org.springframework.util.MimeType;
 
 public abstract class GrpcCodecSupport {
 
+	static final String GRPC_STATUS_HEADER = "grpc-status";
+
 	static final MimeType[] MIME_TYPES = new MimeType[]{
 			new MimeType("application", "grpc")
 	};
@@ -30,7 +32,6 @@ public abstract class GrpcCodecSupport {
 	static final String DELIMITED_KEY = "delimited";
 
 	static final String DELIMITED_VALUE = "true";
-
 
 	protected boolean supportsMimeType(@Nullable MimeType mimeType) {
 		if (mimeType == null) {
