@@ -19,6 +19,7 @@
 		<module>app</module>
 		<module>web</module>
 		<module>webflux</module>
+		<module>bindable</module>
 	</modules>
 
 	<properties>
