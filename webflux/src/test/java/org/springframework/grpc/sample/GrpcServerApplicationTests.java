@@ -1,7 +1,6 @@
 package org.springframework.grpc.sample;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -16,8 +15,8 @@ import org.springframework.grpc.sample.proto.HelloRequest;
 import org.springframework.grpc.sample.proto.SimpleGrpc;
 import org.springframework.test.annotation.DirtiesContext;
 
-import io.grpc.StatusRuntimeException;
 import io.grpc.Status.Code;
+import io.grpc.StatusRuntimeException;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
 		"spring.grpc.client.default-channel.address=0.0.0.0:${local.server.port}" })
