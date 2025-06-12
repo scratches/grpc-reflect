@@ -28,14 +28,19 @@ import io.grpc.MethodDescriptor;
 import io.grpc.ServerCall;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.Status;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Sinks;
+import reactor.core.publisher.Sinks.Many;
+import reactor.core.scheduler.Schedulers;
 
 @RestController
 public class GrpcRestController {
 
 	@PostMapping(path = "Simple/SayHello", produces = "application/grpc")
-	public HelloReply service(@RequestBody HelloRequest input) {
+	public HelloReply unary(@RequestBody HelloRequest input) {
 		GrpcServerService service = new GrpcServerService();
-		ServerMethodDefinition<Object, Object> serverMethod = (ServerMethodDefinition<Object, Object>) service.bindService().getMethod("Simple/SayHello");
+		ServerMethodDefinition<Object, Object> serverMethod = (ServerMethodDefinition<Object, Object>) service
+				.bindService().getMethod("Simple/SayHello");
 		var method = serverMethod.getMethodDescriptor();
 		var call = new LocalServerCall<Object, Object>(method);
 		var listener = serverMethod.getServerCallHandler().startCall(call, null);
@@ -47,8 +52,32 @@ public class GrpcRestController {
 		return entity;
 	}
 
-	class LocalServerCall<Req,Res> extends ServerCall<Req,Res> {
-		private MethodDescriptor<Req,Res> method;
+	@PostMapping(path = "Simple/StreamHello", produces = "application/grpc")
+	public Flux<HelloReply> stream(@RequestBody HelloRequest input) {
+		GrpcServerService service = new GrpcServerService();
+		ServerMethodDefinition<Object, Object> serverMethod = (ServerMethodDefinition<Object, Object>) service
+				.bindService().getMethod("Simple/StreamHello");
+		var method = serverMethod.getMethodDescriptor();
+		Sinks.Many<Object> sink = Sinks.many().replay().all();
+		var call = new LocalStreamingCall<Object, Object>(method, sink);
+		var listener = serverMethod.getServerCallHandler().startCall(call, null);
+		listener.onMessage(input);
+		listener.onReady();
+		new Thread(() -> {
+			try {
+				listener.onHalfClose();
+				listener.onComplete();
+			}
+			catch (Exception e) {
+				System.err.println("Error during streaming: " + e.getMessage());
+				sink.tryEmitError(e);
+			}
+		}).start();
+		return sink.asFlux().map(item -> (HelloReply) item).subscribeOn(Schedulers.boundedElastic());
+	}
+
+	class LocalServerCall<Req, Res> extends ServerCall<Req, Res> {
+		private MethodDescriptor<Req, Res> method;
 		private Object response;
 
 		public LocalServerCall(MethodDescriptor<Req, Res> method) {
@@ -82,10 +111,32 @@ public class GrpcRestController {
 		}
 
 		@Override
-		public MethodDescriptor<Req,Res> getMethodDescriptor() {
+		public MethodDescriptor<Req, Res> getMethodDescriptor() {
 			return method;
 		}
 
+	}
+
+	class LocalStreamingCall<Req, Res> extends LocalServerCall<Req, Res> {
+
+		private Many<Res> sink;
+
+		public LocalStreamingCall(MethodDescriptor<Req, Res> method, Sinks.Many<Res> sink) {
+			super(method);
+			this.sink = sink;
+		}
+
+		@Override
+		public void sendMessage(Res message) {
+			System.out.println("Sending streaming message: " + message);
+			this.sink.tryEmitNext(message);
+		}
+
+		@Override
+		public void close(Status status, Metadata trailers) {
+			System.out.println("Streaming call closed with status: " + status);
+			sink.tryEmitComplete();
+		}
 	}
 
 }
