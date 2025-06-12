@@ -29,6 +29,7 @@ import io.grpc.ServerCall;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.Status;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Sinks;
 import reactor.core.publisher.Sinks.Many;
 import reactor.core.scheduler.Schedulers;
@@ -55,25 +56,17 @@ public class GrpcRestController {
 	@PostMapping(path = "Simple/StreamHello", produces = "application/grpc")
 	public Flux<HelloReply> stream(@RequestBody HelloRequest input) {
 		GrpcServerService service = new GrpcServerService();
-		ServerMethodDefinition<Object, Object> serverMethod = (ServerMethodDefinition<Object, Object>) service
+		ServerMethodDefinition<HelloRequest, HelloReply> serverMethod = (ServerMethodDefinition<HelloRequest, HelloReply>) service
 				.bindService().getMethod("Simple/StreamHello");
 		var method = serverMethod.getMethodDescriptor();
-		Sinks.Many<Object> sink = Sinks.many().replay().all();
-		var call = new LocalStreamingCall<Object, Object>(method, sink);
-		var listener = serverMethod.getServerCallHandler().startCall(call, null);
-		listener.onMessage(input);
-		listener.onReady();
-		new Thread(() -> {
-			try {
-				listener.onHalfClose();
-				listener.onComplete();
-			}
-			catch (Exception e) {
-				System.err.println("Error during streaming: " + e.getMessage());
-				sink.tryEmitError(e);
-			}
-		}).start();
-		return sink.asFlux().map(item -> (HelloReply) item).subscribeOn(Schedulers.boundedElastic());
+		return Flux.<HelloReply>create(emitter -> {
+			var call = new LocalStreamingCall<HelloRequest, HelloReply>(method, emitter);
+			var listener = serverMethod.getServerCallHandler().startCall(call, null);
+			listener.onMessage(input);
+			listener.onReady();
+			listener.onHalfClose();
+			listener.onComplete();
+		}).subscribeOn(Schedulers.boundedElastic());
 	}
 
 	class LocalServerCall<Req, Res> extends ServerCall<Req, Res> {
@@ -119,23 +112,23 @@ public class GrpcRestController {
 
 	class LocalStreamingCall<Req, Res> extends LocalServerCall<Req, Res> {
 
-		private Many<Res> sink;
+		private FluxSink<Res> emitter;
 
-		public LocalStreamingCall(MethodDescriptor<Req, Res> method, Sinks.Many<Res> sink) {
+		public LocalStreamingCall(MethodDescriptor<Req, Res> method, FluxSink<Res> emitter) {
 			super(method);
-			this.sink = sink;
+			this.emitter = emitter;
 		}
 
 		@Override
 		public void sendMessage(Res message) {
 			System.out.println("Sending streaming message: " + message);
-			this.sink.tryEmitNext(message);
+			this.emitter.next(message);
 		}
 
 		@Override
 		public void close(Status status, Metadata trailers) {
 			System.out.println("Streaming call closed with status: " + status);
-			sink.tryEmitComplete();
+			emitter.complete();
 		}
 	}
 
