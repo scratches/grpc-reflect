@@ -26,6 +26,8 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
 
 import io.grpc.MethodDescriptor;
+import io.grpc.ServerMethodDefinition;
+import io.grpc.ServerServiceDefinition;
 import io.grpc.ServiceDescriptor;
 import io.grpc.Status;
 import io.grpc.protobuf.ProtoServiceDescriptorSupplier;
@@ -48,15 +50,17 @@ public class GrpcServerApplication {
 	}
 
 	@Bean
-	public RouterFunction<ServerResponse> grpcRoutes(GrpcRestController grpcRestController) {
-		return RouterFunctions.route()
-				.POST("/Simple/SayHello",
-						request -> request.bodyToMono(HelloRequest.class).flatMap(body -> ServerResponse.ok().contentType(MediaType.valueOf("application/grpc"))
-								.bodyValue(grpcRestController.unary(body))))
-				.POST("/Simple/StreamHello",
-						request -> request.bodyToMono(HelloRequest.class).flatMap(body -> ServerResponse.ok().contentType(MediaType.valueOf("application/grpc"))
-								.body(grpcRestController.stream(body), HelloReply.class)))
-				.build();
+	public RouterFunction<ServerResponse> grpcRoutes(GrpcRequestHandler<Object, Object> grpcRestController) {
+		RouterFunctions.Builder builder = RouterFunctions.route();
+		for (ServerMethodDefinition<?, ?> definition : new GrpcServerService().bindService().getMethods()) {
+			@SuppressWarnings("unchecked")
+			ServerMethodDefinition<Object, Object> method = (ServerMethodDefinition<Object, Object>) definition;
+			builder.POST("/" + method.getMethodDescriptor().getFullMethodName(),
+					request -> ServerResponse.ok().contentType(MediaType.valueOf("application/grpc"))
+							.body(grpcRestController.handle(method, request.bodyToMono(HelloRequest.class)),
+									HelloReply.class));
+		}
+		return builder.build();
 	}
 
 }

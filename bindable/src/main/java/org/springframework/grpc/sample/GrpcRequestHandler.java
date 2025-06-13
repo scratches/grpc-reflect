@@ -15,12 +15,9 @@
  */
 package org.springframework.grpc.sample;
 
-import org.springframework.grpc.sample.proto.HelloReply;
-import org.springframework.grpc.sample.proto.HelloRequest;
+import org.reactivestreams.Publisher;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
 
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
@@ -29,33 +26,40 @@ import io.grpc.ServerMethodDefinition;
 import io.grpc.Status;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @Component
-public class GrpcRestController {
+public class GrpcRequestHandler<I, O> {
 
-	public HelloReply unary(@RequestBody HelloRequest input) {
-		GrpcServerService service = new GrpcServerService();
-		ServerMethodDefinition<HelloRequest, HelloReply> serverMethod = (ServerMethodDefinition<HelloRequest, HelloReply>) service
-				.bindService().getMethod("Simple/SayHello");
+	public Publisher<O> handle(ServerMethodDefinition<I, O> serverMethod, Publisher<I> input) {
+		switch (serverMethod.getMethodDescriptor().getType()) {
+			case UNARY:
+				return Mono.from(input).map(item -> unary(item, serverMethod));
+			case SERVER_STREAMING:
+				return Mono.from(input).flatMapMany(item -> stream(item, serverMethod));
+			default:
+				throw new UnsupportedOperationException(
+						"Unsupported method type: " + serverMethod.getMethodDescriptor().getType());
+		}
+	}
+
+	private O unary(@RequestBody I input, ServerMethodDefinition<I, O> serverMethod) {
 		var method = serverMethod.getMethodDescriptor();
-		var call = new OneToOneServerCall<HelloRequest, HelloReply>(method);
+		var call = new OneToOneServerCall<I, O>(method);
 		var listener = serverMethod.getServerCallHandler().startCall(call, null);
 		listener.onMessage(input);
 		listener.onReady();
 		listener.onHalfClose();
 		listener.onComplete();
-		HelloReply entity = call.response;
+		O entity = call.response;
 		return entity;
 	}
 
-	public Flux<HelloReply> stream(@RequestBody HelloRequest input) {
-		GrpcServerService service = new GrpcServerService();
-		ServerMethodDefinition<HelloRequest, HelloReply> serverMethod = (ServerMethodDefinition<HelloRequest, HelloReply>) service
-				.bindService().getMethod("Simple/StreamHello");
+	private Flux<O> stream(@RequestBody I input, ServerMethodDefinition<I, O> serverMethod) {
 		var method = serverMethod.getMethodDescriptor();
-		return Flux.<HelloReply>create(emitter -> {
-			var call = new OneToManyServerCall<HelloRequest, HelloReply>(method, emitter);
+		return Flux.<O>create(emitter -> {
+			var call = new OneToManyServerCall<I, O>(method, emitter);
 			var listener = serverMethod.getServerCallHandler().startCall(call, null);
 			listener.onMessage(input);
 			listener.onReady();
