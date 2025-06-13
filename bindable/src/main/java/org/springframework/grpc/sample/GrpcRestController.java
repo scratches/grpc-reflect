@@ -21,8 +21,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.google.protobuf.Message;
-
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.ServerCall;
@@ -30,8 +28,6 @@ import io.grpc.ServerMethodDefinition;
 import io.grpc.Status;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
-import reactor.core.publisher.Sinks;
-import reactor.core.publisher.Sinks.Many;
 import reactor.core.scheduler.Schedulers;
 
 @RestController
@@ -40,16 +36,16 @@ public class GrpcRestController {
 	@PostMapping(path = "Simple/SayHello", produces = "application/grpc")
 	public HelloReply unary(@RequestBody HelloRequest input) {
 		GrpcServerService service = new GrpcServerService();
-		ServerMethodDefinition<Object, Object> serverMethod = (ServerMethodDefinition<Object, Object>) service
+		ServerMethodDefinition<HelloRequest, HelloReply> serverMethod = (ServerMethodDefinition<HelloRequest, HelloReply>) service
 				.bindService().getMethod("Simple/SayHello");
 		var method = serverMethod.getMethodDescriptor();
-		var call = new LocalServerCall<Object, Object>(method);
+		var call = new OneToOneServerCall<HelloRequest, HelloReply>(method);
 		var listener = serverMethod.getServerCallHandler().startCall(call, null);
 		listener.onMessage(input);
 		listener.onReady();
 		listener.onHalfClose();
 		listener.onComplete();
-		HelloReply entity = (HelloReply) call.response;
+		HelloReply entity = call.response;
 		return entity;
 	}
 
@@ -60,18 +56,17 @@ public class GrpcRestController {
 				.bindService().getMethod("Simple/StreamHello");
 		var method = serverMethod.getMethodDescriptor();
 		return Flux.<HelloReply>create(emitter -> {
-			var call = new LocalStreamingCall<HelloRequest, HelloReply>(method, emitter);
+			var call = new OneToManyServerCall<HelloRequest, HelloReply>(method, emitter);
 			var listener = serverMethod.getServerCallHandler().startCall(call, null);
 			listener.onMessage(input);
 			listener.onReady();
 			listener.onHalfClose();
 			listener.onComplete();
-		}).subscribeOn(Schedulers.boundedElastic());
+		}).subscribeOn(Schedulers.boundedElastic(), false);
 	}
 
-	class LocalServerCall<Req, Res> extends ServerCall<Req, Res> {
+	abstract class LocalServerCall<Req, Res> extends ServerCall<Req, Res> {
 		private MethodDescriptor<Req, Res> method;
-		private Object response;
 
 		public LocalServerCall(MethodDescriptor<Req, Res> method) {
 			this.method = method;
@@ -80,12 +75,6 @@ public class GrpcRestController {
 		@Override
 		public void request(int numMessages) {
 			System.out.println("Requesting " + numMessages + " messages");
-		}
-
-		@Override
-		public void sendMessage(Res message) {
-			System.out.println("Sending message: " + message);
-			this.response = message;
 		}
 
 		@Override
@@ -110,11 +99,26 @@ public class GrpcRestController {
 
 	}
 
-	class LocalStreamingCall<Req, Res> extends LocalServerCall<Req, Res> {
+	class OneToOneServerCall<Req, Res> extends LocalServerCall<Req, Res> {
+
+		private Res response;
+
+		public OneToOneServerCall(MethodDescriptor<Req, Res> method) {
+			super(method);
+		}
+
+		@Override
+		public void sendMessage(Res message) {
+			System.out.println("Sending message: " + message);
+			this.response = message;
+		}
+	}
+
+	class OneToManyServerCall<Req, Res> extends LocalServerCall<Req, Res> {
 
 		private FluxSink<Res> emitter;
 
-		public LocalStreamingCall(MethodDescriptor<Req, Res> method, FluxSink<Res> emitter) {
+		public OneToManyServerCall(MethodDescriptor<Req, Res> method, FluxSink<Res> emitter) {
 			super(method);
 			this.emitter = emitter;
 		}
