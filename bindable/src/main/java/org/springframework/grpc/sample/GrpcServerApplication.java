@@ -26,8 +26,8 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
 
 import io.grpc.MethodDescriptor;
+import io.grpc.MethodDescriptor.PrototypeMarshaller;
 import io.grpc.ServerMethodDefinition;
-import io.grpc.ServerServiceDefinition;
 import io.grpc.ServiceDescriptor;
 import io.grpc.Status;
 import io.grpc.protobuf.ProtoServiceDescriptorSupplier;
@@ -55,10 +55,14 @@ public class GrpcServerApplication {
 		for (ServerMethodDefinition<?, ?> definition : new GrpcServerService().bindService().getMethods()) {
 			@SuppressWarnings("unchecked")
 			ServerMethodDefinition<Object, Object> method = (ServerMethodDefinition<Object, Object>) definition;
+			Class<?> inputType = ((PrototypeMarshaller<?>) method.getMethodDescriptor()
+					.getRequestMarshaller()).getMessageClass();
+			Class<?> outputType = ((PrototypeMarshaller<?>) method.getMethodDescriptor()
+					.getResponseMarshaller()).getMessageClass();
 			builder.POST("/" + method.getMethodDescriptor().getFullMethodName(),
 					request -> ServerResponse.ok().contentType(MediaType.valueOf("application/grpc"))
-							.body(grpcRestController.handle(method, request.bodyToMono(HelloRequest.class)),
-									HelloReply.class));
+							.body(grpcRestController.handle(method, request.bodyToMono(inputType)),
+									outputType));
 		}
 		return builder.build();
 	}
