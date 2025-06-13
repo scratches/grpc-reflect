@@ -17,6 +17,7 @@ package org.springframework.grpc.sample;
 
 import org.springframework.grpc.sample.proto.HelloReply;
 import org.springframework.grpc.sample.proto.HelloRequest;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,10 +31,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.scheduler.Schedulers;
 
-@RestController
+@Component
 public class GrpcRestController {
 
-	@PostMapping(path = "Simple/SayHello", produces = "application/grpc")
 	public HelloReply unary(@RequestBody HelloRequest input) {
 		GrpcServerService service = new GrpcServerService();
 		ServerMethodDefinition<HelloRequest, HelloReply> serverMethod = (ServerMethodDefinition<HelloRequest, HelloReply>) service
@@ -49,7 +49,6 @@ public class GrpcRestController {
 		return entity;
 	}
 
-	@PostMapping(path = "Simple/StreamHello", produces = "application/grpc")
 	public Flux<HelloReply> stream(@RequestBody HelloRequest input) {
 		GrpcServerService service = new GrpcServerService();
 		ServerMethodDefinition<HelloRequest, HelloReply> serverMethod = (ServerMethodDefinition<HelloRequest, HelloReply>) service

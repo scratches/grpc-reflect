@@ -7,13 +7,20 @@ import java.util.Set;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.grpc.sample.proto.HelloReply;
+import org.springframework.grpc.sample.proto.HelloRequest;
 import org.springframework.grpc.sample.proto.SimpleGrpc;
+import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
+import org.springframework.web.reactive.function.server.RouterFunction;
+import org.springframework.web.reactive.function.server.RouterFunctions;
+import org.springframework.web.reactive.function.server.ServerResponse;
 
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
@@ -38,6 +45,18 @@ public class GrpcServerApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(GrpcServerApplication.class, args);
+	}
+
+	@Bean
+	public RouterFunction<ServerResponse> grpcRoutes(GrpcRestController grpcRestController) {
+		return RouterFunctions.route()
+				.POST("/Simple/SayHello",
+						request -> request.bodyToMono(HelloRequest.class).flatMap(body -> ServerResponse.ok().contentType(MediaType.valueOf("application/grpc"))
+								.bodyValue(grpcRestController.unary(body))))
+				.POST("/Simple/StreamHello",
+						request -> request.bodyToMono(HelloRequest.class).flatMap(body -> ServerResponse.ok().contentType(MediaType.valueOf("application/grpc"))
+								.body(grpcRestController.stream(body), HelloReply.class)))
+				.build();
 	}
 
 }
