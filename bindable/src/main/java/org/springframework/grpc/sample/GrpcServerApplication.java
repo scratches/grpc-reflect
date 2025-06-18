@@ -5,12 +5,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.grpc.sample.proto.HelloReply;
-import org.springframework.grpc.sample.proto.HelloRequest;
 import org.springframework.grpc.sample.proto.SimpleGrpc;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerCodecConfigurer;
@@ -25,6 +25,7 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
 
+import io.grpc.BindableService;
 import io.grpc.MethodDescriptor;
 import io.grpc.MethodDescriptor.PrototypeMarshaller;
 import io.grpc.ServerMethodDefinition;
@@ -50,19 +51,26 @@ public class GrpcServerApplication {
 	}
 
 	@Bean
-	public RouterFunction<ServerResponse> grpcRoutes(GrpcRequestHandler<Object, Object> grpcRestController) {
+	@ConditionalOnBean(BindableService.class)
+	public RouterFunction<ServerResponse> grpcRoutes(GrpcRequestHandler<Object, Object> grpcRestController, ObjectProvider<BindableService> bindableServices) {
 		RouterFunctions.Builder builder = RouterFunctions.route();
-		for (ServerMethodDefinition<?, ?> definition : new GrpcServerService().bindService().getMethods()) {
-			@SuppressWarnings("unchecked")
-			ServerMethodDefinition<Object, Object> method = (ServerMethodDefinition<Object, Object>) definition;
-			Class<?> inputType = ((PrototypeMarshaller<?>) method.getMethodDescriptor()
-					.getRequestMarshaller()).getMessageClass();
-			Class<?> outputType = ((PrototypeMarshaller<?>) method.getMethodDescriptor()
-					.getResponseMarshaller()).getMessageClass();
-			builder.POST("/" + method.getMethodDescriptor().getFullMethodName(),
-					request -> ServerResponse.ok().contentType(MediaType.valueOf("application/grpc"))
-							.body(grpcRestController.handle(method, request.bodyToMono(inputType)),
-									outputType));
+		for (BindableService service : bindableServices) {
+			if (service instanceof GrpcServerReflectionService) {
+				// Skip the reflection service, it is handled separately
+				continue;
+			}
+			for (ServerMethodDefinition<?, ?> definition : service.bindService().getMethods()) {
+				@SuppressWarnings("unchecked")
+				ServerMethodDefinition<Object, Object> method = (ServerMethodDefinition<Object, Object>) definition;
+				Class<?> inputType = ((PrototypeMarshaller<?>) method.getMethodDescriptor()
+						.getRequestMarshaller()).getMessageClass();
+				Class<?> outputType = ((PrototypeMarshaller<?>) method.getMethodDescriptor()
+						.getResponseMarshaller()).getMessageClass();
+				builder.POST("/" + method.getMethodDescriptor().getFullMethodName(),
+						request -> ServerResponse.ok().contentType(MediaType.valueOf("application/grpc"))
+								.body(grpcRestController.handle(method, request.bodyToMono(inputType)),
+										outputType));
+			}
 		}
 		return builder.build();
 	}
