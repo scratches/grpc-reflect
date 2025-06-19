@@ -78,18 +78,17 @@ public class GrpcRequestHandler<I, O> {
 
 	private Flux<O> bidi(Flux<I> request, ServerMethodDefinition<I, O> serverMethod) {
 		var method = serverMethod.getMethodDescriptor();
-		Many<O> emitter = Sinks.many().unicast().onBackpressureBuffer();
-		var call = new ManyToManyServerCall<I, O>(method, emitter);
 		Context context = Context.current().withValue(EmbeddedGrpcServer.SERVER_CONTEXT_KEY, this.server);
 		Context previous = context.attach();
 		try {
+			var call = new ManyToManyServerCall<I, O>(method);
 			var listener = serverMethod.getServerCallHandler().startCall(call, null);
 			return request.subscribeOn(Schedulers.boundedElastic(), false)
 					.flatMap(input -> {
 						listener.onMessage(input);
 						listener.onReady();
 						listener.onHalfClose();
-						return call.emitter.asFlux();
+						return call.reset();
 					})
 					.publishOn(Schedulers.boundedElastic())
 					.doOnSubscribe(subscription -> {
@@ -176,11 +175,10 @@ public class GrpcRequestHandler<I, O> {
 
 	class ManyToManyServerCall<Req, Res> extends LocalServerCall<Req, Res> {
 
-		private Many<Res> emitter;
+		private Many<Res> emitter = Sinks.many().unicast().onBackpressureBuffer();
 
-		public ManyToManyServerCall(MethodDescriptor<Req, Res> method, Many<Res> emitter) {
+		public ManyToManyServerCall(MethodDescriptor<Req, Res> method) {
 			super(method);
-			this.emitter = emitter;
 		}
 
 		@Override
@@ -193,6 +191,17 @@ public class GrpcRequestHandler<I, O> {
 		public void close(Status status, Metadata trailers) {
 			System.out.println("Streaming call closed with status: " + status);
 			emitter.tryEmitComplete();
+		}
+
+		public Flux<Res> reset() {
+			Many<Res> emitter = this.emitter;
+			this.emitter = Sinks.many().unicast().onBackpressureBuffer();
+			// Reset the emitter for the next call
+			return emitter.asFlux().doOnSubscribe(subscription -> {
+				System.out.println("Subscription started");
+			}).doFinally(signalType -> {
+				System.out.println("Subscription ended with signal: " + signalType);
+			});
 		}
 	}
 }
