@@ -16,9 +16,8 @@
 package org.springframework.grpc.sample;
 
 import org.reactivestreams.Publisher;
-import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.RequestBody;
 
+import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.ServerCall;
@@ -27,10 +26,17 @@ import io.grpc.Status;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
+import reactor.core.publisher.Sinks.Many;
 import reactor.core.scheduler.Schedulers;
 
-@Component
 public class GrpcRequestHandler<I, O> {
+
+	private EmbeddedGrpcServer server;
+
+	public GrpcRequestHandler(EmbeddedGrpcServer server) {
+		this.server = server;
+	}
 
 	public Publisher<O> handle(ServerMethodDefinition<I, O> serverMethod, Publisher<I> input) {
 		switch (serverMethod.getMethodDescriptor().getType()) {
@@ -38,13 +44,15 @@ public class GrpcRequestHandler<I, O> {
 				return Mono.from(input).map(item -> unary(item, serverMethod));
 			case SERVER_STREAMING:
 				return Mono.from(input).flatMapMany(item -> stream(item, serverMethod));
+			case BIDI_STREAMING:
+				return bidi(Flux.from(input), serverMethod);
 			default:
 				throw new UnsupportedOperationException(
 						"Unsupported method type: " + serverMethod.getMethodDescriptor().getType());
 		}
 	}
 
-	private O unary(@RequestBody I input, ServerMethodDefinition<I, O> serverMethod) {
+	private O unary(I input, ServerMethodDefinition<I, O> serverMethod) {
 		var method = serverMethod.getMethodDescriptor();
 		var call = new OneToOneServerCall<I, O>(method);
 		var listener = serverMethod.getServerCallHandler().startCall(call, null);
@@ -56,7 +64,7 @@ public class GrpcRequestHandler<I, O> {
 		return entity;
 	}
 
-	private Flux<O> stream(@RequestBody I input, ServerMethodDefinition<I, O> serverMethod) {
+	private Flux<O> stream(I input, ServerMethodDefinition<I, O> serverMethod) {
 		var method = serverMethod.getMethodDescriptor();
 		return Flux.<O>create(emitter -> {
 			var call = new OneToManyServerCall<I, O>(method, emitter);
@@ -66,6 +74,33 @@ public class GrpcRequestHandler<I, O> {
 			listener.onHalfClose();
 			listener.onComplete();
 		}).subscribeOn(Schedulers.boundedElastic(), false);
+	}
+
+	private Flux<O> bidi(Flux<I> request, ServerMethodDefinition<I, O> serverMethod) {
+		var method = serverMethod.getMethodDescriptor();
+		Many<O> emitter = Sinks.many().unicast().onBackpressureBuffer();
+		var call = new ManyToManyServerCall<I, O>(method, emitter);
+		Context context = Context.current().withValue(EmbeddedGrpcServer.SERVER_CONTEXT_KEY, this.server);
+		Context previous = context.attach();
+		try {
+			var listener = serverMethod.getServerCallHandler().startCall(call, null);
+			return request.subscribeOn(Schedulers.boundedElastic(), false)
+					.flatMap(input -> {
+						listener.onMessage(input);
+						listener.onReady();
+						listener.onHalfClose();
+						return call.emitter.asFlux();
+					})
+					.publishOn(Schedulers.boundedElastic())
+					.doOnSubscribe(subscription -> {
+						Context.current().withValue(EmbeddedGrpcServer.SERVER_CONTEXT_KEY, this.server);
+					})
+					.doFinally(signalType -> {
+						listener.onComplete();
+					});
+		} finally {
+			context.detach(previous);
+		}
 	}
 
 	abstract class LocalServerCall<Req, Res> extends ServerCall<Req, Res> {
@@ -139,4 +174,25 @@ public class GrpcRequestHandler<I, O> {
 		}
 	}
 
+	class ManyToManyServerCall<Req, Res> extends LocalServerCall<Req, Res> {
+
+		private Many<Res> emitter;
+
+		public ManyToManyServerCall(MethodDescriptor<Req, Res> method, Many<Res> emitter) {
+			super(method);
+			this.emitter = emitter;
+		}
+
+		@Override
+		public void sendMessage(Res message) {
+			System.out.println("Sending streaming message: " + message);
+			this.emitter.tryEmitNext(message);
+		}
+
+		@Override
+		public void close(Status status, Metadata trailers) {
+			System.out.println("Streaming call closed with status: " + status);
+			emitter.tryEmitComplete();
+		}
+	}
 }
