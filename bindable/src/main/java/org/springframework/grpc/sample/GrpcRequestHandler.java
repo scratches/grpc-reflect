@@ -23,6 +23,7 @@ import io.grpc.MethodDescriptor;
 import io.grpc.ServerCall;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.Status;
+import io.grpc.reflection.v1.ServerReflectionResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
@@ -87,14 +88,12 @@ public class GrpcRequestHandler<I, O> {
 					.flatMap(input -> {
 						listener.onMessage(input);
 						listener.onReady();
-						listener.onHalfClose();
 						return call.reset();
 					})
 					.publishOn(Schedulers.boundedElastic())
-					.doOnSubscribe(subscription -> {
-						Context.current().withValue(EmbeddedGrpcServer.SERVER_CONTEXT_KEY, this.server);
-					})
+					.subscribeOn(Schedulers.boundedElastic(), false)
 					.doFinally(signalType -> {
+						listener.onHalfClose();
 						listener.onComplete();
 					});
 		} finally {
@@ -111,12 +110,10 @@ public class GrpcRequestHandler<I, O> {
 
 		@Override
 		public void request(int numMessages) {
-			System.out.println("Requesting " + numMessages + " messages");
 		}
 
 		@Override
 		public void close(Status status, Metadata trailers) {
-			System.out.println("Call closed with status: " + status);
 		}
 
 		@Override
@@ -126,7 +123,6 @@ public class GrpcRequestHandler<I, O> {
 
 		@Override
 		public void sendHeaders(Metadata headers) {
-			System.out.println("Sending headers: " + headers);
 		}
 
 		@Override
@@ -146,7 +142,6 @@ public class GrpcRequestHandler<I, O> {
 
 		@Override
 		public void sendMessage(Res message) {
-			System.out.println("Sending message: " + message);
 			this.response = message;
 		}
 	}
@@ -162,13 +157,11 @@ public class GrpcRequestHandler<I, O> {
 
 		@Override
 		public void sendMessage(Res message) {
-			System.out.println("Sending streaming message: " + message);
 			this.emitter.next(message);
 		}
 
 		@Override
 		public void close(Status status, Metadata trailers) {
-			System.out.println("Streaming call closed with status: " + status);
 			emitter.complete();
 		}
 	}
@@ -183,25 +176,20 @@ public class GrpcRequestHandler<I, O> {
 
 		@Override
 		public void sendMessage(Res message) {
-			System.out.println("Sending streaming message: " + message);
+			if (message instanceof ServerReflectionResponse response) {
+				if (response.getErrorResponse() != null && response.getErrorResponse().getErrorCode() != 0) {
+					return;
+				}
+			}
 			this.emitter.tryEmitNext(message);
-		}
-
-		@Override
-		public void close(Status status, Metadata trailers) {
-			System.out.println("Streaming call closed with status: " + status);
-			emitter.tryEmitComplete();
 		}
 
 		public Flux<Res> reset() {
 			Many<Res> emitter = this.emitter;
+			emitter.tryEmitComplete();
 			this.emitter = Sinks.many().unicast().onBackpressureBuffer();
 			// Reset the emitter for the next call
-			return emitter.asFlux().doOnSubscribe(subscription -> {
-				System.out.println("Subscription started");
-			}).doFinally(signalType -> {
-				System.out.println("Subscription ended with signal: " + signalType);
-			});
+			return emitter.asFlux();
 		}
 	}
 }
