@@ -46,7 +46,6 @@ public class EmbeddedGrpcServer extends Server {
 
 	@Override
 	public Server start() throws IOException {
-		Context.current().withValue(SERVER_CONTEXT_KEY, this);
 		return this;
 	}
 
