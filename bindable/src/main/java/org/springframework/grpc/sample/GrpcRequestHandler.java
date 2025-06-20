@@ -16,10 +16,13 @@
 package org.springframework.grpc.sample;
 
 import org.reactivestreams.Publisher;
+import org.springframework.web.reactive.function.server.ServerRequest;
 
 import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
+import io.grpc.MethodDescriptor.MethodType;
+import io.grpc.MethodDescriptor.PrototypeMarshaller;
 import io.grpc.ServerCall;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.Status;
@@ -39,7 +42,22 @@ public class GrpcRequestHandler<I, O> {
 		this.server = server;
 	}
 
-	public Publisher<O> handle(ServerMethodDefinition<I, O> serverMethod, Publisher<I> input) {
+	public Class<I> getInputType(ServerMethodDefinition<I, O> serverMethod) {
+		return ((PrototypeMarshaller<I>) serverMethod.getMethodDescriptor().getRequestMarshaller())
+				.getMessageClass();
+	}
+
+	public Class<O> getOutputType(ServerMethodDefinition<I, O> serverMethod) {
+		return ((PrototypeMarshaller<O>) serverMethod.getMethodDescriptor().getResponseMarshaller())
+				.getMessageClass();
+	}
+
+	public Publisher<O> handle(ServerMethodDefinition<I, O> serverMethod, ServerRequest request) {
+		Class<?> inputType = getInputType(serverMethod);
+		@SuppressWarnings("unchecked")
+		Publisher<I> input = (Publisher<I>) (serverMethod.getMethodDescriptor().getType() == MethodType.BIDI_STREAMING
+				? request.bodyToFlux(inputType)
+				: request.bodyToMono(inputType));
 		switch (serverMethod.getMethodDescriptor().getType()) {
 			case UNARY:
 				return Mono.from(input).map(item -> unary(item, serverMethod));
@@ -84,13 +102,11 @@ public class GrpcRequestHandler<I, O> {
 		try {
 			var call = new ManyToManyServerCall<I, O>(method);
 			var listener = serverMethod.getServerCallHandler().startCall(call, null);
-			return request.subscribeOn(Schedulers.boundedElastic(), false)
-					.flatMap(input -> {
+			return request.flatMap(input -> {
 						listener.onMessage(input);
 						listener.onReady();
 						return call.reset();
 					})
-					.publishOn(Schedulers.boundedElastic())
 					.subscribeOn(Schedulers.boundedElastic(), false)
 					.doFinally(signalType -> {
 						listener.onHalfClose();

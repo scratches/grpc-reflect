@@ -28,8 +28,6 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 
 import io.grpc.Context;
 import io.grpc.InternalServer;
-import io.grpc.MethodDescriptor.MethodType;
-import io.grpc.MethodDescriptor.PrototypeMarshaller;
 import io.grpc.Server;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
@@ -101,17 +99,10 @@ public class EmbeddedGrpcServer extends Server {
 		for (ServerMethodDefinition<?, ?> definition : service.getMethods()) {
 			@SuppressWarnings("unchecked")
 			ServerMethodDefinition<Object, Object> method = (ServerMethodDefinition<Object, Object>) definition;
-			Class<?> inputType = ((PrototypeMarshaller<?>) method.getMethodDescriptor()
-					.getRequestMarshaller()).getMessageClass();
-			Class<?> outputType = ((PrototypeMarshaller<?>) method.getMethodDescriptor()
-					.getResponseMarshaller()).getMessageClass();
+			Class<?> outputType = requestHandler.getOutputType(method);
 			this.handlers.put("/" + method.getMethodDescriptor().getFullMethodName(),
 					request -> ServerResponse.ok().contentType(MediaType.valueOf("application/grpc"))
-							.body(requestHandler.handle(method,
-									method.getMethodDescriptor().getType() == MethodType.BIDI_STREAMING
-											? request.bodyToFlux(inputType)
-											: request.bodyToMono(inputType)),
-									outputType));
+							.body(requestHandler.handle(method, request), outputType));
 		}
 	}
 
