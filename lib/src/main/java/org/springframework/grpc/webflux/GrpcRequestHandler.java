@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.grpc.sample;
+package org.springframework.grpc.webflux;
 
 import org.reactivestreams.Publisher;
 import org.springframework.web.reactive.function.server.ServerRequest;
+
+import com.google.protobuf.Message;
 
 import io.grpc.Context;
 import io.grpc.Metadata;
@@ -26,7 +28,6 @@ import io.grpc.MethodDescriptor.PrototypeMarshaller;
 import io.grpc.ServerCall;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.Status;
-import io.grpc.reflection.v1.ServerReflectionResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
@@ -100,7 +101,7 @@ public class GrpcRequestHandler<I, O> {
 		Context context = Context.current().withValue(EmbeddedGrpcServer.SERVER_CONTEXT_KEY, this.server);
 		Context previous = context.attach();
 		try {
-			var call = new ManyToManyServerCall<I, O>(method);
+			var call = new ManyToManyServerCall<I, O>(method, getOutputType(serverMethod));
 			var listener = serverMethod.getServerCallHandler().startCall(call, null);
 			return request.flatMap(input -> {
 						listener.onMessage(input);
@@ -118,7 +119,7 @@ public class GrpcRequestHandler<I, O> {
 	}
 
 	abstract class LocalServerCall<Req, Res> extends ServerCall<Req, Res> {
-		private MethodDescriptor<Req, Res> method;
+		protected MethodDescriptor<Req, Res> method;
 
 		public LocalServerCall(MethodDescriptor<Req, Res> method) {
 			this.method = method;
@@ -185,19 +186,41 @@ public class GrpcRequestHandler<I, O> {
 	class ManyToManyServerCall<Req, Res> extends LocalServerCall<Req, Res> {
 
 		private Many<Res> emitter = Sinks.many().unicast().onBackpressureBuffer();
+		private Class<Res> type;
 
-		public ManyToManyServerCall(MethodDescriptor<Req, Res> method) {
+		public ManyToManyServerCall(MethodDescriptor<Req, Res> method, Class<Res> type) {
 			super(method);
+			this.type = type;
 		}
 
 		@Override
 		public void sendMessage(Res message) {
-			if (message instanceof ServerReflectionResponse response) {
-				if (response.getErrorResponse() != null && response.getErrorResponse().getErrorCode() != 0) {
+			if (message instanceof Message response) {
+				if (isErrorResponse(response)) {
 					return;
 				}
 			}
 			this.emitter.tryEmitNext(message);
+		}
+
+		private boolean isErrorResponse(Message response) {
+			try {
+				// Server reflection responses may contain an error response
+				if (response.getDescriptorForType().findFieldByName("error_response") == null) {
+					return false;
+				}
+				// Check if the response contains an error
+				Message error = (Message)response.getField(response.getDescriptorForType().findFieldByName("error_response"));
+				if (error != null) {
+					Integer code = (Integer) error.getField(error.getDescriptorForType().findFieldByName("error_code"));
+					if (code != null && code != 0) {
+						return true;
+					}
+				}
+			} catch (Exception e) {
+				// If we cannot read the error response, we assume it's not an error
+			}
+			return false;
 		}
 
 		public Flux<Res> reset() {

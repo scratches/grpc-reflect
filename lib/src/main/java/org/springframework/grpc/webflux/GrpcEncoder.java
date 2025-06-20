@@ -1,4 +1,4 @@
-package org.springframework.grpc.sample;
+package org.springframework.grpc.webflux;
 /*
  * Copyright 2024-2024 the original author or authors.
  *
