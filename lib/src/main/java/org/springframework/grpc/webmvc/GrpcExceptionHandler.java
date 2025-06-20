@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.grpc.sample;
+package org.springframework.grpc.webmvc;
 
 import java.util.Map;
 
 import org.springframework.core.Ordered;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.ModelAndView;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-@Component
 public class GrpcExceptionHandler implements HandlerExceptionResolver, Ordered {
 
 	@Override

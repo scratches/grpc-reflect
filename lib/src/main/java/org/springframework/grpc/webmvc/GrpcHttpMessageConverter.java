@@ -1,4 +1,4 @@
-package org.springframework.grpc.sample;
+package org.springframework.grpc.webmvc;
 
 import java.io.IOException;
 import java.lang.reflect.Method;

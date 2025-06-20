@@ -9,6 +9,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.embedded.tomcat.TomcatConnectorCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.grpc.webmvc.GrpcExceptionHandler;
+import org.springframework.grpc.webmvc.GrpcHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -28,6 +30,11 @@ class WebConfiguration implements WebMvcConfigurer {
 	public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
 		GrpcHttpMessageConverter converter = new GrpcHttpMessageConverter();
 		converters.add(converter);
+	}
+
+	@Bean
+	public GrpcExceptionHandler grpcExceptionHandler() {
+		return new GrpcExceptionHandler();
 	}
 
 	@Bean
