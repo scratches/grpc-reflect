@@ -21,7 +21,7 @@ public class GrpcServerService extends SimpleGrpc.SimpleImplBase {
 			throw new IllegalArgumentException("Bad name: " + req.getName());
 		}
 		if (req.getName().startsWith("internal")) {
-			throw new RuntimeException();
+			throw new RuntimeException("Internal");
 		}
 		HelloReply reply = HelloReply.newBuilder().setMessage("Hello ==> " + req.getName()).build();
 		responseObserver.onNext(reply);

@@ -30,7 +30,6 @@ import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.FileDescriptor;
-import com.google.protobuf.Descriptors.MethodDescriptor;
 
 public class DescriptorRegistry implements DescriptorProvider {
 
@@ -203,22 +202,6 @@ public class DescriptorRegistry implements DescriptorProvider {
 	@Override
 	public Descriptor descriptor(Class<?> clazz) {
 		return this.descriptors.get(clazz);
-	}
-
-	@Override
-	public MethodDescriptor method(String fullMethodName) {
-		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
-		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
-		FileDescriptor file = file(serviceName);
-		if (file == null) {
-			return null;
-		}
-		for (MethodDescriptor method : file.findServiceByName(serviceName).getMethods()) {
-			if (method.getName().equals(methodName)) {
-				return method;
-			}
-		}
-		return null;
 	}
 
 	@Override

@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Test;
 
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
+import com.google.protobuf.Descriptors.FileDescriptor;
+import com.google.protobuf.Descriptors.MethodDescriptor;
 
 public class DescriptorRegistryTests {
 
@@ -32,7 +34,22 @@ public class DescriptorRegistryTests {
 						.build());
 		registry.register(DescriptorRegistryTests.class.getMethod("echo", Foo.class));
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
-		assertThat(registry.method("DescriptorRegistryTests/Echo")).isNotNull();
+		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
+	}
+
+	private MethodDescriptor method(DescriptorRegistry registry, String fullMethodName) {
+			String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
+			String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
+			FileDescriptor file = registry.file(serviceName);
+			if (file == null) {
+				return null;
+			}
+			for (MethodDescriptor method : file.findServiceByName(serviceName).getMethods()) {
+				if (method.getName().equals(methodName)) {
+					return method;
+				}
+			}
+			return null;
 	}
 
 	@Test
@@ -40,12 +57,12 @@ public class DescriptorRegistryTests {
 		DescriptorRegistry registry = new DescriptorRegistry();
 		registry.register(DescriptorRegistryTests.class.getMethod("echo", Foo.class));
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
-		assertThat(registry.method("DescriptorRegistryTests/Echo")).isNotNull();
+		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
 		registry.register(DescriptorRegistryTests.class.getMethod("translate", Foo.class));
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
-		assertThat(registry.method("DescriptorRegistryTests/Echo")).isNotNull();
+		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
 		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
-		assertThat(registry.method("DescriptorRegistryTests/Translate")).isNotNull();
+		assertThat(method(registry, "DescriptorRegistryTests/Translate")).isNotNull();
 	}
 
 	@Test
@@ -54,7 +71,7 @@ public class DescriptorRegistryTests {
 		registry.register("Service/Spam", Foo.class, Bar.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
-		assertThat(registry.method("Service/Spam")).isNotNull();
+		assertThat(method(registry, "Service/Spam")).isNotNull();
 	}
 
 	@Test
@@ -62,12 +79,12 @@ public class DescriptorRegistryTests {
 		DescriptorRegistry registry = new DescriptorRegistry();
 		registry.register("Service/Echo", Foo.class, Foo.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
-		assertThat(registry.method("Service/Echo")).isNotNull();
+		assertThat(method(registry, "Service/Echo")).isNotNull();
 		registry.register("Service/Spam", Foo.class, Bar.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
-		assertThat(registry.method("Service/Echo")).isNotNull();
+		assertThat(method(registry, "Service/Echo")).isNotNull();
 		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
-		assertThat(registry.method("Service/Spam")).isNotNull();
+		assertThat(method(registry, "Service/Spam")).isNotNull();
 	}
 
 	@Test
@@ -75,12 +92,12 @@ public class DescriptorRegistryTests {
 		DescriptorRegistry registry = new DescriptorRegistry();
 		registry.register("EchoService/Echo", Foo.class, Foo.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
-		assertThat(registry.method("EchoService/Echo")).isNotNull();
+		assertThat(method(registry, "EchoService/Echo")).isNotNull();
 		registry.register("Service/Spam", Foo.class, Bar.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
-		assertThat(registry.method("EchoService/Echo")).isNotNull();
+		assertThat(method(registry, "EchoService/Echo")).isNotNull();
 		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
-		assertThat(registry.method("Service/Spam")).isNotNull();
+		assertThat(method(registry, "Service/Spam")).isNotNull();
 	}
 
 	@Test
@@ -88,12 +105,12 @@ public class DescriptorRegistryTests {
 		DescriptorRegistry registry = new DescriptorRegistry();
 		registry.register(DescriptorRegistryTests.class.getMethod("echo", Foo.class));
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
-		assertThat(registry.method("DescriptorRegistryTests/Echo")).isNotNull();
+		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
 		registry.register("Service/Spam", Foo.class, Bar.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
-		assertThat(registry.method("DescriptorRegistryTests/Echo")).isNotNull();
+		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
 		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
-		assertThat(registry.method("Service/Spam")).isNotNull();
+		assertThat(method(registry, "Service/Spam")).isNotNull();
 	}
 
 	@Test
