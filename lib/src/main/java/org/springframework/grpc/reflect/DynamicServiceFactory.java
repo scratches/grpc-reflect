@@ -24,6 +24,7 @@ import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 import com.google.protobuf.Descriptors;
+import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.DynamicMessage;
 
@@ -166,10 +167,12 @@ public class DynamicServiceFactory {
 				Function<I, O> function) {
 			String fullMethodName = serviceName + "/" + methodName;
 			this.registry.register(fullMethodName, requestType, responseType);
+			Descriptor inputType = registry.file(serviceName).findServiceByName(serviceName).findMethodByName(methodName).getInputType();
+			Descriptor outputType = registry.file(serviceName).findServiceByName(serviceName).findMethodByName(methodName).getOutputType();
 			Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
-					.marshaller(DynamicMessage.newBuilder(registry.descriptor(responseType)).build());
+					.marshaller(DynamicMessage.newBuilder(outputType).build());
 			Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
-					.marshaller(DynamicMessage.newBuilder(registry.descriptor(requestType)).build());
+					.marshaller(DynamicMessage.newBuilder(inputType).build());
 			MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
 					.<DynamicMessage, DynamicMessage>newBuilder()
 					.setType(MethodDescriptor.MethodType.UNARY)

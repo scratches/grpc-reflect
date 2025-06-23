@@ -15,8 +15,8 @@
  */
 package org.springframework.grpc.reflect;
 
-import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.FileDescriptor;
 
-public interface DescriptorProvider {
-	Descriptor descriptor(Class<?> clazz);
+public interface FileDescriptorProvider {
+	FileDescriptor file(String serviceName);
 }

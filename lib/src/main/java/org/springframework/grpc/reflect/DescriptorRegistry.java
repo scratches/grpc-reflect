@@ -31,7 +31,7 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.FileDescriptor;
 
-public class DescriptorRegistry implements DescriptorProvider {
+public class DescriptorRegistry implements DescriptorProvider, FileDescriptorProvider {
 
 	private final DescriptorProtoProvider protos;
 	private final MethodDescriptorProtoProvider methods;

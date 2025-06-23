@@ -32,7 +32,7 @@ public class DynamicStubFactory implements StubFactory<Object> {
 	private final DescriptorRegistry descriptorRegistry;
 
 	public DynamicStubFactory(DescriptorRegistry descriptorRegistry) {
-		this.descriptorRegistry = new DescriptorRegistry();
+		this.descriptorRegistry = descriptorRegistry;
 	}
 
 	public static boolean supports(Class<?> type) {
