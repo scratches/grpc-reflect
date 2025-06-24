@@ -1,0 +1,3 @@
+org.springframework.grpc.webmvc.GrpcWebmvcAutoConfiguration
+org.springframework.grpc.webflux.GrpcWebfluxAutoConfiguration
+org.springframework.grpc.webflux.GrpcWebfluxServerAutoConfiguration
