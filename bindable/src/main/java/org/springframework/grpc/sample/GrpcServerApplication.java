@@ -15,7 +15,7 @@ public class GrpcServerApplication {
 	}
 
 	@Bean
-	public BindableService reflectionService() {
+	BindableService reflectionService() {
 		return ProtoReflectionServiceV1.newInstance();
 	}
 

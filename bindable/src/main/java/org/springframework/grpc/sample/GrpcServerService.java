@@ -38,14 +38,37 @@ public class GrpcServerService extends SimpleGrpc.SimpleImplBase {
 			count++;
 			try {
 				Thread.sleep(1000L);
-			}
-			catch (InterruptedException e) {
+			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 				responseObserver.onError(e);
 				return;
 			}
 		}
 		responseObserver.onCompleted();
+	}
+
+	@Override
+	public StreamObserver<HelloRequest> parallelHello(StreamObserver<HelloReply> responseObserver) {
+		return new StreamObserver<HelloRequest>() {
+
+			@Override
+			public void onNext(HelloRequest value) {
+				log.info("Hello " + value.getName());
+				HelloReply reply = HelloReply.newBuilder().setMessage("Hello ==> " + value.getName()).build();
+				responseObserver.onNext(reply);
+			}
+
+			@Override
+			public void onError(Throwable t) {
+				responseObserver.onError(t);
+			}
+
+			@Override
+			public void onCompleted() {
+				responseObserver.onCompleted();
+			}
+
+		};
 	}
 
 }
