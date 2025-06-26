@@ -103,12 +103,12 @@ public class GrpcRequestHandler<I, O> {
 		try {
 			var call = new ManyToManyServerCall<I, O>(method, getOutputType(serverMethod));
 			var listener = serverMethod.getServerCallHandler().startCall(call, null);
-			return request.flatMap(input -> {
+			return request.publishOn(Schedulers.boundedElastic())
+					.flatMap(input -> {
 						listener.onMessage(input);
 						listener.onReady();
 						return call.reset();
 					})
-					.subscribeOn(Schedulers.boundedElastic(), false)
 					.doFinally(signalType -> {
 						listener.onHalfClose();
 						listener.onComplete();
@@ -210,7 +210,8 @@ public class GrpcRequestHandler<I, O> {
 					return false;
 				}
 				// Check if the response contains an error
-				Message error = (Message)response.getField(response.getDescriptorForType().findFieldByName("error_response"));
+				Message error = (Message) response
+						.getField(response.getDescriptorForType().findFieldByName("error_response"));
 				if (error != null) {
 					Integer code = (Integer) error.getField(error.getDescriptorForType().findFieldByName("error_code"));
 					if (code != null && code != 0) {
