@@ -103,16 +103,16 @@ public class GrpcRequestHandler<I, O> {
 		try {
 			var call = new ManyToManyServerCall<I, O>(method);
 			var listener = serverMethod.getServerCallHandler().startCall(call, null);
-			return request.publishOn(Schedulers.boundedElastic())
+			return Flux.merge(request.publishOn(Schedulers.boundedElastic())
 					.doOnNext(input -> {
 						listener.onMessage(input);
 						listener.onReady();
-					})
-					.doFinally(signalType -> {
+					}).doFinally(signalType -> {
 						listener.onHalfClose();
 						listener.onComplete();
 						call.complete();
-					}).publish(requests -> call.flux());
+					})
+					.filter(input -> false).then(Mono.empty()), call.flux());
 		} finally {
 			context.detach(previous);
 		}
@@ -191,40 +191,14 @@ public class GrpcRequestHandler<I, O> {
 			super(method);
 		}
 
-		public Flux<Res> flux() {
-			return this.emitter.asFlux();
-		}
-
 		@Override
 		public void sendMessage(Res message) {
-			if (message instanceof Message response) {
-				if (isErrorResponse(response)) {
-					return;
-				}
-			}
 			this.emitter.tryEmitNext(message);
 		}
 
-		private boolean isErrorResponse(Message response) {
-			try {
-				// Server reflection responses may contain an error response
-				if (response.getDescriptorForType().findFieldByName("error_response") == null) {
-					return false;
-				}
-				// Check if the response contains an error
-				Message error = (Message) response
-						.getField(response.getDescriptorForType().findFieldByName("error_response"));
-				if (error != null) {
-					Integer code = (Integer) error.getField(error.getDescriptorForType().findFieldByName("error_code"));
-					if (code != null && code != 0) {
-						return true;
-					}
-				}
-			} catch (Exception e) {
-				// If we cannot read the error response, we assume it's not an error
-			}
-			return false;
-		}
+		public Flux<Res> flux() {
+			return this.emitter.asFlux();
+		}	
 
 		public void complete() {
 			this.emitter.tryEmitComplete();

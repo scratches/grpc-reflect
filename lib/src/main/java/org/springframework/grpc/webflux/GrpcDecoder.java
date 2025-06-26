@@ -51,11 +51,9 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 
 	private static final ConcurrentMap<Class<?>, Method> methodCache = new ConcurrentReferenceHashMap<>();
 
-
 	private final ExtensionRegistry extensionRegistry;
 
 	private int maxMessageSize = DEFAULT_MESSAGE_MAX_SIZE;
-
 
 	/**
 	 * Construct a new {@code ProtobufDecoder}.
@@ -67,6 +65,7 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 	/**
 	 * Construct a new {@code ProtobufDecoder} with an initializer that allows the
 	 * registration of message extensions.
+	 * 
 	 * @param extensionRegistry a message extension registry
 	 */
 	public GrpcDecoder(ExtensionRegistry extensionRegistry) {
@@ -74,10 +73,11 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 		this.extensionRegistry = extensionRegistry;
 	}
 
-
 	/**
 	 * The max size allowed per message.
-	 * <p>By default, this is set to 256K.
+	 * <p>
+	 * By default, this is set to 256K.
+	 * 
 	 * @param maxMessageSize the max size per message, or -1 for unlimited
 	 */
 	public void setMaxMessageSize(int maxMessageSize) {
@@ -86,12 +86,12 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 
 	/**
 	 * Return the {@link #setMaxMessageSize configured} message size limit.
+	 * 
 	 * @since 5.1.11
 	 */
 	public int getMaxMessageSize() {
 		return this.maxMessageSize;
 	}
-
 
 	@Override
 	public boolean canDecode(ResolvableType elementType, @Nullable MimeType mimeType) {
@@ -103,8 +103,7 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 	public Flux<Message> decode(Publisher<DataBuffer> inputStream, ResolvableType elementType,
 			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
 
-		MessageDecoderFunction decoderFunction =
-				new MessageDecoderFunction(elementType, this.maxMessageSize);
+		MessageDecoderFunction decoderFunction = new MessageDecoderFunction(elementType, this.maxMessageSize);
 
 		return (Flux<Message>) Flux.from(inputStream)
 				.flatMapIterable(decoderFunction)
@@ -132,22 +131,19 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 			byteBuffer.getInt(); // Read the message size (4 bytes)
 			builder.mergeFrom(CodedInputStream.newInstance(byteBuffer), this.extensionRegistry);
 			return builder.build();
-		}
-		catch (IOException ex) {
+		} catch (IOException ex) {
 			throw new DecodingException("I/O error while parsing input stream", ex);
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			throw new DecodingException("Could not read Protobuf message: " + ex.getMessage(), ex);
-		}
-		finally {
+		} finally {
 			DataBufferUtils.release(dataBuffer);
 		}
 	}
 
-
 	/**
 	 * Create a new {@code Message.Builder} instance for the given class.
-	 * <p>This method uses a ConcurrentHashMap for caching method lookups.
+	 * <p>
+	 * This method uses a ConcurrentHashMap for caching method lookups.
 	 */
 	private static Message.Builder getMessageBuilder(Class<?> clazz) throws Exception {
 		Method method = methodCache.get(clazz);
@@ -163,7 +159,6 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 		return getMimeTypes();
 	}
 
-
 	private class MessageDecoderFunction implements Function<DataBuffer, Iterable<? extends Message>> {
 
 		private final ResolvableType elementType;
@@ -175,14 +170,10 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 
 		private int messageBytesToRead;
 
-		private int offset;
-
-
 		public MessageDecoderFunction(ResolvableType elementType, int maxMessageSize) {
 			this.elementType = elementType;
 			this.maxMessageSize = maxMessageSize;
 		}
-
 
 		@Override
 		public Iterable<? extends Message> apply(DataBuffer input) {
@@ -214,81 +205,45 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 					this.messageBytesToRead -= chunkBytesToRead;
 
 					if (this.messageBytesToRead == 0) {
-						ByteBuffer byteBuffer = ByteBuffer.allocate(this.output.readableByteCount());
-						this.output.toByteBuffer(byteBuffer);
-						CodedInputStream stream = CodedInputStream.newInstance(byteBuffer);
-						DataBufferUtils.release(this.output);
+						if (chunkBytesToRead > 0) {
+							ByteBuffer byteBuffer = ByteBuffer.allocate(this.output.readableByteCount());
+							this.output.toByteBuffer(byteBuffer);
+							CodedInputStream stream = CodedInputStream.newInstance(byteBuffer);
+							DataBufferUtils.release(this.output);
+							Message message = getMessageBuilder(this.elementType.toClass())
+									.mergeFrom(stream, extensionRegistry)
+									.build();
+							messages.add(message);
+						}
 						this.output = null;
-						Message message = getMessageBuilder(this.elementType.toClass())
-								.mergeFrom(stream, extensionRegistry)
-								.build();
-						messages.add(message);
 					}
 				} while (remainingBytesToRead > 0);
 				return messages;
-			}
-			catch (DecodingException ex) {
+			} catch (DecodingException ex) {
 				throw ex;
-			}
-			catch (IOException ex) {
+			} catch (IOException ex) {
 				throw new DecodingException("I/O error while parsing input stream", ex);
-			}
-			catch (Exception ex) {
+			} catch (Exception ex) {
 				throw new DecodingException("Could not read Protobuf message: " + ex.getMessage(), ex);
-			}
-			finally {
+			} finally {
 				DataBufferUtils.release(input);
 			}
 		}
 
 		/**
-		 * Parse message size as a varint from the input stream, updating {@code messageBytesToRead} and
-		 * {@code offset} fields if needed to allow processing of upcoming chunks.
-		 * Inspired from {@link CodedInputStream#readRawVarint32(int, java.io.InputStream)}
-		 * @return {@code true} when the message size is parsed successfully, {@code false} when the message size is
-		 * truncated
-		 * @see <a href="https://developers.google.com/protocol-buffers/docs/encoding#varints">Base 128 Varints</a>
+		 * Parse message size from gRPC header.
 		 */
 		private boolean readMessageSize(DataBuffer input) {
-			if (this.offset == 0) {
-				if (input.readableByteCount() == 0) {
-					return false;
-				}
-				int firstByte = input.read();
-				if ((firstByte & 0x80) == 0) {
-					this.messageBytesToRead = firstByte;
-					return true;
-				}
-				this.messageBytesToRead = firstByte & 0x7f;
-				this.offset = 7;
+			if (input.readableByteCount() < 5) {
+				return false;
 			}
-
-			if (this.offset < 32) {
-				for (; this.offset < 32; this.offset += 7) {
-					if (input.readableByteCount() == 0) {
-						return false;
-					}
-					final int b = input.read();
-					this.messageBytesToRead |= (b & 0x7f) << this.offset;
-					if ((b & 0x80) == 0) {
-						this.offset = 0;
-						return true;
-					}
-				}
-			}
-			// Keep reading up to 64 bits.
-			for (; this.offset < 64; this.offset += 7) {
-				if (input.readableByteCount() == 0) {
-					return false;
-				}
-				final int b = input.read();
-				if ((b & 0x80) == 0) {
-					this.offset = 0;
-					return true;
-				}
-			}
-			this.offset = 0;
-			throw new DecodingException("Cannot parse message size: malformed varint");
+			byte[] header = new byte[5];
+			input.read(header);
+			ByteBuffer byteBuffer = ByteBuffer.wrap(header);
+			byteBuffer.order(ByteOrder.BIG_ENDIAN);
+			byteBuffer.get(); // Skip the first byte (gRPC header)
+			this.messageBytesToRead = byteBuffer.getInt(); // Read the message size (4 bytes)
+			return true;
 		}
 
 		public void discard() {
@@ -298,5 +253,4 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 		}
 	}
 
-	
 }
