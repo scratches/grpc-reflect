@@ -101,18 +101,18 @@ public class GrpcRequestHandler<I, O> {
 		Context context = Context.current().withValue(EmbeddedGrpcServer.SERVER_CONTEXT_KEY, this.server);
 		Context previous = context.attach();
 		try {
-			var call = new ManyToManyServerCall<I, O>(method, getOutputType(serverMethod));
+			var call = new ManyToManyServerCall<I, O>(method);
 			var listener = serverMethod.getServerCallHandler().startCall(call, null);
 			return request.publishOn(Schedulers.boundedElastic())
-					.flatMap(input -> {
+					.doOnNext(input -> {
 						listener.onMessage(input);
 						listener.onReady();
-						return call.reset();
 					})
 					.doFinally(signalType -> {
 						listener.onHalfClose();
 						listener.onComplete();
-					});
+						call.complete();
+					}).publish(requests -> call.flux());
 		} finally {
 			context.detach(previous);
 		}
@@ -186,11 +186,13 @@ public class GrpcRequestHandler<I, O> {
 	class ManyToManyServerCall<Req, Res> extends LocalServerCall<Req, Res> {
 
 		private Many<Res> emitter = Sinks.many().unicast().onBackpressureBuffer();
-		private Class<Res> type;
 
-		public ManyToManyServerCall(MethodDescriptor<Req, Res> method, Class<Res> type) {
+		public ManyToManyServerCall(MethodDescriptor<Req, Res> method) {
 			super(method);
-			this.type = type;
+		}
+
+		public Flux<Res> flux() {
+			return this.emitter.asFlux();
 		}
 
 		@Override
@@ -224,12 +226,8 @@ public class GrpcRequestHandler<I, O> {
 			return false;
 		}
 
-		public Flux<Res> reset() {
-			Many<Res> emitter = this.emitter;
-			emitter.tryEmitComplete();
-			this.emitter = Sinks.many().unicast().onBackpressureBuffer();
-			// Reset the emitter for the next call
-			return emitter.asFlux();
+		public void complete() {
+			this.emitter.tryEmitComplete();
 		}
 	}
 }
