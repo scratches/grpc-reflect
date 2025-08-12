@@ -17,6 +17,7 @@ package org.springframework.grpc.webflux;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
@@ -32,6 +33,11 @@ public class GrpcWebfluxAutoConfiguration implements WebFluxConfigurer {
 	public void configureHttpMessageCodecs(ServerCodecConfigurer configurer) {
 		configurer.customCodecs().register(new GrpcHttpMessageWriter());
 		configurer.customCodecs().register(new GrpcDecoder());
+	}
+
+	@Bean
+	public GrpcExceptionHandler grpcExceptionHandler() {
+		return new GrpcExceptionHandler();
 	}
 
 }

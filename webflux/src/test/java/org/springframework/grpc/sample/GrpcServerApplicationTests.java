@@ -45,8 +45,7 @@ public class GrpcServerApplicationTests {
 		assertThat(assertThrows(StatusRuntimeException.class,
 				() -> stub.sayHello(HelloRequest.newBuilder().setName("internal").build()))
 				.getStatus()
-				// Should be INTERNAL, not UNKNOWN (reactor-netty doesn't send the status code)
-				.getCode()).isEqualTo(Code.UNKNOWN);
+				.getCode()).isEqualTo(Code.INTERNAL);
 	}
 
 }

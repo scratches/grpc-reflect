@@ -7,15 +7,10 @@ import java.util.Set;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.grpc.sample.proto.SimpleGrpc;
-import org.springframework.grpc.webflux.GrpcDecoder;
-import org.springframework.grpc.webflux.GrpcHttpMessageWriter;
-import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.reactive.config.WebFluxConfigurer;
 
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
@@ -42,16 +37,6 @@ public class GrpcServerApplication {
 		SpringApplication.run(GrpcServerApplication.class, args);
 	}
 
-}
-
-@Configuration
-class WebConfiguration implements WebFluxConfigurer {
-
-	@Override
-	public void configureHttpMessageCodecs(ServerCodecConfigurer configurer) {
-		configurer.customCodecs().register(new GrpcHttpMessageWriter());
-		configurer.customCodecs().register(new GrpcDecoder());
-	}
 }
 
 @RestController
