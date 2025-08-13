@@ -15,11 +15,15 @@
  */
 package org.springframework.grpc.reflect;
 
+import java.beans.PropertyDescriptor;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.cglib.core.ReflectUtils;
 
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
@@ -28,6 +32,7 @@ import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
 import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
+import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.Descriptors.ServiceDescriptor;
 
@@ -39,6 +44,7 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 	private Map<Class<?>, Descriptor> descriptors = new HashMap<>();
 	private Map<Class<?>, FileDescriptor> types = new HashMap<>();
 	private Map<String, FileDescriptor> fileDescriptors = new HashMap<>();
+	private boolean strict = true;
 
 	public DescriptorRegistrar() {
 		this(DescriptorProtoProvider.DEFAULT_INSTANCE);
@@ -46,6 +52,10 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 
 	public DescriptorRegistrar(DescriptorProtoProvider protos) {
 		this.protos = protos;
+	}
+
+	public void setStrict(boolean strict) {
+		this.strict = strict;
 	}
 
 	public <I, O> void register(String fullMethodName, Class<I> input, Class<O> output) {
@@ -213,5 +223,39 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 	@Override
 	public FileDescriptor file(String serviceName) {
 		return this.fileDescriptors.get(serviceName);
+	}
+
+	public void validate(String fullMethodName, Class<?> requestType, Class<?> responseType) {
+		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
+		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
+		if (this.fileDescriptors.containsKey(serviceName)) {
+			FileDescriptor file = this.fileDescriptors.get(serviceName);
+			ServiceDescriptor service = file.findServiceByName(serviceName);
+			if (service == null || service.findMethodByName(methodName) == null) {
+				throw new IllegalStateException("Service or method not found: " + fullMethodName);
+			}
+			Descriptor inputType = service.findMethodByName(methodName).getInputType();
+			Descriptor outputType = service.findMethodByName(methodName).getOutputType();
+			if (this.strict) {
+				validateMessage(fullMethodName, requestType, inputType.getFields());
+				validateMessage(fullMethodName, responseType, outputType.getFields());
+			}
+		} else {
+			throw new IllegalStateException("Service not registered: " + fullMethodName);
+		}
+	}
+
+	private void validateMessage(String fullMethodName, Class<?> responseType, List<FieldDescriptor> fields) {
+		for (FieldDescriptor field : fields) {
+			PropertyDescriptor descriptor = BeanUtils.getPropertyDescriptor(responseType, field.getName());
+			if (descriptor == null) {
+				throw new IllegalArgumentException("Field " + field.getName() + " not found in class "
+						+ responseType.getName() + " for method " + fullMethodName);
+			}
+			if (field.getJavaType() == FieldDescriptor.JavaType.MESSAGE) {
+				validateMessage(fullMethodName, descriptor.getPropertyType(), field.getMessageType().getFields());
+			}
+		}
+		// All fields in the input type must be present in the class
 	}
 }

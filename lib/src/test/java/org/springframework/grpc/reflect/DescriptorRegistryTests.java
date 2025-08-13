@@ -35,7 +35,8 @@ public class DescriptorRegistryTests {
 		registry.register(HelloWorldProto.getDescriptor().findServiceByName("Simple"));
 		registry.register(Foo.class, HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
 		// Doesn't make sense to register the same type twice
-		// registry.register(Foo.class, HelloWorldProto.getDescriptor().findMessageTypeByName("HelloReply"));
+		// registry.register(Foo.class,
+		// HelloWorldProto.getDescriptor().findMessageTypeByName("HelloReply"));
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("HelloRequest");
 		assertThat(method(registry, "Simple/SayHello")).isNotNull();
 	}

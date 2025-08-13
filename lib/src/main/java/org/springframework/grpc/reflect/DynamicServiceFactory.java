@@ -174,6 +174,8 @@ public class DynamicServiceFactory {
 					|| this.registry.file(serviceName).findServiceByName(serviceName) == null || this.registry
 							.file(serviceName).findServiceByName(serviceName).findMethodByName(methodName) == null) {
 				this.registrar.register(fullMethodName, requestType, responseType);
+			} else {
+				registrar.validate(fullMethodName, requestType, responseType);
 			}
 			Descriptor inputType = registry.file(serviceName).findServiceByName(serviceName)
 					.findMethodByName(methodName).getInputType();
