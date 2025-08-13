@@ -37,7 +37,7 @@ public class GrpcServerApplicationTests {
 
 	@Test
 	void dynamicServiceFromFunction() {
-		DynamicStub stub = new DynamicStub(new DescriptorRegistry(), this.channelFactory.createChannel("default"));
+		DynamicStub stub = new DynamicStub(new DescriptorRegistrar(), this.channelFactory.createChannel("default"));
 		Foo request = new Foo();
 		request.setName("Alien");
 		Foo response = stub.call("EchoService/Echo", request, Foo.class);
@@ -46,7 +46,7 @@ public class GrpcServerApplicationTests {
 
 	@Test
 	void dynamicServiceFromInstance() {
-		DynamicStub stub = new DynamicStub(new DescriptorRegistry(), this.channelFactory.createChannel("default"));
+		DynamicStub stub = new DynamicStub(new DescriptorRegistrar(), this.channelFactory.createChannel("default"));
 		Input request = new Input();
 		Output response = stub.call("FooService/Process", request, Output.class);
 		assertThat(response).isNotNull();

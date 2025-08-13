@@ -28,7 +28,7 @@ public class DescriptorRegistryTests {
 
 	@Test
 	public void testRegisterMethod() throws Exception {
-		DescriptorRegistry registry = new DescriptorRegistry(
+		DescriptorRegistrar registry = new DescriptorRegistrar(
 				clazz -> DescriptorProto.newBuilder().setName(clazz.getSimpleName()).build(),
 				method -> MethodDescriptorProto.newBuilder().setName("Echo").setOutputType("Foo").setInputType("Foo")
 						.build());
@@ -37,7 +37,7 @@ public class DescriptorRegistryTests {
 		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
 	}
 
-	private MethodDescriptor method(DescriptorRegistry registry, String fullMethodName) {
+	private MethodDescriptor method(DescriptorRegistrar registry, String fullMethodName) {
 			String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
 			String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
 			FileDescriptor file = registry.file(serviceName);
@@ -54,7 +54,7 @@ public class DescriptorRegistryTests {
 
 	@Test
 	public void testRegisterTwoMethods() throws Exception {
-		DescriptorRegistry registry = new DescriptorRegistry();
+		DescriptorRegistrar registry = new DescriptorRegistrar();
 		registry.register(DescriptorRegistryTests.class.getMethod("echo", Foo.class));
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
@@ -67,7 +67,7 @@ public class DescriptorRegistryTests {
 
 	@Test
 	public void testRegisterUnownedMethod() throws Exception {
-		DescriptorRegistry registry = new DescriptorRegistry();
+		DescriptorRegistrar registry = new DescriptorRegistrar();
 		registry.register("Service/Spam", Foo.class, Bar.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
@@ -76,7 +76,7 @@ public class DescriptorRegistryTests {
 
 	@Test
 	public void testRegisterTwoUnownedMethods() throws Exception {
-		DescriptorRegistry registry = new DescriptorRegistry();
+		DescriptorRegistrar registry = new DescriptorRegistrar();
 		registry.register("Service/Echo", Foo.class, Foo.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "Service/Echo")).isNotNull();
@@ -89,7 +89,7 @@ public class DescriptorRegistryTests {
 
 	@Test
 	public void testRegisterTwoUnownedMethodsFromDifferentServices() throws Exception {
-		DescriptorRegistry registry = new DescriptorRegistry();
+		DescriptorRegistrar registry = new DescriptorRegistrar();
 		registry.register("EchoService/Echo", Foo.class, Foo.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "EchoService/Echo")).isNotNull();
@@ -102,7 +102,7 @@ public class DescriptorRegistryTests {
 
 	@Test
 	public void testRegisterTwoMixedMethods() throws Exception {
-		DescriptorRegistry registry = new DescriptorRegistry();
+		DescriptorRegistrar registry = new DescriptorRegistrar();
 		registry.register(DescriptorRegistryTests.class.getMethod("echo", Foo.class));
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
@@ -115,7 +115,7 @@ public class DescriptorRegistryTests {
 
 	@Test
 	public void testRegisterType() throws Exception {
-		DescriptorRegistry registry = new DescriptorRegistry(
+		DescriptorRegistrar registry = new DescriptorRegistrar(
 				clazz -> DescriptorProto.newBuilder().setName(clazz.getSimpleName()).build(),
 				method -> null);
 		registry.register(Foo.class);
@@ -126,14 +126,14 @@ public class DescriptorRegistryTests {
 
 	@Test
 	public void testRegisterEmptyType() throws Exception {
-		DescriptorRegistry registry = new DescriptorRegistry();
+		DescriptorRegistrar registry = new DescriptorRegistrar();
 		registry.register(Void.class);
 		assertThat(registry.descriptor(Void.class).getFullName()).isEqualTo("Void");
 	}
 
 	@Test
 	public void testRegisterTypeTwice() throws Exception {
-		DescriptorRegistry registry = new DescriptorRegistry();
+		DescriptorRegistrar registry = new DescriptorRegistrar();
 		registry.register(Foo.class);
 		registry.register(Foo.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");

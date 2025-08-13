@@ -28,20 +28,20 @@ import io.grpc.stub.ClientCalls;
 public class DynamicStub extends AbstractStub<DynamicStub> {
 
 	private final MessageConverter converter;
-	private final DescriptorRegistry registry;
+	private final DescriptorRegistrar registry;
 
-	public DynamicStub(DescriptorRegistry registry, Channel channel) {
+	public DynamicStub(DescriptorRegistrar registry, Channel channel) {
 		this(registry, channel, CallOptions.DEFAULT);
 	}
 
-	public DynamicStub(DescriptorRegistry registry, Channel channel, CallOptions callOptions) {
+	public DynamicStub(DescriptorRegistrar registry, Channel channel, CallOptions callOptions) {
 		super(channel, callOptions);
 		this.registry = registry;
 		this.converter = new MessageConverter(registry);
 	}
 
 	public static DynamicStub newStub(Channel channel) {
-		return new DynamicStub(new DescriptorRegistry(), channel);
+		return new DynamicStub(new DescriptorRegistrar(), channel);
 	}
 
 	public <T> T call(String fullMethodName, Object request, Class<T> responseType) {

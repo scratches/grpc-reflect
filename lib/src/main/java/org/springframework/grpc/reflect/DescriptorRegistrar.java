@@ -31,7 +31,7 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.FileDescriptor;
 
-public class DescriptorRegistry implements DescriptorProvider, FileDescriptorProvider {
+public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorProvider {
 
 	private final DescriptorProtoProvider protos;
 	private final MethodDescriptorProtoProvider methods;
@@ -41,11 +41,11 @@ public class DescriptorRegistry implements DescriptorProvider, FileDescriptorPro
 	private Map<Class<?>, FileDescriptor> types = new HashMap<>();
 	private Map<String, FileDescriptor> fileDescriptors = new HashMap<>();
 
-	public DescriptorRegistry() {
+	public DescriptorRegistrar() {
 		this(DescriptorProtoProvider.DEFAULT_INSTANCE, MethodDescriptorProtoProvider.DEFAULT_INSTANCE);
 	}
 
-	public DescriptorRegistry(DescriptorProtoProvider protos, MethodDescriptorProtoProvider methods) {
+	public DescriptorRegistrar(DescriptorProtoProvider protos, MethodDescriptorProtoProvider methods) {
 		this.protos = protos;
 		this.methods = methods;
 	}
@@ -58,7 +58,7 @@ public class DescriptorRegistry implements DescriptorProvider, FileDescriptorPro
 				.setInputType(input.getSimpleName())
 				.setOutputType(output.getSimpleName())
 				.build();
-		register(DescriptorRegistry.class, serviceName, methodName, proto, input, output);
+		register(DescriptorRegistrar.class, serviceName, methodName, proto, input, output);
 	}
 
 	public void register(Method method) {
@@ -158,7 +158,7 @@ public class DescriptorRegistry implements DescriptorProvider, FileDescriptorPro
 	}
 
 	public void register(Class<?> type) {
-		String name = DescriptorRegistry.class.getName();
+		String name = DescriptorRegistrar.class.getName();
 		if (register(name, type)) {
 			process(name);
 		}

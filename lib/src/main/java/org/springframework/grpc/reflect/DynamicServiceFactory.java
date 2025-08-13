@@ -46,9 +46,9 @@ import io.grpc.protobuf.ProtoUtils;
 public class DynamicServiceFactory {
 
 	private final MessageConverter converter;
-	private final DescriptorRegistry registry;
+	private final DescriptorRegistrar registry;
 
-	public DynamicServiceFactory(DescriptorRegistry registry) {
+	public DynamicServiceFactory(DescriptorRegistrar registry) {
 		this.registry = registry;
 		this.converter = new MessageConverter(registry);
 	}
@@ -110,7 +110,7 @@ public class DynamicServiceFactory {
 		private BindableServiceBuilder builder;
 		private Object instance;
 
-		private <T> BindableServiceInstanceBuilder(T instance, String serviceName, DescriptorRegistry registry,
+		private <T> BindableServiceInstanceBuilder(T instance, String serviceName, DescriptorRegistrar registry,
 				MessageConverter converter) {
 			this.instance = instance;
 			this.builder = new BindableServiceBuilder(serviceName, registry, converter);
@@ -123,8 +123,10 @@ public class DynamicServiceFactory {
 				throw new IllegalArgumentException("Method " + methodName + " not found in class " + owner.getName());
 			}
 			if (method.getParameterTypes().length != 1) {
-				throw new IllegalArgumentException("Method must have exactly one parameter");
+				throw new IllegalArgumentException(
+						"Method " + methodName + " must have exactly one parameter in class " + owner.getName());
 			}
+			// TODO: support streaming types (Publisher etc.)
 			Class<?> requestType = method.getParameterTypes()[0];
 			Class<?> responseType = method.getReturnType();
 			this.builder.method(StringUtils.capitalize(methodName), requestType, responseType,
@@ -152,23 +154,31 @@ public class DynamicServiceFactory {
 	public static class BindableServiceBuilder {
 
 		private String serviceName;
-		private DescriptorRegistry registry;
+		private FileDescriptorProvider registry;
+		private DescriptorRegistrar registrar;
 		private MessageConverter converter;
 		private Map<String, ServerCallHandler<DynamicMessage, DynamicMessage>> handlers = new HashMap<>();
 		private Map<String, MethodDescriptor<DynamicMessage, DynamicMessage>> descriptors = new HashMap<>();
 
-		private BindableServiceBuilder(String serviceName, DescriptorRegistry registry, MessageConverter converter) {
+		private BindableServiceBuilder(String serviceName, DescriptorRegistrar registry, MessageConverter converter) {
 			this.serviceName = serviceName;
 			this.registry = registry;
+			this.registrar = registry;
 			this.converter = converter;
 		}
 
 		public <I, O> BindableServiceBuilder method(String methodName, Class<I> requestType, Class<O> responseType,
 				Function<I, O> function) {
 			String fullMethodName = serviceName + "/" + methodName;
-			this.registry.register(fullMethodName, requestType, responseType);
-			Descriptor inputType = registry.file(serviceName).findServiceByName(serviceName).findMethodByName(methodName).getInputType();
-			Descriptor outputType = registry.file(serviceName).findServiceByName(serviceName).findMethodByName(methodName).getOutputType();
+			if (this.registry.file(serviceName) == null
+					|| this.registry.file(serviceName).findServiceByName(serviceName) == null || this.registry
+							.file(serviceName).findServiceByName(serviceName).findMethodByName(methodName) == null) {
+				this.registrar.register(fullMethodName, requestType, responseType);
+			}
+			Descriptor inputType = registry.file(serviceName).findServiceByName(serviceName)
+					.findMethodByName(methodName).getInputType();
+			Descriptor outputType = registry.file(serviceName).findServiceByName(serviceName)
+					.findMethodByName(methodName).getOutputType();
 			Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
 					.marshaller(DynamicMessage.newBuilder(outputType).build());
 			Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
@@ -179,7 +189,8 @@ public class DynamicServiceFactory {
 					.setFullMethodName(fullMethodName)
 					.setRequestMarshaller(requestMarshaller)
 					.setResponseMarshaller(responseMarshaller)
-					.setSchemaDescriptor(new SimpleMethodDescriptor(registry.file(serviceName), serviceName, methodName))
+					.setSchemaDescriptor(
+							new SimpleMethodDescriptor(registry.file(serviceName), serviceName, methodName))
 					.build();
 			ServerCallHandler<DynamicMessage, DynamicMessage> handler = new ServerCallHandler<DynamicMessage, DynamicMessage>() {
 				@Override

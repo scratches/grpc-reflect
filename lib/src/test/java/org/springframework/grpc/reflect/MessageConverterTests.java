@@ -25,7 +25,7 @@ import com.google.protobuf.DynamicMessage;
 
 public class MessageConverterTests {
 
-	private DescriptorRegistry registry = new DescriptorRegistry();
+	private DescriptorRegistrar registry = new DescriptorRegistrar();
 
 	@Test
 	public void testConvertToPojo() {

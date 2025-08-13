@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.grpc.client.GrpcChannelFactory;
 import org.springframework.grpc.client.ImportGrpcClients;
-import org.springframework.grpc.reflect.DescriptorRegistry;
+import org.springframework.grpc.reflect.DescriptorRegistrar;
 import org.springframework.grpc.reflect.DynamicServiceFactory;
 import org.springframework.grpc.reflect.DynamicStub;
 import org.springframework.grpc.reflect.DynamicStubFactory;
@@ -51,7 +51,7 @@ public class GrpcServerApplicationTests {
 	private FooClient fooClient;
 
 	@Autowired
-	private DescriptorRegistry registry;
+	private DescriptorRegistrar registry;
 
 	@Test
 	void contextLoads() {
@@ -164,7 +164,7 @@ public class GrpcServerApplicationTests {
 		}
 
 		@Bean
-		DynamicStubFactory dynamicStubFactory(DescriptorRegistry registry) {
+		DynamicStubFactory dynamicStubFactory(DescriptorRegistrar registry) {
 			return new DynamicStubFactory(registry);
 		}
 

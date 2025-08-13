@@ -29,9 +29,9 @@ import io.grpc.ManagedChannel;
 
 public class DynamicStubFactory implements StubFactory<Object> {
 
-	private final DescriptorRegistry descriptorRegistry;
+	private final DescriptorRegistrar descriptorRegistry;
 
-	public DynamicStubFactory(DescriptorRegistry descriptorRegistry) {
+	public DynamicStubFactory(DescriptorRegistrar descriptorRegistry) {
 		this.descriptorRegistry = descriptorRegistry;
 	}
 
