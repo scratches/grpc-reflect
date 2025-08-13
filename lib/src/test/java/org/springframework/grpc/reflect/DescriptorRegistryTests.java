@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.util.StringUtils;
 
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
-import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 
@@ -32,9 +31,7 @@ public class DescriptorRegistryTests {
 	@Test
 	public void testRegisterMethod() throws Exception {
 		DescriptorRegistrar registry = new DescriptorRegistrar(
-				clazz -> DescriptorProto.newBuilder().setName(clazz.getSimpleName()).build(),
-				method -> MethodDescriptorProto.newBuilder().setName("Echo").setOutputType("Foo").setInputType("Foo")
-						.build());
+				clazz -> DescriptorProto.newBuilder().setName(clazz.getSimpleName()).build());
 		register(registry, DescriptorRegistryTests.class.getMethod("echo", Foo.class));
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
@@ -44,7 +41,8 @@ public class DescriptorRegistryTests {
 		Class<?> owner = method.getDeclaringClass();
 		Class<?> inputType = method.getParameterTypes()[0];
 		Class<?> outputType = method.getReturnType();
-		registry.register(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType, outputType);
+		registry.register(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
+				outputType);
 	}
 
 	private MethodDescriptor method(DescriptorRegistrar registry, String fullMethodName) {
@@ -126,8 +124,7 @@ public class DescriptorRegistryTests {
 	@Test
 	public void testRegisterType() throws Exception {
 		DescriptorRegistrar registry = new DescriptorRegistrar(
-				clazz -> DescriptorProto.newBuilder().setName(clazz.getSimpleName()).build(),
-				method -> null);
+				clazz -> DescriptorProto.newBuilder().setName(clazz.getSimpleName()).build());
 		registry.register(Foo.class);
 		registry.register(Bar.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");

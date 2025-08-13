@@ -33,7 +33,6 @@ import com.google.protobuf.Descriptors.FileDescriptor;
 public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorProvider {
 
 	private final DescriptorProtoProvider protos;
-	private final MethodDescriptorProtoProvider methods;
 	private Map<String, ServiceDescriptorProto> serviceProtos = new HashMap<>();
 	private Map<String, List<Class<?>>> typesPerService = new HashMap<>();
 	private Map<Class<?>, Descriptor> descriptors = new HashMap<>();
@@ -41,12 +40,11 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 	private Map<String, FileDescriptor> fileDescriptors = new HashMap<>();
 
 	public DescriptorRegistrar() {
-		this(DescriptorProtoProvider.DEFAULT_INSTANCE, MethodDescriptorProtoProvider.DEFAULT_INSTANCE);
+		this(DescriptorProtoProvider.DEFAULT_INSTANCE);
 	}
 
-	public DescriptorRegistrar(DescriptorProtoProvider protos, MethodDescriptorProtoProvider methods) {
+	public DescriptorRegistrar(DescriptorProtoProvider protos) {
 		this.protos = protos;
-		this.methods = methods;
 	}
 
 	public <I, O> void register(String fullMethodName, Class<I> input, Class<O> output) {
@@ -111,7 +109,8 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 			builder.addDependency(message.getName());
 		}
 		try {
-			FileDescriptor proto = FileDescriptor.buildFrom(builder.build(), dependencies.toArray(new FileDescriptor[0]));
+			FileDescriptor proto = FileDescriptor.buildFrom(builder.build(),
+					dependencies.toArray(new FileDescriptor[0]));
 			proto.getServices().forEach(descriptor -> {
 				this.fileDescriptors.put(descriptor.getName(), proto);
 			});
@@ -178,7 +177,8 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 			dependencies.add(file);
 		}
 		try {
-			FileDescriptor proto = FileDescriptor.buildFrom(builder.build(), dependencies.toArray(new FileDescriptor[0]));
+			FileDescriptor proto = FileDescriptor.buildFrom(builder.build(),
+					dependencies.toArray(new FileDescriptor[0]));
 			proto.getMessageTypes()
 					.forEach(descriptor -> this.descriptors.put(types.get(descriptor.getName()), descriptor));
 			proto.getServices().forEach(descriptor -> {
