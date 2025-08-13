@@ -17,7 +17,10 @@ package org.springframework.grpc.reflect;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.lang.reflect.Method;
+
 import org.junit.jupiter.api.Test;
+import org.springframework.util.StringUtils;
 
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
@@ -32,33 +35,40 @@ public class DescriptorRegistryTests {
 				clazz -> DescriptorProto.newBuilder().setName(clazz.getSimpleName()).build(),
 				method -> MethodDescriptorProto.newBuilder().setName("Echo").setOutputType("Foo").setInputType("Foo")
 						.build());
-		registry.register(DescriptorRegistryTests.class.getMethod("echo", Foo.class));
+		register(registry, DescriptorRegistryTests.class.getMethod("echo", Foo.class));
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
 	}
 
+	private void register(DescriptorRegistrar registry, Method method) {
+		Class<?> owner = method.getDeclaringClass();
+		Class<?> inputType = method.getParameterTypes()[0];
+		Class<?> outputType = method.getReturnType();
+		registry.register(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType, outputType);
+	}
+
 	private MethodDescriptor method(DescriptorRegistrar registry, String fullMethodName) {
-			String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
-			String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
-			FileDescriptor file = registry.file(serviceName);
-			if (file == null) {
-				return null;
-			}
-			for (MethodDescriptor method : file.findServiceByName(serviceName).getMethods()) {
-				if (method.getName().equals(methodName)) {
-					return method;
-				}
-			}
+		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
+		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
+		FileDescriptor file = registry.file(serviceName);
+		if (file == null) {
 			return null;
+		}
+		for (MethodDescriptor method : file.findServiceByName(serviceName).getMethods()) {
+			if (method.getName().equals(methodName)) {
+				return method;
+			}
+		}
+		return null;
 	}
 
 	@Test
 	public void testRegisterTwoMethods() throws Exception {
 		DescriptorRegistrar registry = new DescriptorRegistrar();
-		registry.register(DescriptorRegistryTests.class.getMethod("echo", Foo.class));
+		register(registry, DescriptorRegistryTests.class.getMethod("echo", Foo.class));
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
-		registry.register(DescriptorRegistryTests.class.getMethod("translate", Foo.class));
+		register(registry, DescriptorRegistryTests.class.getMethod("translate", Foo.class));
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
 		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
@@ -103,7 +113,7 @@ public class DescriptorRegistryTests {
 	@Test
 	public void testRegisterTwoMixedMethods() throws Exception {
 		DescriptorRegistrar registry = new DescriptorRegistrar();
-		registry.register(DescriptorRegistryTests.class.getMethod("echo", Foo.class));
+		register(registry, DescriptorRegistryTests.class.getMethod("echo", Foo.class));
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
 		registry.register("Service/Spam", Foo.class, Bar.class);

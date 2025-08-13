@@ -15,7 +15,6 @@
  */
 package org.springframework.grpc.reflect;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -59,14 +58,6 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 				.setOutputType(output.getSimpleName())
 				.build();
 		register(DescriptorRegistrar.class, serviceName, methodName, proto, input, output);
-	}
-
-	public void register(Method method) {
-		Class<?> owner = method.getDeclaringClass();
-		MethodDescriptorProto proto = this.methods.service(method);
-		Class<?> inputType = method.getParameterTypes()[0];
-		Class<?> outputType = method.getReturnType();
-		register(owner, owner.getSimpleName(), proto.getName(), proto, inputType, outputType);
 	}
 
 	private void register(Class<?> owner, String serviceName, String methodName, MethodDescriptorProto proto,
