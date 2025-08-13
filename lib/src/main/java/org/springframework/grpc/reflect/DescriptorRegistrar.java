@@ -154,6 +154,10 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 		}
 	}
 
+	public void register(Class<?> type, Descriptor descriptor) {
+		this.descriptors.put(type, descriptor);
+	}
+
 	private void process(String owner, Class<?> type) {
 		FileDescriptorProto.Builder builder = FileDescriptorProto.newBuilder();
 		if (this.types.containsKey(type)) {

@@ -18,6 +18,7 @@ package org.springframework.grpc.reflect;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.grpc.sample.proto.HelloWorldProto;
 
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -27,8 +28,26 @@ public class MessageConverterTests {
 
 	private DescriptorRegistrar registry = new DescriptorRegistrar();
 
+
 	@Test
-	public void testConvertToPojo() {
+	public void testConvertGeneratedTypeToPojo() {;
+		MessageConverter converter = new MessageConverter(registry);
+		registry.register(Foo.class, HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
+		Descriptor desc = registry.descriptor(Foo.class);
+		var foo = DynamicMessage.newBuilder(desc)
+				.setField(desc.findFieldByName("name"), "foo")
+				.build();
+
+		Foo convertedFoo = converter.convert(foo, Foo.class);
+
+		assertThat(convertedFoo).isNotNull();
+		assertThat(convertedFoo.getName()).isEqualTo("foo");
+		// The age field is not included in the schema, so it should be 0
+		assertThat(convertedFoo.getAge()).isEqualTo(0);
+	}
+
+	@Test
+	public void testConvertToPojo() {;
 		MessageConverter converter = new MessageConverter(registry);
 		registry.register(Foo.class);
 		Descriptor desc = registry.descriptor(Foo.class);
@@ -74,6 +93,23 @@ public class MessageConverterTests {
 		Object message = converter.convert(foo, Void.class);
 
 		assertThat(message).isNull();
+	}
+
+	@Test
+	public void testConvertToGeneratedMessage() {
+		MessageConverter converter = new MessageConverter(registry);
+		registry.register(Foo.class, HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
+		Descriptor desc = registry.descriptor(Foo.class);
+		Foo foo = new Foo();
+		foo.setName("foo");
+		foo.setAge(30);
+
+		AbstractMessage message = converter.convert(foo);
+
+		assertThat(message).isNotNull();
+		assertThat(message.getField(desc.findFieldByName("name"))).isEqualTo("foo");
+		// Age is not in the schema
+		assertThat(message.getAllFields().size()).isEqualTo(1);
 	}
 
 	@Test
