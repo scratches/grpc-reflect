@@ -29,6 +29,7 @@ import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.FileDescriptor;
+import com.google.protobuf.Descriptors.ServiceDescriptor;
 
 public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorProvider {
 
@@ -156,6 +157,16 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 
 	public void register(Class<?> type, Descriptor descriptor) {
 		this.descriptors.put(type, descriptor);
+	}
+
+	public void register(FileDescriptor file) {
+		for (ServiceDescriptor service : file.getServices()) {
+			register(service);
+		}
+	}
+
+	public void register(ServiceDescriptor service) {
+		this.fileDescriptors.put(service.getName(), service.getFile());
 	}
 
 	private void process(String owner, Class<?> type) {

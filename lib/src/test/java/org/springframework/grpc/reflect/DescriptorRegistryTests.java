@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.lang.reflect.Method;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.grpc.sample.proto.HelloWorldProto;
 import org.springframework.util.StringUtils;
 
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
@@ -27,6 +28,17 @@ import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 
 public class DescriptorRegistryTests {
+
+	@Test
+	public void testRegisterGeneratedTypes() throws Exception {
+		DescriptorRegistrar registry = new DescriptorRegistrar();
+		registry.register(HelloWorldProto.getDescriptor().findServiceByName("Simple"));
+		registry.register(Foo.class, HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
+		// Doesn't make sense to register the same type twice
+		// registry.register(Foo.class, HelloWorldProto.getDescriptor().findMessageTypeByName("HelloReply"));
+		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("HelloRequest");
+		assertThat(method(registry, "Simple/SayHello")).isNotNull();
+	}
 
 	@Test
 	public void testRegisterMethod() throws Exception {
