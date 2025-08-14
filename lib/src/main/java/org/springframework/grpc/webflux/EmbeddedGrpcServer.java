@@ -26,6 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.server.HandlerFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
+import io.grpc.BindableService;
 import io.grpc.Context;
 import io.grpc.InternalServer;
 import io.grpc.Server;
@@ -93,7 +94,8 @@ public class EmbeddedGrpcServer extends Server {
 		return this.getServices();
 	}
 
-	public void addService(ServerServiceDefinition service) {
+	public void addService(BindableService bindable) {
+		ServerServiceDefinition service = bindable.bindService();
 		this.services.add(service);
 		for (ServerMethodDefinition<?, ?> definition : service.getMethods()) {
 			@SuppressWarnings("unchecked")
@@ -101,7 +103,7 @@ public class EmbeddedGrpcServer extends Server {
 			Class<?> outputType = requestHandler.getOutputType(method);
 			this.handlers.put("/" + method.getMethodDescriptor().getFullMethodName(),
 					request -> ServerResponse.ok().contentType(MediaType.valueOf("application/grpc"))
-							.body(requestHandler.handle(method, request), outputType));
+							.body(requestHandler.handle(bindable, method, request), outputType));
 		}
 	}
 

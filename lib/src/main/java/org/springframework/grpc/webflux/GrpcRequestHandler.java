@@ -20,6 +20,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 
 import com.google.protobuf.Message;
 
+import io.grpc.BindableService;
 import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
@@ -53,7 +54,8 @@ public class GrpcRequestHandler<I, O> {
 				.getMessageClass();
 	}
 
-	public Publisher<O> handle(ServerMethodDefinition<I, O> serverMethod, ServerRequest request) {
+	public Publisher<O> handle(BindableService bindable, ServerMethodDefinition<I, O> serverMethod,
+			ServerRequest request) {
 		Class<?> inputType = getInputType(serverMethod);
 		@SuppressWarnings("unchecked")
 		Publisher<I> input = (Publisher<I>) (serverMethod.getMethodDescriptor().getType() == MethodType.BIDI_STREAMING
@@ -63,9 +65,9 @@ public class GrpcRequestHandler<I, O> {
 			case UNARY:
 				return Mono.from(input).map(item -> unary(item, serverMethod));
 			case SERVER_STREAMING:
-				return Mono.from(input).flatMapMany(item -> stream(item, serverMethod));
+				return Mono.from(input).flatMapMany(item -> stream(item, bindable, serverMethod));
 			case BIDI_STREAMING:
-				return bidi(Flux.from(input), serverMethod);
+				return bidi(Flux.from(input), bindable, serverMethod);
 			default:
 				throw new UnsupportedOperationException(
 						"Unsupported method type: " + serverMethod.getMethodDescriptor().getType());
@@ -84,26 +86,35 @@ public class GrpcRequestHandler<I, O> {
 		return entity;
 	}
 
-	private Flux<O> stream(I input, ServerMethodDefinition<I, O> serverMethod) {
+	// TODO: this isn't working for reactive services
+	private Flux<O> stream(I input, BindableService bindable, ServerMethodDefinition<I, O> serverMethod) {
 		var method = serverMethod.getMethodDescriptor();
-		return Flux.<O>create(emitter -> {
+		Flux<O> result = Flux.<O>create(emitter -> {
 			var call = new OneToManyServerCall<I, O>(method, emitter);
 			var listener = serverMethod.getServerCallHandler().startCall(call, null);
 			listener.onMessage(input);
 			listener.onReady();
 			listener.onHalfClose();
 			listener.onComplete();
-		}).subscribeOn(Schedulers.boundedElastic(), false);
+		});
+		if (!isReactive(bindable, serverMethod)) {
+			result = result.subscribeOn(Schedulers.boundedElastic(), false);
+		}
+		return result;
 	}
 
-	private Flux<O> bidi(Flux<I> request, ServerMethodDefinition<I, O> serverMethod) {
+	private Flux<O> bidi(Flux<I> request, BindableService bindable, ServerMethodDefinition<I, O> serverMethod) {
 		var method = serverMethod.getMethodDescriptor();
 		Context context = Context.current().withValue(EmbeddedGrpcServer.SERVER_CONTEXT_KEY, this.server);
 		Context previous = context.attach();
 		try {
 			var call = new ManyToManyServerCall<I, O>(method);
 			var listener = serverMethod.getServerCallHandler().startCall(call, null);
-			return Flux.merge(request.publishOn(Schedulers.boundedElastic())
+			Flux<I> source = request;
+			if (!isReactive(bindable, serverMethod)) {
+				source = request.publishOn(Schedulers.boundedElastic());
+			}
+			return Flux.merge(source
 					.doOnNext(input -> {
 						listener.onMessage(input);
 						listener.onReady();
@@ -116,6 +127,13 @@ public class GrpcRequestHandler<I, O> {
 		} finally {
 			context.detach(previous);
 		}
+	}
+
+	private boolean isReactive(BindableService bindable, ServerMethodDefinition<I, O> serverMethod) {
+		// If we have reason to believe that the bindable is not reactive we need to
+		// ensure that the request is processed on a bounded elastic scheduler to avoid
+		// blocking the event loop.
+		return bindable.getClass().getSuperclass().getName().contains("Reactor");
 	}
 
 	abstract class LocalServerCall<Req, Res> extends ServerCall<Req, Res> {
@@ -198,7 +216,7 @@ public class GrpcRequestHandler<I, O> {
 
 		public Flux<Res> flux() {
 			return this.emitter.asFlux();
-		}	
+		}
 
 		public void complete() {
 			this.emitter.tryEmitComplete();

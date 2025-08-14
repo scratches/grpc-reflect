@@ -39,7 +39,7 @@ public class GrpcWebfluxServerAutoConfiguration {
 	public EmbeddedGrpcServer grpcServer(ObjectProvider<BindableService> bindableServices) throws IOException {
 		EmbeddedGrpcServer server = new EmbeddedGrpcServer();
 		for (BindableService service : bindableServices) {
-			server.addService(service.bindService());
+			server.addService(service);
 		}
 		server.start();
 		return server;
