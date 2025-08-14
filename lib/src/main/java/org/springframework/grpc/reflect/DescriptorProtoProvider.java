@@ -15,6 +15,8 @@
  */
 package org.springframework.grpc.reflect;
 
+import java.lang.reflect.ParameterizedType;
+
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type;
@@ -31,11 +33,14 @@ public interface DescriptorProtoProvider {
 		}
 		int count = 1;
 		for (var field : clazz.getDeclaredFields()) {
-			Type type = findType(field.getType());
+			Type type = findType(field.getType(), field.getGenericType());
 			DescriptorProtos.FieldDescriptorProto.Builder fb = DescriptorProtos.FieldDescriptorProto.newBuilder().setName(field.getName())
 			.setNumber(count).setType(type);
 			if (type == Type.TYPE_MESSAGE) {
 				fb.setTypeName(field.getType().getSimpleName());
+			}
+			if (field.getType().isArray() || Iterable.class.isAssignableFrom(field.getType())) {
+				fb.setLabel(DescriptorProtos.FieldDescriptorProto.Label.LABEL_REPEATED);
 			}
 			builder.addField(fb.build());
 			count++;
@@ -43,7 +48,18 @@ public interface DescriptorProtoProvider {
 		return builder.build();
 	};
 
-	private static DescriptorProtos.FieldDescriptorProto.Type findType(Class<?> type) {
+	private static DescriptorProtos.FieldDescriptorProto.Type findType(Class<?> type, java.lang.reflect.Type genericType) {
+		if (type.isArray()) {
+			type = type.getComponentType();
+		}
+		if (Iterable.class.isAssignableFrom(type)) {
+			if (genericType instanceof ParameterizedType param) {
+				param.getActualTypeArguments();
+				if (param.getActualTypeArguments().length > 0) {
+					type = (Class<?>) param.getActualTypeArguments()[0];
+				}
+			}
+		}
 		if (type == String.class) {
 			return DescriptorProtos.FieldDescriptorProto.Type.TYPE_STRING;
 		}
@@ -64,6 +80,9 @@ public interface DescriptorProtoProvider {
 		}
 		else if (type == byte[].class) {
 			return DescriptorProtos.FieldDescriptorProto.Type.TYPE_BYTES;
+		}
+		else if (type.isEnum()) {
+			return DescriptorProtos.FieldDescriptorProto.Type.TYPE_ENUM;
 		}
 		return DescriptorProtos.FieldDescriptorProto.Type.TYPE_MESSAGE;
 	}

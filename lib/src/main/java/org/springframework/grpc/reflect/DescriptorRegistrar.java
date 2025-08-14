@@ -16,6 +16,7 @@
 package org.springframework.grpc.reflect;
 
 import java.beans.PropertyDescriptor;
+import java.lang.Enum.EnumDesc;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.BeanUtils;
-import org.springframework.cglib.core.ReflectUtils;
 
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
@@ -252,8 +252,64 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 				throw new IllegalArgumentException("Field " + field.getName() + " not found in class "
 						+ responseType.getName() + " for method " + fullMethodName);
 			}
+			// TODO: map types
+			if (field.isRepeated() && !descriptor.getPropertyType().isArray()
+					&& !Iterable.class.isAssignableFrom(descriptor.getPropertyType())) {
+				throw new IllegalArgumentException(
+						"Field " + field.getName() + " is repeated in the schema, but is not a collection in class "
+								+ responseType.getName() + " for method " + fullMethodName);
+			}
 			if (field.getJavaType() == FieldDescriptor.JavaType.MESSAGE) {
 				validateMessage(fullMethodName, descriptor.getPropertyType(), field.getMessageType().getFields());
+			}
+			if (field.getJavaType() == FieldDescriptor.JavaType.ENUM) {
+				if (!descriptor.getPropertyType().isEnum()) {
+					throw new IllegalArgumentException(
+							"Field " + field.getName() + " is an enum in the schema, but is not in class "
+									+ responseType.getName() + " for method " + fullMethodName);
+				}
+			}
+			if (field.getJavaType() == FieldDescriptor.JavaType.BOOLEAN
+					&& !descriptor.getPropertyType().equals(Boolean.class)
+					&& !descriptor.getPropertyType().equals(boolean.class)) {
+				throw new IllegalArgumentException(
+						"Field '" + field.getName() + "' is a boolean in the schema, but is not in class "
+								+ responseType.getName() + " for method " + fullMethodName);
+			}
+			if ((field.getJavaType() == FieldDescriptor.JavaType.STRING
+					|| field.getJavaType() == FieldDescriptor.JavaType.BYTE_STRING)
+					&& !descriptor.getPropertyType().equals(String.class)) {
+				throw new IllegalArgumentException(
+						"Field '" + field.getName() + "' is a string in the schema, but is not in class "
+								+ responseType.getName() + " for method " + fullMethodName);
+			}
+			if (field.getJavaType() == FieldDescriptor.JavaType.DOUBLE
+					&& !descriptor.getPropertyType().equals(Double.class)
+					&& !descriptor.getPropertyType().equals(double.class)) {
+				throw new IllegalArgumentException(
+						"Field '" + field.getName() + "' is a double in the schema, but is not in class "
+								+ responseType.getName() + " for method " + fullMethodName);
+			}
+			if (field.getJavaType() == FieldDescriptor.JavaType.FLOAT
+					&& !descriptor.getPropertyType().equals(Float.class)
+					&& !descriptor.getPropertyType().equals(float.class)) {
+				throw new IllegalArgumentException(
+						"Field '" + field.getName() + "' is a float in the schema, but is not in class "
+								+ responseType.getName() + " for method " + fullMethodName);
+			}
+			if (field.getJavaType() == FieldDescriptor.JavaType.INT
+					&& !descriptor.getPropertyType().equals(Integer.class)
+					&& !descriptor.getPropertyType().equals(int.class)) {
+				throw new IllegalArgumentException(
+						"Field '" + field.getName() + "' is an integer in the schema, but is not in class "
+								+ responseType.getName() + " for method " + fullMethodName);
+			}
+			if (field.getJavaType() == FieldDescriptor.JavaType.LONG
+					&& !descriptor.getPropertyType().equals(Long.class)
+					&& !descriptor.getPropertyType().equals(long.class)) {
+				throw new IllegalArgumentException(
+						"Field '" + field.getName() + "' is a long in the schema, but is not in class "
+								+ responseType.getName() + " for method " + fullMethodName);
 			}
 		}
 		// All fields in the input type must be present in the class

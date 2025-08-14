@@ -15,6 +15,7 @@
  */
 package org.springframework.grpc.reflect;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.lang.reflect.Method;
@@ -58,6 +59,17 @@ public class DescriptorRegistryValidationTests {
 	}
 
 	@Test
+	public void testValidateBadProperty() throws Exception {
+		DescriptorRegistrar registry = new DescriptorRegistrar();
+		registry.register(HelloWorldProto.getDescriptor().findServiceByName("Simple"));
+		registry.register(Foo.class, HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
+		registry.validate("Simple/SayHello", Foo.class, Response.class);
+		String message = assertThrows(IllegalArgumentException.class,
+				() -> registry.validate("Simple/SayHello", Wrong.class, Response.class)).getMessage();
+		assertThat(message).contains("Field 'name'");
+	}
+
+	@Test
 	public void testValidateBadResponse() throws Exception {
 		DescriptorRegistrar registry = new DescriptorRegistrar();
 		registry.register(HelloWorldProto.getDescriptor().findServiceByName("Simple"));
@@ -85,6 +97,19 @@ public class DescriptorRegistryValidationTests {
 		public void setMessage(String message) {
 			this.message = message;
 		}
+	}
+
+	public static class Wrong {
+		private int name;
+
+		public int getName() {
+			return name;
+		}
+
+		public void setName(int name) {
+			this.name = name;
+		}
+
 	}
 
 	public Foo echo(Foo foo) {
