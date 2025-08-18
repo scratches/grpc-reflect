@@ -42,7 +42,10 @@ import io.grpc.protobuf.ProtoMethodDescriptorSupplier;
 import io.grpc.protobuf.ProtoServiceDescriptorSupplier;
 import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ServerCalls;
+import io.grpc.stub.StreamObserver;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Sinks;
+import reactor.core.publisher.Sinks.Many;
 
 public class DynamicServiceFactory {
 
@@ -254,8 +257,49 @@ public class DynamicServiceFactory {
 						}).doOnComplete(() -> obs.onCompleted())
 								.doOnError(error -> obs.onError(error)).subscribe();
 					});
+				case BIDI_STREAMING:
+					return ServerCalls
+							.asyncBidiStreamingCall(obs -> new BidiStreamObserver<I, O>(function, obs, requestType));
 				default:
 					throw new UnsupportedOperationException("Unsupported method type: " + methodType);
+			}
+		}
+
+		private class BidiStreamObserver<I, O> implements StreamObserver<DynamicMessage> {
+			private final StreamObserver<DynamicMessage> obs;
+			private final Class<I> requestType;
+			private Many<I> sink;
+			private Flux<O> output;
+
+			@SuppressWarnings("unchecked")
+			private BidiStreamObserver(Function<?, ?> function, StreamObserver<DynamicMessage> obs,
+					Class<I> requestType) {
+				this.obs = obs;
+				this.requestType = requestType;
+				this.sink = Sinks.many().unicast().onBackpressureBuffer();
+				this.output = Flux.from(((Function<Publisher<I>, Publisher<O>>) function).apply(this.sink.asFlux()));
+				this.output.doOnNext(item -> {
+					obs.onNext((DynamicMessage) converter.convert(item));
+				}).doOnComplete(() -> obs.onCompleted())
+						.doOnError(error -> obs.onError(error)).subscribe();
+			}
+
+			@Override
+			public void onNext(DynamicMessage value) {
+				I input = converter.convert(value, requestType);
+				this.sink.tryEmitNext(input);
+			}
+
+			@Override
+			public void onError(Throwable t) {
+				obs.onError(t);
+				this.sink.tryEmitError(t);
+			}
+
+			@Override
+			public void onCompleted() {
+				obs.onCompleted();
+				this.sink.tryEmitComplete();
 			}
 		}
 
