@@ -16,10 +16,12 @@
 package org.springframework.grpc.reflect;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.reactivestreams.Publisher;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -29,19 +31,18 @@ import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.DynamicMessage;
 
 import io.grpc.BindableService;
-import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.MethodDescriptor.Marshaller;
-import io.grpc.ServerCall;
-import io.grpc.ServerCall.Listener;
+import io.grpc.MethodDescriptor.MethodType;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.ServiceDescriptor;
 import io.grpc.ServiceDescriptor.Builder;
-import io.grpc.Status;
 import io.grpc.protobuf.ProtoMethodDescriptorSupplier;
 import io.grpc.protobuf.ProtoServiceDescriptorSupplier;
 import io.grpc.protobuf.ProtoUtils;
+import io.grpc.stub.ServerCalls;
+import reactor.core.publisher.Flux;
 
 public class DynamicServiceFactory {
 
@@ -129,14 +130,8 @@ public class DynamicServiceFactory {
 			// TODO: support streaming types (Publisher etc.)
 			Class<?> requestType = method.getParameterTypes()[0];
 			Class<?> responseType = method.getReturnType();
-			this.builder.method(StringUtils.capitalize(methodName), requestType, responseType,
+			this.builder.unary(StringUtils.capitalize(methodName), requestType, responseType,
 					request -> invoker(instance, method, request));
-			return this;
-		}
-
-		public <I, O> BindableServiceInstanceBuilder method(String methodName, Class<I> requestType,
-				Class<O> responseType, Function<I, O> function) {
-			this.builder.method(methodName, requestType, responseType, function);
 			return this;
 		}
 
@@ -167,13 +162,32 @@ public class DynamicServiceFactory {
 			this.converter = converter;
 		}
 
-		public <I, O> BindableServiceBuilder method(String methodName, Class<I> requestType, Class<O> responseType,
+		public <I, O> BindableServiceBuilder unary(String methodName, Class<I> requestType, Class<O> responseType,
 				Function<I, O> function) {
+			return method(methodName, requestType, requestType, responseType, responseType, function,
+					MethodDescriptor.MethodType.UNARY);
+		}
+
+		public <I, O> BindableServiceBuilder stream(String methodName, Class<I> requestType, Class<O> responseType,
+				Function<I, Publisher<O>> function) {
+			return method(methodName, requestType, requestType, responseType, responseType, function,
+					MethodDescriptor.MethodType.SERVER_STREAMING);
+		}
+
+		public <I, O> BindableServiceBuilder bidi(String methodName, Class<I> requestType, Class<O> responseType,
+				Function<Publisher<I>, Publisher<O>> function) {
+			return method(methodName, requestType, requestType, responseType, responseType, function,
+					MethodDescriptor.MethodType.BIDI_STREAMING);
+		}
+
+		private <I, O> BindableServiceBuilder method(String methodName, Class<I> requestType, Type genericRequestType,
+				Class<O> responseType, Type genericResponseType,
+				Function<?, ?> function, MethodType methodType) {
 			String fullMethodName = serviceName + "/" + methodName;
 			if (this.registry.file(serviceName) == null
 					|| this.registry.file(serviceName).findServiceByName(serviceName) == null || this.registry
 							.file(serviceName).findServiceByName(serviceName).findMethodByName(methodName) == null) {
-				this.registrar.register(fullMethodName, requestType, responseType);
+				this.registrar.register(fullMethodName, requestType, responseType, methodType);
 			} else {
 				registrar.validate(fullMethodName, requestType, responseType);
 			}
@@ -187,21 +201,14 @@ public class DynamicServiceFactory {
 					.marshaller(DynamicMessage.newBuilder(inputType).build());
 			MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
 					.<DynamicMessage, DynamicMessage>newBuilder()
-					.setType(MethodDescriptor.MethodType.UNARY)
+					.setType(methodType)
 					.setFullMethodName(fullMethodName)
 					.setRequestMarshaller(requestMarshaller)
 					.setResponseMarshaller(responseMarshaller)
 					.setSchemaDescriptor(
 							new SimpleMethodDescriptor(registry.file(serviceName), serviceName, methodName))
 					.build();
-			ServerCallHandler<DynamicMessage, DynamicMessage> handler = new ServerCallHandler<DynamicMessage, DynamicMessage>() {
-				@Override
-				public Listener<DynamicMessage> startCall(ServerCall<DynamicMessage, DynamicMessage> call,
-						Metadata headers) {
-					call.request(2);
-					return new DynamicListener<I, O>(requestType, function, call, headers);
-				}
-			};
+			ServerCallHandler<DynamicMessage, DynamicMessage> handler = handler(requestType, function, methodType);
 			this.handlers.put(methodName, handler);
 			this.descriptors.put(methodName, methodDescriptor);
 			return this;
@@ -225,46 +232,31 @@ public class DynamicServiceFactory {
 			return () -> service.build();
 		}
 
-		class DynamicListener<I, O> extends ServerCall.Listener<DynamicMessage> {
-
-			private ServerCall<DynamicMessage, DynamicMessage> call;
-			private Metadata headers;
-			private Class<I> requestType;
-			private Function<I, O> function;
-
-			public DynamicListener(Class<I> requestType, Function<I, O> function,
-					ServerCall<DynamicMessage, DynamicMessage> call, Metadata headers) {
-				this.requestType = requestType;
-				this.function = function;
-				this.call = call;
-				this.headers = headers;
+		private <I, O> ServerCallHandler<DynamicMessage, DynamicMessage> handler(Class<I> requestType,
+				Function<?, ?> function,
+				MethodType methodType) {
+			switch (methodType) {
+				case UNARY:
+					return ServerCalls.asyncUnaryCall((req, obs) -> {
+						I input = converter.convert(req, requestType);
+						@SuppressWarnings("unchecked")
+						O output = ((Function<I, O>) function).apply(input);
+						obs.onNext((DynamicMessage) converter.convert(output));
+						obs.onCompleted();
+					});
+				case SERVER_STREAMING:
+					return ServerCalls.asyncServerStreamingCall((req, obs) -> {
+						I input = converter.convert(req, requestType);
+						@SuppressWarnings("unchecked")
+						Flux<O> output = Flux.from(((Function<I, Publisher<O>>) function).apply(input));
+						output.doOnNext(item -> {
+							obs.onNext((DynamicMessage) converter.convert(item));
+						}).doOnComplete(() -> obs.onCompleted())
+								.doOnError(error -> obs.onError(error)).subscribe();
+					});
+				default:
+					throw new UnsupportedOperationException("Unsupported method type: " + methodType);
 			}
-
-			@Override
-			public void onCancel() {
-			}
-
-			@Override
-			public void onComplete() {
-			}
-
-			@Override
-			public void onHalfClose() {
-			}
-
-			@Override
-			public void onMessage(DynamicMessage message) {
-				I input = converter.convert(message, requestType);
-				O output = function.apply(input);
-				this.call.sendMessage((DynamicMessage) converter.convert(output));
-				this.call.close(Status.OK, new Metadata());
-			}
-
-			@Override
-			public void onReady() {
-				call.sendHeaders(this.headers);
-			}
-
 		}
 
 	}

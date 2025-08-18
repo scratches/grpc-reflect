@@ -36,6 +36,8 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.Descriptors.ServiceDescriptor;
 
+import io.grpc.MethodDescriptor.MethodType;
+
 public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorProvider {
 
 	private final DescriptorProtoProvider protos;
@@ -59,12 +61,27 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 	}
 
 	public <I, O> void register(String fullMethodName, Class<I> input, Class<O> output) {
+		register(fullMethodName, input, output, MethodType.UNARY);
+	}
+
+	public <I, O> void register(String fullMethodName, Class<I> input, Class<O> output, MethodType methodType) {
 		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
 		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
-		MethodDescriptorProto proto = MethodDescriptorProto.newBuilder()
+		MethodDescriptorProto.Builder builder = MethodDescriptorProto.newBuilder()
 				.setName(methodName)
 				.setInputType(input.getSimpleName())
-				.setOutputType(output.getSimpleName())
+				.setOutputType(output.getSimpleName());
+		switch (methodType) {
+			case SERVER_STREAMING:
+				builder.setServerStreaming(true);
+				break;
+			case BIDI_STREAMING:
+				builder.setServerStreaming(true);
+				builder.setClientStreaming(true);
+				break;
+			default:
+		}
+		MethodDescriptorProto proto = builder
 				.build();
 		register(DescriptorRegistrar.class, serviceName, methodName, proto, input, output);
 	}

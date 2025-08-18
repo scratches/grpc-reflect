@@ -159,7 +159,7 @@ public class GrpcServerApplicationTests {
 
 		@Bean
 		BindableService echoService(DynamicServiceFactory factory) {
-			return factory.service("EchoService").method("Echo",
+			return factory.service("EchoService").unary("Echo",
 					Foo.class, Foo.class, Function.identity()).build();
 		}
 

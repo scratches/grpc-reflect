@@ -1,8 +1,8 @@
 package org.springframework.grpc.reflect;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.time.Duration;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -13,19 +13,16 @@ import org.springframework.boot.test.context.SpringBootTest.UseMainMethod;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.grpc.client.GrpcChannelFactory;
-import org.springframework.grpc.sample.proto.HelloReply;
-import org.springframework.grpc.sample.proto.HelloRequest;
-import org.springframework.grpc.sample.proto.SimpleGrpc;
-import org.springframework.grpc.sample.proto.SimpleGrpc.SimpleBlockingStub;
+import org.springframework.grpc.reflect.FooService.Input;
+import org.springframework.grpc.reflect.FooService.Output;
 import org.springframework.test.annotation.DirtiesContext;
 
 import io.grpc.BindableService;
-import reactor.core.publisher.Flux;
 
 @SpringBootTest(properties = { "spring.grpc.server.port=0",
 		"spring.grpc.client.default-channel.address=0.0.0.0:${local.grpc.port}" }, useMainMethod = UseMainMethod.ALWAYS)
 @DirtiesContext
-public class GrpcServerApplicationTests {
+public class GrpcServerApplicationDynamicStubTests {
 
 	public static void main(String[] args) {
 		new SpringApplicationBuilder(GrpcServerApplication.class, ExtraConfiguration.class).run();
@@ -40,36 +37,52 @@ public class GrpcServerApplicationTests {
 
 	@Test
 	void dynamicServiceFromFunction() {
-		SimpleBlockingStub stub = SimpleGrpc.newBlockingStub(this.channelFactory.createChannel("default"));
-		HelloRequest.Builder request = HelloRequest.newBuilder();
+		DynamicStub stub = new DynamicStub(new DescriptorRegistrar(), this.channelFactory.createChannel("default"));
+		Foo request = new Foo();
 		request.setName("Alien");
-		HelloReply response = stub.sayHello(request.build());
-		assertEquals("Alien", response.getMessage());
+		Foo response = stub.call("EchoService/Echo", request, Foo.class);
+		assertEquals("Alien", response.getName());
 	}
 
 	@Test
-	void streamingServiceFromFunction() {
-		SimpleBlockingStub stub = SimpleGrpc.newBlockingStub(this.channelFactory.createChannel("default"));
-		HelloRequest.Builder request = HelloRequest.newBuilder();
-		request.setName("Alien");
-		HelloReply response = stub.streamHello(request.build()).next();
-		assertEquals("Alien (0)", response.getMessage());
+	void dynamicServiceFromInstance() {
+		DynamicStub stub = new DynamicStub(new DescriptorRegistrar(), this.channelFactory.createChannel("default"));
+		Input request = new Input();
+		Output response = stub.call("FooService/Process", request, Output.class);
+		assertThat(response).isNotNull();
 	}
 
 	@TestConfiguration(proxyBeanMethods = false)
+	@EnableGrpcMapping
 	static class ExtraConfiguration {
 
 		@Bean
 		BindableService echoService(DynamicServiceFactory factory) {
-			return factory.service("Simple").unary("SayHello",
-					Foo.class, Foo.class, Function.identity())
-					.stream("StreamHello",
-							Foo.class, Foo.class,
-							foo -> Flux.interval(Duration.ofMillis(200)).take(5)
-									.map(val -> new Foo(foo.getName() + " (" + val + ")")))
-					.build();
+			return factory.service("EchoService").unary("Echo",
+					Foo.class, Foo.class, Function.identity()).build();
 		}
 
 	}
 
+}
+
+@GrpcController
+class FooService {
+
+	@GrpcMapping
+	public Foo echo(Foo input) {
+		return input;
+	}
+
+	@GrpcMapping
+	public Output process(Input input) {
+		return new Output();
+	}
+
+	static class Input {
+	}
+	
+	static class Output {
+	}
+	
 }
