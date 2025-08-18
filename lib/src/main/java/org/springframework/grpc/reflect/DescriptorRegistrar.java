@@ -60,11 +60,19 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 		this.strict = strict;
 	}
 
-	public <I, O> void register(String fullMethodName, Class<I> input, Class<O> output) {
+	public <I, O> void unary(String fullMethodName, Class<I> input, Class<O> output) {
 		register(fullMethodName, input, output, MethodType.UNARY);
 	}
 
-	public <I, O> void register(String fullMethodName, Class<I> input, Class<O> output, MethodType methodType) {
+	public <I, O> void stream(String fullMethodName, Class<I> input, Class<O> output) {
+		register(fullMethodName, input, output, MethodType.SERVER_STREAMING);
+	}
+
+	public <I, O> void bidi(String fullMethodName, Class<I> input, Class<O> output) {
+		register(fullMethodName, input, output, MethodType.BIDI_STREAMING);
+	}
+
+	private <I, O> void register(String fullMethodName, Class<I> input, Class<O> output, MethodType methodType) {
 		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
 		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
 		MethodDescriptorProto.Builder builder = MethodDescriptorProto.newBuilder()

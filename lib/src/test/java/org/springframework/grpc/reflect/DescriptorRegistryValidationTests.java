@@ -83,7 +83,7 @@ public class DescriptorRegistryValidationTests {
 		Class<?> owner = method.getDeclaringClass();
 		Class<?> inputType = method.getParameterTypes()[0];
 		Class<?> outputType = method.getReturnType();
-		registry.register(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
+		registry.unary(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
 				outputType);
 	}
 

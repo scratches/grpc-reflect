@@ -190,7 +190,19 @@ public class DynamicServiceFactory {
 			if (this.registry.file(serviceName) == null
 					|| this.registry.file(serviceName).findServiceByName(serviceName) == null || this.registry
 							.file(serviceName).findServiceByName(serviceName).findMethodByName(methodName) == null) {
-				this.registrar.register(fullMethodName, requestType, responseType, methodType);
+				switch (methodType) {
+					case UNARY:
+						this.registrar.unary(fullMethodName, requestType, responseType);
+						break;
+					case SERVER_STREAMING:
+						this.registrar.stream(fullMethodName, requestType, responseType);
+						break;
+					case BIDI_STREAMING:
+						this.registrar.bidi(fullMethodName, requestType, responseType);
+						break;
+					default:
+						throw new UnsupportedOperationException();
+				}
 			} else {
 				registrar.validate(fullMethodName, requestType, responseType);
 			}

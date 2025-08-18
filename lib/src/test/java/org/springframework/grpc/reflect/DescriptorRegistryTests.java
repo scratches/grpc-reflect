@@ -54,7 +54,7 @@ public class DescriptorRegistryTests {
 		Class<?> owner = method.getDeclaringClass();
 		Class<?> inputType = method.getParameterTypes()[0];
 		Class<?> outputType = method.getReturnType();
-		registry.register(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
+		registry.unary(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
 				outputType);
 	}
 
@@ -89,7 +89,7 @@ public class DescriptorRegistryTests {
 	@Test
 	public void testRegisterUnownedMethod() throws Exception {
 		DescriptorRegistrar registry = new DescriptorRegistrar();
-		registry.register("Service/Spam", Foo.class, Bar.class);
+		registry.unary("Service/Spam", Foo.class, Bar.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
 		assertThat(method(registry, "Service/Spam")).isNotNull();
@@ -98,10 +98,10 @@ public class DescriptorRegistryTests {
 	@Test
 	public void testRegisterTwoUnownedMethods() throws Exception {
 		DescriptorRegistrar registry = new DescriptorRegistrar();
-		registry.register("Service/Echo", Foo.class, Foo.class);
+		registry.unary("Service/Echo", Foo.class, Foo.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "Service/Echo")).isNotNull();
-		registry.register("Service/Spam", Foo.class, Bar.class);
+		registry.unary("Service/Spam", Foo.class, Bar.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "Service/Echo")).isNotNull();
 		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
@@ -111,10 +111,10 @@ public class DescriptorRegistryTests {
 	@Test
 	public void testRegisterTwoUnownedMethodsFromDifferentServices() throws Exception {
 		DescriptorRegistrar registry = new DescriptorRegistrar();
-		registry.register("EchoService/Echo", Foo.class, Foo.class);
+		registry.unary("EchoService/Echo", Foo.class, Foo.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "EchoService/Echo")).isNotNull();
-		registry.register("Service/Spam", Foo.class, Bar.class);
+		registry.unary("Service/Spam", Foo.class, Bar.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "EchoService/Echo")).isNotNull();
 		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
@@ -127,7 +127,7 @@ public class DescriptorRegistryTests {
 		register(registry, DescriptorRegistryTests.class.getMethod("echo", Foo.class));
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
-		registry.register("Service/Spam", Foo.class, Bar.class);
+		registry.unary("Service/Spam", Foo.class, Bar.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
 		assertThat(registry.descriptor(Bar.class).getFullName()).isEqualTo("Bar");
