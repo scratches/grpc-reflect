@@ -71,7 +71,7 @@ public class DynamicStubFactory implements StubFactory<Object> {
 			String methodName = service(client, invocation.getMethod().getDeclaringClass()) + "/"
 					+ method(mapping, invocation.getMethod());
 			Object[] arguments = invocation.getArguments();
-			return this.stub.call(methodName, arguments[0], invocation.getMethod().getReturnType());
+			return this.stub.unary(methodName, arguments[0], invocation.getMethod().getReturnType());
 		}
 
 		private String method(GrpcMapping mapping, Method method) {

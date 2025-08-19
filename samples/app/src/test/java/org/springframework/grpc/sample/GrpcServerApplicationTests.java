@@ -126,7 +126,7 @@ public class GrpcServerApplicationTests {
 		DynamicStub stub = new DynamicStub(registry, this.channel);
 		Hello request = new Hello();
 		request.setName("Alien");
-		Hello response = stub.call("EchoService/Echo", request, Hello.class);
+		Hello response = stub.unary("EchoService/Echo", request, Hello.class);
 		assertEquals("Alien", response.getName());
 	}
 
@@ -134,7 +134,7 @@ public class GrpcServerApplicationTests {
 	void dynamicServiceFromInstance() {
 		DynamicStub stub = new DynamicStub(registry, this.channel);
 		Input request = new Input();
-		Output response = stub.call("FooService/Process", request, Output.class);
+		Output response = stub.unary("FooService/Process", request, Output.class);
 		assertThat(response).isNotNull();
 	}
 
@@ -143,7 +143,7 @@ public class GrpcServerApplicationTests {
 		DynamicStub stub = new DynamicStub(registry, this.channel);
 		Hello request = new Hello();
 		request.setName("Alien");
-		Hello response = stub.call("Simple/SayHello", request, Hello.class);
+		Hello response = stub.unary("Simple/SayHello", request, Hello.class);
 		assertEquals("Hello ==> Alien", response.getName());
 	}
 

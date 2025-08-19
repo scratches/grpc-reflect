@@ -15,6 +15,8 @@
  */
 package org.springframework.grpc.reflect;
 
+import org.reactivestreams.Publisher;
+
 import com.google.protobuf.DynamicMessage;
 
 import io.grpc.CallOptions;
@@ -24,6 +26,10 @@ import io.grpc.MethodDescriptor.Marshaller;
 import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.AbstractStub;
 import io.grpc.stub.ClientCalls;
+import io.grpc.stub.StreamObserver;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Sinks;
+import reactor.core.publisher.Sinks.Many;
 
 public class DynamicStub extends AbstractStub<DynamicStub> {
 
@@ -44,7 +50,101 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 		return new DynamicStub(new DescriptorRegistrar(), channel);
 	}
 
-	public <T> T call(String fullMethodName, Object request, Class<T> responseType) {
+	public <S, T> Flux<T> bidi(String fullMethodName, Publisher<S> request, Class<S> requestType,
+			Class<T> responseType) {
+		if (request == null) {
+			throw new IllegalArgumentException("Request cannot be null");
+		}
+		if (responseType == null) {
+			throw new IllegalArgumentException("Response type cannot be null");
+		}
+		if (this.registry.descriptor(responseType) == null) {
+			this.registry.register(responseType);
+		}
+		if (this.registry.descriptor(requestType) == null) {
+			this.registry.register(requestType);
+		}
+		Marshaller<DynamicMessage> marshaller = ProtoUtils
+				.marshaller(DynamicMessage.newBuilder(registry.descriptor(responseType)).build());
+		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
+				.<DynamicMessage, DynamicMessage>newBuilder()
+				.setType(MethodDescriptor.MethodType.BIDI_STREAMING)
+				.setFullMethodName(fullMethodName)
+				.setRequestMarshaller(marshaller)
+				.setResponseMarshaller(marshaller)
+				.build();
+		Many<T> sink = Sinks.many().multicast().onBackpressureBuffer();
+		StreamObserver<DynamicMessage> requests = ClientCalls.asyncBidiStreamingCall(
+				getChannel().newCall(methodDescriptor, getCallOptions()),
+				new StreamObserver<DynamicMessage>() {
+
+					@Override
+					public void onNext(DynamicMessage value) {
+						sink.tryEmitNext(converter.convert(value, responseType));
+					}
+
+					@Override
+					public void onError(Throwable t) {
+						sink.tryEmitError(t);
+					}
+
+					@Override
+					public void onCompleted() {
+						sink.tryEmitComplete();
+					}
+
+				});
+		Flux.from(request).doOnComplete(() -> requests.onCompleted()).doOnError(error -> requests.onError(error))
+				.doOnNext(msg -> requests.onNext((DynamicMessage) converter.convert(msg))).subscribe();
+		return sink.asFlux();
+	}
+
+	public <T> Flux<T> stream(String fullMethodName, Object request, Class<T> responseType) {
+		if (request == null) {
+			throw new IllegalArgumentException("Request cannot be null");
+		}
+		if (responseType == null) {
+			throw new IllegalArgumentException("Response type cannot be null");
+		}
+		if (this.registry.descriptor(responseType) == null) {
+			this.registry.register(responseType);
+		}
+		if (this.registry.descriptor(request.getClass()) == null) {
+			this.registry.register(request.getClass());
+		}
+		Marshaller<DynamicMessage> marshaller = ProtoUtils
+				.marshaller(DynamicMessage.newBuilder(registry.descriptor(responseType)).build());
+		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
+				.<DynamicMessage, DynamicMessage>newBuilder()
+				.setType(MethodDescriptor.MethodType.SERVER_STREAMING)
+				.setFullMethodName(fullMethodName)
+				.setRequestMarshaller(marshaller)
+				.setResponseMarshaller(marshaller)
+				.build();
+		Many<T> sink = Sinks.many().multicast().onBackpressureBuffer();
+		ClientCalls.asyncServerStreamingCall(getChannel().newCall(methodDescriptor, getCallOptions()),
+				(DynamicMessage) converter.convert(request), new StreamObserver<DynamicMessage>() {
+
+					@Override
+					public void onNext(DynamicMessage value) {
+						sink.tryEmitNext(converter.convert(value, responseType));
+					}
+
+					@Override
+					public void onError(Throwable t) {
+						sink.tryEmitError(t);
+					}
+
+					@Override
+					public void onCompleted() {
+						sink.tryEmitComplete();
+					}
+
+				});
+		return sink.asFlux();
+	}
+
+	public <T> T unary(String fullMethodName, Object request, Class<T> responseType) {
 		if (request == null) {
 			throw new IllegalArgumentException("Request cannot be null");
 		}

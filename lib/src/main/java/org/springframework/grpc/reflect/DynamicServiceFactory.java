@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.checkerframework.checker.units.qual.m;
 import org.reactivestreams.Publisher;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
@@ -132,9 +133,22 @@ public class DynamicServiceFactory {
 			}
 			// TODO: support streaming types (Publisher etc.)
 			Class<?> requestType = method.getParameterTypes()[0];
+			Type genericRequestType = method.getGenericParameterTypes()[0];
 			Class<?> responseType = method.getReturnType();
-			this.builder.unary(StringUtils.capitalize(methodName), requestType, responseType,
-					request -> invoker(instance, method, request));
+			Type genericResponseType = method.getGenericReturnType();
+			if (requestType.equals(genericRequestType) && responseType.equals(genericResponseType)) {
+				this.builder.unary(StringUtils.capitalize(methodName), requestType, responseType,
+						request -> invoker(instance, method, request));
+			} else if (Publisher.class.isAssignableFrom(responseType)) {
+				if (Publisher.class.isAssignableFrom(requestType)) {
+					this.builder.bidi(methodName, requestType, responseType, request -> invoker(instance, method, request));
+				} else {
+					this.builder.stream(methodName, requestType, responseType, request -> invoker(instance, method, request));
+				}
+			} else {
+				throw new IllegalStateException(
+						"Unsupported request and response types [" + requestType + ", " + responseType + "]");
+			}
 			return this;
 		}
 
@@ -167,24 +181,24 @@ public class DynamicServiceFactory {
 
 		public <I, O> BindableServiceBuilder unary(String methodName, Class<I> requestType, Class<O> responseType,
 				Function<I, O> function) {
-			return method(methodName, requestType, requestType, responseType, responseType, function,
+			return method(methodName, requestType, responseType, function,
 					MethodDescriptor.MethodType.UNARY);
 		}
 
 		public <I, O> BindableServiceBuilder stream(String methodName, Class<I> requestType, Class<O> responseType,
 				Function<I, Publisher<O>> function) {
-			return method(methodName, requestType, requestType, responseType, responseType, function,
+			return method(methodName, requestType, responseType, function,
 					MethodDescriptor.MethodType.SERVER_STREAMING);
 		}
 
 		public <I, O> BindableServiceBuilder bidi(String methodName, Class<I> requestType, Class<O> responseType,
 				Function<Publisher<I>, Publisher<O>> function) {
-			return method(methodName, requestType, requestType, responseType, responseType, function,
+			return method(methodName, requestType, responseType, function,
 					MethodDescriptor.MethodType.BIDI_STREAMING);
 		}
 
-		private <I, O> BindableServiceBuilder method(String methodName, Class<I> requestType, Type genericRequestType,
-				Class<O> responseType, Type genericResponseType,
+		private <I, O> BindableServiceBuilder method(String methodName, Class<I> requestType,
+				Class<O> responseType,
 				Function<?, ?> function, MethodType methodType) {
 			String fullMethodName = serviceName + "/" + methodName;
 			if (this.registry.file(serviceName) == null
