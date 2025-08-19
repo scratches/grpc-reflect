@@ -16,12 +16,12 @@
 package org.springframework.grpc.reflect;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.checkerframework.checker.units.qual.m;
 import org.reactivestreams.Publisher;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
@@ -131,7 +131,6 @@ public class DynamicServiceFactory {
 				throw new IllegalArgumentException(
 						"Method " + methodName + " must have exactly one parameter in class " + owner.getName());
 			}
-			// TODO: support streaming types (Publisher etc.)
 			Class<?> requestType = method.getParameterTypes()[0];
 			Type genericRequestType = method.getGenericParameterTypes()[0];
 			Class<?> responseType = method.getReturnType();
@@ -140,10 +139,14 @@ public class DynamicServiceFactory {
 				this.builder.unary(StringUtils.capitalize(methodName), requestType, responseType,
 						request -> invoker(instance, method, request));
 			} else if (Publisher.class.isAssignableFrom(responseType)) {
+				responseType = (Class<?>) ((ParameterizedType) genericResponseType).getActualTypeArguments()[0];
 				if (Publisher.class.isAssignableFrom(requestType)) {
-					this.builder.bidi(methodName, requestType, responseType, request -> invoker(instance, method, request));
+					requestType = (Class<?>) ((ParameterizedType) genericRequestType).getActualTypeArguments()[0];
+					this.builder.bidi(methodName, requestType, responseType,
+							request -> invoker(instance, method, request));
 				} else {
-					this.builder.stream(methodName, requestType, responseType, request -> invoker(instance, method, request));
+					this.builder.stream(methodName, requestType, responseType,
+							request -> invoker(instance, method, request));
 				}
 			} else {
 				throw new IllegalStateException(
@@ -306,8 +309,7 @@ public class DynamicServiceFactory {
 				this.output = Flux.from(((Function<Publisher<I>, Publisher<O>>) function).apply(this.sink.asFlux()));
 				this.output.doOnNext(item -> {
 					obs.onNext((DynamicMessage) converter.convert(item));
-				}).doOnComplete(() -> obs.onCompleted())
-						.doOnError(error -> obs.onError(error)).subscribe();
+				}).subscribe();
 			}
 
 			@Override

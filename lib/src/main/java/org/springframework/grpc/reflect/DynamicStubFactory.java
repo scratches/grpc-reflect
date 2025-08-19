@@ -16,16 +16,19 @@
 package org.springframework.grpc.reflect;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.util.function.Supplier;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.reactivestreams.Publisher;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.grpc.client.StubFactory;
 import org.springframework.util.StringUtils;
 
 import io.grpc.ManagedChannel;
+import reactor.core.publisher.Flux;
 
 public class DynamicStubFactory implements StubFactory<Object> {
 
@@ -71,6 +74,19 @@ public class DynamicStubFactory implements StubFactory<Object> {
 			String methodName = service(client, invocation.getMethod().getDeclaringClass()) + "/"
 					+ method(mapping, invocation.getMethod());
 			Object[] arguments = invocation.getArguments();
+			if (Publisher.class.isAssignableFrom(invocation.getMethod().getParameterTypes()[0])) {
+				Class<?> requestType = (Class<?>) ((ParameterizedType) (invocation.getMethod()
+						.getGenericParameterTypes()[0])).getActualTypeArguments()[0];
+				if (Publisher.class.isAssignableFrom(invocation.getMethod().getReturnType())) {
+					Class<?> responseType = (Class<?>) ((ParameterizedType) (invocation.getMethod()
+							.getGenericReturnType())).getActualTypeArguments()[0];
+					@SuppressWarnings({ "rawtypes", "unchecked" })
+					Flux<?> result = this.stub.bidi(methodName, (Publisher) arguments[0], responseType, requestType);
+					return result;
+				} else {
+					return this.stub.stream(methodName, requestType, invocation.getMethod().getReturnType());
+				}
+			}
 			return this.stub.unary(methodName, arguments[0], invocation.getMethod().getReturnType());
 		}
 
