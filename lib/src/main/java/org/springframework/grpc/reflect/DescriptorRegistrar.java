@@ -16,7 +16,6 @@
 package org.springframework.grpc.reflect;
 
 import java.beans.PropertyDescriptor;
-import java.lang.Enum.EnumDesc;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
