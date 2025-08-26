@@ -18,7 +18,7 @@ package org.springframework.grpc.reflect;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.grpc.sample.proto.HelloWorldProto;
+import org.springframework.grpc.sample.proto.HelloRequest;
 
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -26,13 +26,12 @@ import com.google.protobuf.DynamicMessage;
 
 public class MessageConverterTests {
 
-	private DescriptorRegistrar registry = new DescriptorRegistrar();
-
+	private DescriptorProvider registry = DescriptorProvider.DEFAULT_INSTANCE;;
 
 	@Test
-	public void testConvertGeneratedTypeToPojo() {;
+	public void testConvertGeneratedTypeToPojo() {
+		;
 		MessageConverter converter = new MessageConverter(registry);
-		registry.register(Foo.class, HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
 		Descriptor desc = registry.descriptor(Foo.class);
 		var foo = DynamicMessage.newBuilder(desc)
 				.setField(desc.findFieldByName("name"), "foo")
@@ -47,9 +46,9 @@ public class MessageConverterTests {
 	}
 
 	@Test
-	public void testConvertToPojo() {;
+	public void testConvertToPojo() {
+		;
 		MessageConverter converter = new MessageConverter(registry);
-		registry.register(Foo.class);
 		Descriptor desc = registry.descriptor(Foo.class);
 		var foo = DynamicMessage.newBuilder(desc)
 				.setField(desc.findFieldByName("name"), "foo")
@@ -66,8 +65,6 @@ public class MessageConverterTests {
 	@Test
 	public void testConvertToPojoWithNested() {
 		MessageConverter converter = new MessageConverter(registry);
-		registry.register(Foo.class);
-		registry.register(Bar.class);
 		Descriptor desc = registry.descriptor(Foo.class);
 		var foo = DynamicMessage.newBuilder(desc)
 				.setField(desc.findFieldByName("name"), "foo")
@@ -87,7 +84,6 @@ public class MessageConverterTests {
 	@Test
 	public void testConvertToVoid() {
 		MessageConverter converter = new MessageConverter(registry);
-		registry.register(Void.class);
 		var foo = DynamicMessage.newBuilder(registry.descriptor(Void.class))
 				.build();
 		Object message = converter.convert(foo, Void.class);
@@ -97,13 +93,17 @@ public class MessageConverterTests {
 
 	@Test
 	public void testConvertToGeneratedMessage() {
-		MessageConverter converter = new MessageConverter(registry);
-		registry.register(Foo.class, HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
-		Descriptor desc = registry.descriptor(Foo.class);
+		DescriptorRegistrar catalog = new DescriptorRegistrar();
+		catalog.register(Foo.class, HelloRequest.getDescriptor());
+		MessageConverter converter = new MessageConverter(catalog);
+		Descriptor desc = HelloRequest.getDescriptor();
 		Foo foo = new Foo();
 		foo.setName("foo");
 		foo.setAge(30);
 
+		// TODO: a MessageConverter ought to be able to convert a Foo into a number of
+		// different message types, so maybe it needs a method with a Descriptor
+		// argument?
 		AbstractMessage message = converter.convert(foo);
 
 		assertThat(message).isNotNull();
@@ -115,7 +115,6 @@ public class MessageConverterTests {
 	@Test
 	public void testConvertToMessage() {
 		MessageConverter converter = new MessageConverter(registry);
-		registry.register(Foo.class);
 		Descriptor desc = registry.descriptor(Foo.class);
 		Foo foo = new Foo();
 		foo.setName("foo");
@@ -131,8 +130,6 @@ public class MessageConverterTests {
 	@Test
 	public void testConvertToNestedMessage() {
 		MessageConverter converter = new MessageConverter(registry);
-		registry.register(Foo.class);
-		registry.register(Bar.class);
 		Descriptor desc = registry.descriptor(Foo.class);
 		Foo foo = new Foo();
 		foo.setName("foo");
@@ -152,7 +149,6 @@ public class MessageConverterTests {
 	@Test
 	public void testConvertVoidToMessage() {
 		MessageConverter converter = new MessageConverter(registry);
-		registry.register(Void.class);
 
 		AbstractMessage message = converter.convert(null);
 
