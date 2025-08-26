@@ -21,11 +21,11 @@ import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type;
 
-public interface DescriptorProtoProvider {
+public interface DescriptorProtoExtractor {
 
 	DescriptorProto proto(Class<?> clazz);
 
-	public DescriptorProtoProvider DEFAULT_INSTANCE = clazz -> {
+	public DescriptorProtoExtractor DEFAULT_INSTANCE = clazz -> {
 		DescriptorProto.Builder builder = DescriptorProto.newBuilder();
 		builder.setName(clazz.getSimpleName());
 		if (clazz == Void.class || clazz == Void.TYPE) {

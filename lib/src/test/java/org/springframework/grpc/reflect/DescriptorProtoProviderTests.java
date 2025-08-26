@@ -28,7 +28,7 @@ import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Label;
 public class DescriptorProtoProviderTests {
 	@Test
 	public void testDefaultInstance() throws Exception {
-		DescriptorProtoProvider provider = DescriptorProtoProvider.DEFAULT_INSTANCE;
+		DescriptorProtoExtractor provider = DescriptorProtoExtractor.DEFAULT_INSTANCE;
 		DescriptorProto proto = provider.proto(Foo.class);
 		assertThat(proto.getName()).isEqualTo("Foo");
 		assertThat(proto.getFieldCount()).isEqualTo(2);
@@ -40,7 +40,7 @@ public class DescriptorProtoProviderTests {
 
 	@Test
 	public void testVoidType() throws Exception {
-		DescriptorProtoProvider provider = DescriptorProtoProvider.DEFAULT_INSTANCE;
+		DescriptorProtoExtractor provider = DescriptorProtoExtractor.DEFAULT_INSTANCE;
 		DescriptorProto proto = provider.proto(Void.class);
 		assertThat(proto.getName()).isEqualTo("Void");
 		assertThat(proto.getFieldCount()).isEqualTo(0);
@@ -48,7 +48,7 @@ public class DescriptorProtoProviderTests {
 
 	@Test
 	public void testArrayType() throws Exception {
-		DescriptorProtoProvider provider = DescriptorProtoProvider.DEFAULT_INSTANCE;
+		DescriptorProtoExtractor provider = DescriptorProtoExtractor.DEFAULT_INSTANCE;
 		DescriptorProto proto = provider.proto(TestBean.class);
 		assertThat(proto.getName()).isEqualTo("TestBean");
 		assertThat(proto.getFieldCount()).isEqualTo(1);
@@ -59,7 +59,7 @@ public class DescriptorProtoProviderTests {
 
 	@Test
 	public void testIterableType() throws Exception {
-		DescriptorProtoProvider provider = DescriptorProtoProvider.DEFAULT_INSTANCE;
+		DescriptorProtoExtractor provider = DescriptorProtoExtractor.DEFAULT_INSTANCE;
 		DescriptorProto proto = provider.proto(TestList.class);
 		assertThat(proto.getName()).isEqualTo("TestList");
 		assertThat(proto.getFieldCount()).isEqualTo(1);

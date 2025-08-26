@@ -39,19 +39,19 @@ import io.grpc.MethodDescriptor.MethodType;
 
 public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorProvider {
 
-	private final DescriptorProtoProvider protos;
+	private final DescriptorProtoExtractor protos;
+	private final DescriptorCatalog catalog = new DescriptorCatalog();
 	private Map<String, ServiceDescriptorProto> serviceProtos = new HashMap<>();
 	private Map<String, List<Class<?>>> typesPerService = new HashMap<>();
 	private Map<Class<?>, Descriptor> descriptors = new HashMap<>();
 	private Map<Class<?>, FileDescriptor> types = new HashMap<>();
-	private Map<String, FileDescriptor> fileDescriptors = new HashMap<>();
 	private boolean strict = true;
 
 	public DescriptorRegistrar() {
-		this(DescriptorProtoProvider.DEFAULT_INSTANCE);
+		this(DescriptorProtoExtractor.DEFAULT_INSTANCE);
 	}
 
-	public DescriptorRegistrar(DescriptorProtoProvider protos) {
+	public DescriptorRegistrar(DescriptorProtoExtractor protos) {
 		this.protos = protos;
 	}
 
@@ -123,8 +123,8 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 
 	private void process(String owner) {
 		FileDescriptorProto.Builder builder = FileDescriptorProto.newBuilder();
-		if (this.fileDescriptors.containsKey(owner)) {
-			builder = this.fileDescriptors.get(owner).toProto().toBuilder();
+		if (this.catalog.file(owner) != null) {
+			builder = this.catalog.file(owner).toProto().toBuilder();
 		} else {
 			builder.setName(owner + ".proto");
 			builder.setSyntax("proto3");
@@ -146,9 +146,7 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 		try {
 			FileDescriptor proto = FileDescriptor.buildFrom(builder.build(),
 					dependencies.toArray(new FileDescriptor[0]));
-			proto.getServices().forEach(descriptor -> {
-				this.fileDescriptors.put(descriptor.getName(), proto);
-			});
+			this.catalog.register(proto);
 		} catch (DescriptorValidationException e) {
 			throw new IllegalStateException(e);
 		}
@@ -200,7 +198,7 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 	}
 
 	public void register(ServiceDescriptor service) {
-		this.fileDescriptors.put(service.getName(), service.getFile());
+		this.catalog.register(service.getFile());
 	}
 
 	private void process(String owner, Class<?> type) {
@@ -231,7 +229,7 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 			proto.getMessageTypes()
 					.forEach(descriptor -> this.descriptors.put(types.get(descriptor.getName()), descriptor));
 			proto.getServices().forEach(descriptor -> {
-				this.fileDescriptors.put(descriptor.getName(), proto);
+				this.catalog.register(proto);
 			});
 			this.types.put(type, proto);
 		} catch (DescriptorValidationException e) {
@@ -246,14 +244,14 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 
 	@Override
 	public FileDescriptor file(String serviceName) {
-		return this.fileDescriptors.get(serviceName);
+		return this.catalog.file(serviceName);
 	}
 
 	public void validate(String fullMethodName, Class<?> requestType, Class<?> responseType) {
 		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
 		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
-		if (this.fileDescriptors.containsKey(serviceName)) {
-			FileDescriptor file = this.fileDescriptors.get(serviceName);
+		if (this.catalog.file(serviceName) != null) {
+			FileDescriptor file = this.catalog.file(serviceName);
 			ServiceDescriptor service = file.findServiceByName(serviceName);
 			if (service == null || service.findMethodByName(methodName) == null) {
 				throw new IllegalStateException("Service or method not found: " + fullMethodName);
