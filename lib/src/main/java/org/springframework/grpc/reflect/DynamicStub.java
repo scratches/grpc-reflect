@@ -59,19 +59,23 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 			throw new IllegalArgumentException("Response type cannot be null");
 		}
 		if (this.registry.descriptor(responseType) == null) {
+			// TODO: this method should be obsolete. Maybe we should throw an error instead?
 			this.registry.register(responseType);
 		}
 		if (this.registry.descriptor(requestType) == null) {
+			// TODO: this method should be obsolete. Maybe we should throw an error instead?
 			this.registry.register(requestType);
 		}
-		Marshaller<DynamicMessage> marshaller = ProtoUtils
+		Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
+				.marshaller(DynamicMessage.newBuilder(registry.descriptor(requestType)).build());
+		Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
 				.marshaller(DynamicMessage.newBuilder(registry.descriptor(responseType)).build());
 		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
 				.<DynamicMessage, DynamicMessage>newBuilder()
 				.setType(MethodDescriptor.MethodType.BIDI_STREAMING)
 				.setFullMethodName(fullMethodName)
-				.setRequestMarshaller(marshaller)
-				.setResponseMarshaller(marshaller)
+				.setRequestMarshaller(requestMarshaller)
+				.setResponseMarshaller(responseMarshaller)
 				.build();
 		Many<T> sink = Sinks.many().multicast().onBackpressureBuffer();
 		StreamObserver<DynamicMessage> requests = ClientCalls.asyncBidiStreamingCall(
@@ -157,14 +161,16 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 		if (this.registry.descriptor(request.getClass()) == null) {
 			this.registry.register(request.getClass());
 		}
-		Marshaller<DynamicMessage> marshaller = ProtoUtils
+		Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
+				.marshaller(DynamicMessage.newBuilder(registry.descriptor(request.getClass())).build());
+		Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
 				.marshaller(DynamicMessage.newBuilder(registry.descriptor(responseType)).build());
 		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
 				.<DynamicMessage, DynamicMessage>newBuilder()
 				.setType(MethodDescriptor.MethodType.UNARY)
 				.setFullMethodName(fullMethodName)
-				.setRequestMarshaller(marshaller)
-				.setResponseMarshaller(marshaller)
+				.setRequestMarshaller(requestMarshaller)
+				.setResponseMarshaller(responseMarshaller)
 				.build();
 		var response = ClientCalls.blockingUnaryCall(getChannel(), methodDescriptor, getCallOptions(),
 				(DynamicMessage) converter.convert(request));
