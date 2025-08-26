@@ -229,9 +229,7 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 					dependencies.toArray(new FileDescriptor[0]));
 			proto.getMessageTypes()
 					.forEach(descriptor -> this.descriptors.put(types.get(descriptor.getName()), descriptor));
-			proto.getServices().forEach(descriptor -> {
-				this.catalog.register(proto);
-			});
+			this.catalog.register(proto);
 			this.types.put(type, proto);
 		} catch (DescriptorValidationException e) {
 			throw new IllegalStateException(e);
