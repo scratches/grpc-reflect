@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.grpc.sample.proto.HelloWorldProto;
 import org.springframework.util.StringUtils;
 
-import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 
@@ -43,8 +42,7 @@ public class DescriptorRegistryTests {
 
 	@Test
 	public void testRegisterMethod() throws Exception {
-		DescriptorRegistrar registry = new DescriptorRegistrar(
-				clazz -> DescriptorProto.newBuilder().setName(clazz.getSimpleName()).build());
+		DescriptorRegistrar registry = new DescriptorRegistrar();
 		register(registry, DescriptorRegistryTests.class.getMethod("echo", Foo.class));
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(method(registry, "DescriptorRegistryTests/Echo")).isNotNull();
@@ -136,8 +134,7 @@ public class DescriptorRegistryTests {
 
 	@Test
 	public void testRegisterType() throws Exception {
-		DescriptorRegistrar registry = new DescriptorRegistrar(
-				clazz -> DescriptorProto.newBuilder().setName(clazz.getSimpleName()).build());
+		DescriptorRegistrar registry = new DescriptorRegistrar();
 		registry.register(Foo.class);
 		registry.register(Bar.class);
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");

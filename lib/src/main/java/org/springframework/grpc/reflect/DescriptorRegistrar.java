@@ -40,7 +40,7 @@ import io.grpc.MethodDescriptor.MethodType;
 public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorProvider {
 
 	private final DescriptorProtoExtractor protos;
-	private final DescriptorCatalog catalog = new DescriptorCatalog();
+	private final DescriptorCatalog catalog;
 	private Map<String, ServiceDescriptorProto> serviceProtos = new HashMap<>();
 	private Map<String, List<Class<?>>> typesPerService = new HashMap<>();
 	private Map<Class<?>, Descriptor> descriptors = new HashMap<>();
@@ -48,11 +48,12 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 	private boolean strict = true;
 
 	public DescriptorRegistrar() {
-		this(DescriptorProtoExtractor.DEFAULT_INSTANCE);
+		this(DescriptorProtoExtractor.DEFAULT_INSTANCE, new DescriptorCatalog());
 	}
 
-	public DescriptorRegistrar(DescriptorProtoExtractor protos) {
+	public DescriptorRegistrar(DescriptorProtoExtractor protos, DescriptorCatalog catalog) {
 		this.protos = protos;
+		this.catalog = catalog;
 	}
 
 	public void setStrict(boolean strict) {
