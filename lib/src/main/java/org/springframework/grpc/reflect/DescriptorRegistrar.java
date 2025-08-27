@@ -236,6 +236,8 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 		}
 	}
 
+	// TODO: this class should not implement DescriptorProvider. The Descriptor
+	// might be different for the same type and different services.
 	@Override
 	public Descriptor descriptor(Class<?> clazz) {
 		return this.descriptors.get(clazz);

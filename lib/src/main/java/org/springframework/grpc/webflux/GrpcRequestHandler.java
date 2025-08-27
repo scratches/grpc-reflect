@@ -18,8 +18,6 @@ package org.springframework.grpc.webflux;
 import org.reactivestreams.Publisher;
 import org.springframework.web.reactive.function.server.ServerRequest;
 
-import com.google.protobuf.Message;
-
 import io.grpc.BindableService;
 import io.grpc.Context;
 import io.grpc.Metadata;
