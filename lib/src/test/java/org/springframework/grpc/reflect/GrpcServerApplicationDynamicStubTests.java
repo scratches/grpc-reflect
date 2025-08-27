@@ -34,13 +34,16 @@ public class GrpcServerApplicationDynamicStubTests {
 	@Autowired
 	private GrpcChannelFactory channelFactory;
 
+	@Autowired
+	private DescriptorRegistrar registrar;
+
 	@Test
 	void contextLoads() {
 	}
 
 	@Test
 	void dynamicServiceFromFunction() {
-		DynamicStub stub = new DynamicStub(new DescriptorRegistrar(), this.channelFactory.createChannel("default"));
+		DynamicStub stub = new DynamicStub(registrar, this.channelFactory.createChannel("default"));
 		Foo request = new Foo();
 		request.setName("Alien");
 		Foo response = stub.unary("EchoService/Echo", request, Foo.class);
@@ -49,7 +52,10 @@ public class GrpcServerApplicationDynamicStubTests {
 
 	@Test
 	void dynamicStreamFromFunction() {
-		DynamicStub stub = new DynamicStub(new DescriptorRegistrar(), this.channelFactory.createChannel("default"));
+		// It doesn't have to be the registrar from the application context
+		DescriptorRegistrar registry = new DescriptorRegistrar();
+		registry.unary("EchoService/Stream", Foo.class, Foo.class);
+		DynamicStub stub = new DynamicStub(registry, this.channelFactory.createChannel("default"));
 		Foo request = new Foo();
 		request.setName("Alien");
 		Flux<Foo> response = stub.stream("EchoService/Stream", request, Foo.class);
@@ -58,7 +64,7 @@ public class GrpcServerApplicationDynamicStubTests {
 
 	@Test
 	void dynamicBidiFromFunction() {
-		DynamicStub stub = new DynamicStub(new DescriptorRegistrar(), this.channelFactory.createChannel("default"));
+		DynamicStub stub = new DynamicStub(this.registrar, this.channelFactory.createChannel("default"));
 		Foo request = new Foo();
 		request.setName("Alien");
 		Flux<Foo> response = stub.bidi("EchoService/Parallel", Mono.just(request), Foo.class, Foo.class);
@@ -67,7 +73,7 @@ public class GrpcServerApplicationDynamicStubTests {
 
 	@Test
 	void dynamicServiceFromInstance() {
-		DynamicStub stub = new DynamicStub(new DescriptorRegistrar(), this.channelFactory.createChannel("default"));
+		DynamicStub stub = new DynamicStub(this.registrar, this.channelFactory.createChannel("default"));
 		Input request = new Input();
 		Output response = stub.unary("FooService/Process", request, Output.class);
 		assertThat(response).isNotNull();

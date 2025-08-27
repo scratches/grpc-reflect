@@ -84,7 +84,7 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 				});
 		Flux.from(request).doOnComplete(() -> requests.onCompleted()).doOnError(error -> requests.onError(error))
 				.doOnNext(msg -> requests
-						.onNext((DynamicMessage) converter.convert(msg, this.registry.descriptor(responseType))))
+						.onNext((DynamicMessage) converter.convert(msg, this.registry.output(fullMethodName).descriptor())))
 				.subscribe();
 		return sink.asFlux();
 	}
@@ -97,7 +97,7 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 				request.getClass(), responseType, MethodDescriptor.MethodType.SERVER_STREAMING);
 		Many<T> sink = Sinks.many().multicast().onBackpressureBuffer();
 		ClientCalls.asyncServerStreamingCall(getChannel().newCall(methodDescriptor, getCallOptions()),
-				(DynamicMessage) converter.convert(request, this.registry.descriptor(request.getClass())),
+				(DynamicMessage) converter.convert(request, this.registry.input(fullMethodName).descriptor()),
 				new StreamObserver<DynamicMessage>() {
 
 					@Override
@@ -127,7 +127,7 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 				request.getClass(),
 				responseType, MethodDescriptor.MethodType.UNARY);
 		var response = ClientCalls.blockingUnaryCall(getChannel(), methodDescriptor, getCallOptions(),
-				(DynamicMessage) converter.convert(request, registry.descriptor(request.getClass())));
+				(DynamicMessage) converter.convert(request, registry.input(fullMethodName).descriptor()));
 		return converter.convert(response, responseType);
 	}
 
@@ -136,16 +136,16 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 		if (responseType == null) {
 			throw new IllegalArgumentException("Response type cannot be null");
 		}
-		if (this.registry.descriptor(responseType) == null) {
-			this.registry.register(responseType);
+		if (registry.input(fullMethodName) == null) {
+			throw new IllegalArgumentException("No descriptor found for input of method: " + fullMethodName);
 		}
-		if (this.registry.descriptor(requestType) == null) {
-			this.registry.register(requestType);
+		if (registry.output(fullMethodName) == null) {
+			throw new IllegalArgumentException("No descriptor found for output of method: " + fullMethodName);
 		}
 		Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
-				.marshaller(DynamicMessage.newBuilder(registry.descriptor(requestType)).build());
+				.marshaller(DynamicMessage.newBuilder(registry.input(fullMethodName).descriptor()).build());
 		Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
-				.marshaller(DynamicMessage.newBuilder(registry.descriptor(responseType)).build());
+				.marshaller(DynamicMessage.newBuilder(registry.output(fullMethodName).descriptor()).build());
 		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
 				.<DynamicMessage, DynamicMessage>newBuilder()
 				.setType(methodType)
