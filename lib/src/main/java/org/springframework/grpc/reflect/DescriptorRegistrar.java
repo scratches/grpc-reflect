@@ -33,6 +33,7 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
+import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.google.protobuf.Descriptors.ServiceDescriptor;
 
 import io.grpc.MethodDescriptor.MethodType;
@@ -41,8 +42,12 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 
 	private final DescriptorProtoExtractor protos;
 	private final DescriptorCatalog catalog;
+	// TODO: get rid of this and all methods that use it
+	private final ReflectionFileDescriptorProvider reflection;
 	private Map<String, ServiceDescriptorProto> serviceProtos = new HashMap<>();
 	private Map<String, List<Class<?>>> typesPerService = new HashMap<>();
+	private Map<String, DescriptorMapping> inputs = new HashMap<>();
+	private Map<String, DescriptorMapping> outputs = new HashMap<>();
 	private Map<Class<?>, Descriptor> descriptors = new HashMap<>();
 	private Map<Class<?>, FileDescriptor> types = new HashMap<>();
 	private boolean strict = true;
@@ -54,6 +59,7 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 	public DescriptorRegistrar(DescriptorProtoExtractor protos, DescriptorCatalog catalog) {
 		this.protos = protos;
 		this.catalog = catalog;
+		this.reflection = new ReflectionFileDescriptorProvider(protos);
 	}
 
 	public void setStrict(boolean strict) {
@@ -61,65 +67,18 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 	}
 
 	public <I, O> void unary(String fullMethodName, Class<I> input, Class<O> output) {
-		register(fullMethodName, input, output, MethodType.UNARY);
+		reflection.unary(fullMethodName, input, output);
+		register(findMethod(reflection, fullMethodName), input, output);
 	}
 
 	public <I, O> void stream(String fullMethodName, Class<I> input, Class<O> output) {
-		register(fullMethodName, input, output, MethodType.SERVER_STREAMING);
+		reflection.stream(fullMethodName, input, output);
+		register(findMethod(reflection, fullMethodName), input, output);
 	}
 
 	public <I, O> void bidi(String fullMethodName, Class<I> input, Class<O> output) {
-		register(fullMethodName, input, output, MethodType.BIDI_STREAMING);
-	}
-
-	private <I, O> void register(String fullMethodName, Class<I> input, Class<O> output, MethodType methodType) {
-		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
-		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
-		MethodDescriptorProto.Builder builder = MethodDescriptorProto.newBuilder()
-				.setName(methodName)
-				.setInputType(input.getSimpleName())
-				.setOutputType(output.getSimpleName());
-		switch (methodType) {
-			case SERVER_STREAMING:
-				builder.setServerStreaming(true);
-				break;
-			case BIDI_STREAMING:
-				builder.setServerStreaming(true);
-				builder.setClientStreaming(true);
-				break;
-			default:
-		}
-		MethodDescriptorProto proto = builder
-				.build();
-		register(DescriptorRegistrar.class, serviceName, methodName, proto, input, output);
-	}
-
-	private void register(Class<?> owner, String serviceName, String methodName, MethodDescriptorProto proto,
-			Class<?> input,
-			Class<?> output) {
-		ServiceDescriptorProto service = this.serviceProtos.get(serviceName);
-		if (service == null) {
-			service = ServiceDescriptorProto.newBuilder().setName(serviceName).build();
-		}
-		if (findMethod(service, methodName) != null) {
-			return;
-		}
-		ServiceDescriptorProto.Builder builder = service.toBuilder();
-		builder.addMethod(proto);
-		service = builder.build();
-		this.serviceProtos.put(serviceName, service);
-		register(serviceName, input);
-		register(serviceName, output);
-		process(serviceName);
-	}
-
-	private MethodDescriptorProto findMethod(ServiceDescriptorProto service, String name) {
-		for (MethodDescriptorProto method : service.getMethodList()) {
-			if (method.getName().equals(name)) {
-				return method;
-			}
-		}
-		return null;
+		reflection.bidi(fullMethodName, input, output);
+		register(findMethod(reflection, fullMethodName), input, output);
 	}
 
 	private void process(String owner) {
@@ -188,6 +147,22 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 		}
 	}
 
+	public DescriptorMapping input(String fullMethodName) {
+		return this.inputs.get(fullMethodName);
+	}
+
+	public void input(String fullMethodName, Class<?> type, Descriptor descriptor) {
+		this.inputs.put(fullMethodName, new DescriptorMapping(type, descriptor));
+	}
+
+	public DescriptorMapping output(String fullMethodName) {
+		return this.outputs.get(fullMethodName);
+	}
+
+	public void output(String fullMethodName, Class<?> type, Descriptor descriptor) {
+		this.outputs.put(fullMethodName, new DescriptorMapping(type, descriptor));
+	}
+
 	public void register(Class<?> type, Descriptor descriptor) {
 		this.descriptors.put(type, descriptor);
 	}
@@ -200,6 +175,32 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 
 	public void register(ServiceDescriptor service) {
 		this.catalog.register(service.getFile());
+	}
+
+	public void register(MethodDescriptor method, Class<?> input, Class<?> output) {
+		this.catalog.register(method.getFile());
+		String name = method.getFullName();
+		name = name.substring(0, name.lastIndexOf(method.getName()) - 1) + "/" + method.getName();
+		this.input(name, input, method.getInputType());
+		this.output(name, output, method.getOutputType());
+	}
+
+	private MethodDescriptor findMethod(String fullMethodName) {
+		return findMethod(this.catalog, fullMethodName);
+	}
+
+	private MethodDescriptor findMethod(FileDescriptorProvider provider, String fullMethodName) {
+		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
+		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
+		FileDescriptor file = provider.file(serviceName);
+		if (file == null) {
+			return null;
+		}
+		ServiceDescriptor service = file.findServiceByName(serviceName);
+		if (service == null) {
+			return null;
+		}
+		return service.findMethodByName(methodName);
 	}
 
 	private void process(String owner, Class<?> type) {
