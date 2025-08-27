@@ -240,7 +240,8 @@ public class DynamicServiceFactory {
 					.setSchemaDescriptor(
 							new SimpleMethodDescriptor(registry.file(serviceName), serviceName, methodName))
 					.build();
-			ServerCallHandler<DynamicMessage, DynamicMessage> handler = handler(requestType, function, methodType);
+			ServerCallHandler<DynamicMessage, DynamicMessage> handler = handler(requestType, outputType, function,
+					methodType);
 			this.handlers.put(methodName, handler);
 			this.descriptors.put(methodName, methodDescriptor);
 			return this;
@@ -265,6 +266,7 @@ public class DynamicServiceFactory {
 		}
 
 		private <I, O> ServerCallHandler<DynamicMessage, DynamicMessage> handler(Class<I> requestType,
+				Descriptor descriptor,
 				Function<?, ?> function,
 				MethodType methodType) {
 			switch (methodType) {
@@ -273,7 +275,7 @@ public class DynamicServiceFactory {
 						I input = converter.convert(req, requestType);
 						@SuppressWarnings("unchecked")
 						O output = ((Function<I, O>) function).apply(input);
-						obs.onNext((DynamicMessage) converter.convert(output));
+						obs.onNext((DynamicMessage) converter.convert(output, descriptor));
 						obs.onCompleted();
 					});
 				case SERVER_STREAMING:
@@ -282,13 +284,14 @@ public class DynamicServiceFactory {
 						@SuppressWarnings("unchecked")
 						Flux<O> output = Flux.from(((Function<I, Publisher<O>>) function).apply(input));
 						output.doOnNext(item -> {
-							obs.onNext((DynamicMessage) converter.convert(item));
+							obs.onNext((DynamicMessage) converter.convert(item, descriptor));
 						}).doOnComplete(() -> obs.onCompleted())
 								.doOnError(error -> obs.onError(error)).subscribe();
 					});
 				case BIDI_STREAMING:
 					return ServerCalls
-							.asyncBidiStreamingCall(obs -> new BidiStreamObserver<I, O>(function, obs, requestType));
+							.asyncBidiStreamingCall(
+									obs -> new BidiStreamObserver<I, O>(function, obs, requestType, descriptor));
 				default:
 					throw new UnsupportedOperationException("Unsupported method type: " + methodType);
 			}
@@ -299,16 +302,18 @@ public class DynamicServiceFactory {
 			private final Class<I> requestType;
 			private Many<I> sink;
 			private Flux<O> output;
+			private Descriptor descriptor;
 
 			@SuppressWarnings("unchecked")
 			private BidiStreamObserver(Function<?, ?> function, StreamObserver<DynamicMessage> obs,
-					Class<I> requestType) {
+					Class<I> requestType, Descriptor descriptor) {
 				this.obs = obs;
 				this.requestType = requestType;
+				this.descriptor = descriptor;
 				this.sink = Sinks.many().unicast().onBackpressureBuffer();
 				this.output = Flux.from(((Function<Publisher<I>, Publisher<O>>) function).apply(this.sink.asFlux()));
 				this.output.doOnNext(item -> {
-					obs.onNext((DynamicMessage) converter.convert(item));
+					obs.onNext((DynamicMessage) converter.convert(item, this.descriptor));
 				}).subscribe();
 			}
 

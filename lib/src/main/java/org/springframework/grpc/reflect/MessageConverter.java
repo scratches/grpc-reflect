@@ -30,6 +30,7 @@ import com.google.protobuf.DynamicMessage.Builder;
 public class MessageConverter {
 
 	private final DescriptorProvider descriptors;
+
 	public MessageConverter(DescriptorProvider descriptors) {
 		this.descriptors = descriptors;
 	}
@@ -61,17 +62,13 @@ public class MessageConverter {
 		return instance;
 	}
 
-	public <T> AbstractMessage convert(T value) {
+	public <T> AbstractMessage convert(T value, Descriptor descriptor) {
 		if (value == null) {
-			if (this.descriptors.descriptor(Void.class) != null) {
-				return DynamicMessage.newBuilder(this.descriptors.descriptor(Void.class)).build();
-			}
-			return null;
+			return DynamicMessage.newBuilder(DescriptorProvider.DEFAULT_INSTANCE.descriptor(Void.class)).build();
 		}
 		if (value instanceof AbstractMessage) {
 			return (AbstractMessage) value;
 		}
-		Descriptor descriptor = this.descriptors.descriptor(value.getClass());
 		if (descriptor == null) {
 			throw new IllegalArgumentException("No descriptor found for class: " + value.getClass());
 		}
@@ -84,7 +81,9 @@ public class MessageConverter {
 				ReflectionUtils.makeAccessible(method);
 				if (field.getType() == FieldDescriptor.Type.MESSAGE) {
 					Object nestedValue = ReflectionUtils.invokeMethod(method, value);
-					AbstractMessage nestedMessage = convert(nestedValue);
+					// TODO: ditch the descriptors and infer the type from the dependencies somehow
+					AbstractMessage nestedMessage = convert(nestedValue,
+							this.descriptors.descriptor(propertyDescriptor.getPropertyType()));
 					builder.setField(field, nestedMessage);
 				} else {
 					Object fieldValue = ReflectionUtils.invokeMethod(method, value);

@@ -104,7 +104,7 @@ public class MessageConverterTests {
 		// TODO: a MessageConverter ought to be able to convert a Foo into a number of
 		// different message types, so maybe it needs a method with a Descriptor
 		// argument?
-		AbstractMessage message = converter.convert(foo);
+		AbstractMessage message = converter.convert(foo, desc);
 
 		assertThat(message).isNotNull();
 		assertThat(message.getField(desc.findFieldByName("name"))).isEqualTo("foo");
@@ -120,7 +120,7 @@ public class MessageConverterTests {
 		foo.setName("foo");
 		foo.setAge(30);
 
-		AbstractMessage message = converter.convert(foo);
+		AbstractMessage message = converter.convert(foo, desc);
 
 		assertThat(message).isNotNull();
 		assertThat(message.getField(desc.findFieldByName("name"))).isEqualTo("foo");
@@ -137,7 +137,7 @@ public class MessageConverterTests {
 		Bar bar = new Bar();
 		bar.setFoo(foo);
 
-		AbstractMessage message = converter.convert(bar);
+		AbstractMessage message = converter.convert(bar, registry.descriptor(Bar.class));
 
 		assertThat(message).isNotNull();
 		AbstractMessage nestedMessage = (AbstractMessage) message
@@ -150,7 +150,7 @@ public class MessageConverterTests {
 	public void testConvertVoidToMessage() {
 		MessageConverter converter = new MessageConverter(registry);
 
-		AbstractMessage message = converter.convert(null);
+		AbstractMessage message = converter.convert(null, (Descriptor) null);
 
 		assertThat(message).isNotNull();
 		assertThat(message.getDescriptorForType().getFields()).isEmpty();

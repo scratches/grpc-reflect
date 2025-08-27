@@ -18,6 +18,7 @@ package org.springframework.grpc.reflect;
 import org.reactivestreams.Publisher;
 
 import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Descriptors.Descriptor;
 
 import io.grpc.CallOptions;
 import io.grpc.Channel;
@@ -82,7 +83,9 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 
 				});
 		Flux.from(request).doOnComplete(() -> requests.onCompleted()).doOnError(error -> requests.onError(error))
-				.doOnNext(msg -> requests.onNext((DynamicMessage) converter.convert(msg))).subscribe();
+				.doOnNext(msg -> requests
+						.onNext((DynamicMessage) converter.convert(msg, this.registry.descriptor(responseType))))
+				.subscribe();
 		return sink.asFlux();
 	}
 
@@ -94,7 +97,8 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 				request.getClass(), responseType, MethodDescriptor.MethodType.SERVER_STREAMING);
 		Many<T> sink = Sinks.many().multicast().onBackpressureBuffer();
 		ClientCalls.asyncServerStreamingCall(getChannel().newCall(methodDescriptor, getCallOptions()),
-				(DynamicMessage) converter.convert(request), new StreamObserver<DynamicMessage>() {
+				(DynamicMessage) converter.convert(request, this.registry.descriptor(request.getClass())),
+				new StreamObserver<DynamicMessage>() {
 
 					@Override
 					public void onNext(DynamicMessage value) {
@@ -123,7 +127,7 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 				request.getClass(),
 				responseType, MethodDescriptor.MethodType.UNARY);
 		var response = ClientCalls.blockingUnaryCall(getChannel(), methodDescriptor, getCallOptions(),
-				(DynamicMessage) converter.convert(request));
+				(DynamicMessage) converter.convert(request, registry.descriptor(request.getClass())));
 		return converter.convert(response, responseType);
 	}
 
