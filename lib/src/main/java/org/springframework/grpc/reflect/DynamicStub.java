@@ -58,25 +58,8 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 		if (responseType == null) {
 			throw new IllegalArgumentException("Response type cannot be null");
 		}
-		if (this.registry.descriptor(responseType) == null) {
-			// TODO: this method should be obsolete. Maybe we should throw an error instead?
-			this.registry.register(responseType);
-		}
-		if (this.registry.descriptor(requestType) == null) {
-			// TODO: this method should be obsolete. Maybe we should throw an error instead?
-			this.registry.register(requestType);
-		}
-		Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
-				.marshaller(DynamicMessage.newBuilder(registry.descriptor(requestType)).build());
-		Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
-				.marshaller(DynamicMessage.newBuilder(registry.descriptor(responseType)).build());
-		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
-				.<DynamicMessage, DynamicMessage>newBuilder()
-				.setType(MethodDescriptor.MethodType.BIDI_STREAMING)
-				.setFullMethodName(fullMethodName)
-				.setRequestMarshaller(requestMarshaller)
-				.setResponseMarshaller(responseMarshaller)
-				.build();
+		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = methodDescriptor(fullMethodName,
+				requestType, responseType, MethodDescriptor.MethodType.BIDI_STREAMING);
 		Many<T> sink = Sinks.many().multicast().onBackpressureBuffer();
 		StreamObserver<DynamicMessage> requests = ClientCalls.asyncBidiStreamingCall(
 				getChannel().newCall(methodDescriptor, getCallOptions()),
@@ -107,24 +90,8 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 		if (request == null) {
 			throw new IllegalArgumentException("Request cannot be null");
 		}
-		if (responseType == null) {
-			throw new IllegalArgumentException("Response type cannot be null");
-		}
-		if (this.registry.descriptor(responseType) == null) {
-			this.registry.register(responseType);
-		}
-		if (this.registry.descriptor(request.getClass()) == null) {
-			this.registry.register(request.getClass());
-		}
-		Marshaller<DynamicMessage> marshaller = ProtoUtils
-				.marshaller(DynamicMessage.newBuilder(registry.descriptor(responseType)).build());
-		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
-				.<DynamicMessage, DynamicMessage>newBuilder()
-				.setType(MethodDescriptor.MethodType.SERVER_STREAMING)
-				.setFullMethodName(fullMethodName)
-				.setRequestMarshaller(marshaller)
-				.setResponseMarshaller(marshaller)
-				.build();
+		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = methodDescriptor(fullMethodName,
+				request.getClass(), responseType, MethodDescriptor.MethodType.SERVER_STREAMING);
 		Many<T> sink = Sinks.many().multicast().onBackpressureBuffer();
 		ClientCalls.asyncServerStreamingCall(getChannel().newCall(methodDescriptor, getCallOptions()),
 				(DynamicMessage) converter.convert(request), new StreamObserver<DynamicMessage>() {
@@ -152,29 +119,37 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 		if (request == null) {
 			throw new IllegalArgumentException("Request cannot be null");
 		}
+		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = methodDescriptor(fullMethodName,
+				request.getClass(),
+				responseType, MethodDescriptor.MethodType.UNARY);
+		var response = ClientCalls.blockingUnaryCall(getChannel(), methodDescriptor, getCallOptions(),
+				(DynamicMessage) converter.convert(request));
+		return converter.convert(response, responseType);
+	}
+
+	private <T> MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor(String fullMethodName,
+			Class<?> requestType, Class<T> responseType, MethodDescriptor.MethodType methodType) {
 		if (responseType == null) {
 			throw new IllegalArgumentException("Response type cannot be null");
 		}
 		if (this.registry.descriptor(responseType) == null) {
 			this.registry.register(responseType);
 		}
-		if (this.registry.descriptor(request.getClass()) == null) {
-			this.registry.register(request.getClass());
+		if (this.registry.descriptor(requestType) == null) {
+			this.registry.register(requestType);
 		}
 		Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
-				.marshaller(DynamicMessage.newBuilder(registry.descriptor(request.getClass())).build());
+				.marshaller(DynamicMessage.newBuilder(registry.descriptor(requestType)).build());
 		Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
 				.marshaller(DynamicMessage.newBuilder(registry.descriptor(responseType)).build());
 		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
 				.<DynamicMessage, DynamicMessage>newBuilder()
-				.setType(MethodDescriptor.MethodType.UNARY)
+				.setType(methodType)
 				.setFullMethodName(fullMethodName)
 				.setRequestMarshaller(requestMarshaller)
 				.setResponseMarshaller(responseMarshaller)
 				.build();
-		var response = ClientCalls.blockingUnaryCall(getChannel(), methodDescriptor, getCallOptions(),
-				(DynamicMessage) converter.convert(request));
-		return converter.convert(response, responseType);
+		return methodDescriptor;
 	}
 
 	@Override
