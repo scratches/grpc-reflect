@@ -29,12 +29,6 @@ import com.google.protobuf.DynamicMessage.Builder;
 
 public class MessageConverter {
 
-	private final DescriptorProvider descriptors;
-
-	public MessageConverter(DescriptorProvider descriptors) {
-		this.descriptors = descriptors;
-	}
-
 	public <T> T convert(AbstractMessage message, Class<T> targetType) {
 		if (message == null || targetType == null || targetType == Void.class) {
 			return null;
@@ -81,9 +75,7 @@ public class MessageConverter {
 				ReflectionUtils.makeAccessible(method);
 				if (field.getType() == FieldDescriptor.Type.MESSAGE) {
 					Object nestedValue = ReflectionUtils.invokeMethod(method, value);
-					// TODO: ditch the descriptors and infer the type from the dependencies somehow
-					AbstractMessage nestedMessage = convert(nestedValue,
-							this.descriptors.descriptor(propertyDescriptor.getPropertyType()));
+					AbstractMessage nestedMessage = convert(nestedValue,field.getMessageType());
 					builder.setField(field, nestedMessage);
 				} else {
 					Object fieldValue = ReflectionUtils.invokeMethod(method, value);

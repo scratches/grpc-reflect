@@ -44,7 +44,7 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 	public DynamicStub(DescriptorRegistrar registry, Channel channel, CallOptions callOptions) {
 		super(channel, callOptions);
 		this.registry = registry;
-		this.converter = new MessageConverter(registry);
+		this.converter = new MessageConverter();
 	}
 
 	public static DynamicStub newStub(Channel channel) {

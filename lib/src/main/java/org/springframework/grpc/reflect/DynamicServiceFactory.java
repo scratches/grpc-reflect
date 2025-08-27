@@ -55,7 +55,7 @@ public class DynamicServiceFactory {
 
 	public DynamicServiceFactory(DescriptorRegistrar registry) {
 		this.registry = registry;
-		this.converter = new MessageConverter(registry);
+		this.converter = new MessageConverter();
 	}
 
 	public <T> BindableServiceBuilder service(String serviceName) {

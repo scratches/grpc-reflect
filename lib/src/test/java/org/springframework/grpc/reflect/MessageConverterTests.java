@@ -30,8 +30,7 @@ public class MessageConverterTests {
 
 	@Test
 	public void testConvertGeneratedTypeToPojo() {
-		;
-		MessageConverter converter = new MessageConverter(registry);
+		MessageConverter converter = new MessageConverter();
 		Descriptor desc = registry.descriptor(Foo.class);
 		var foo = DynamicMessage.newBuilder(desc)
 				.setField(desc.findFieldByName("name"), "foo")
@@ -47,8 +46,7 @@ public class MessageConverterTests {
 
 	@Test
 	public void testConvertToPojo() {
-		;
-		MessageConverter converter = new MessageConverter(registry);
+		MessageConverter converter = new MessageConverter();
 		Descriptor desc = registry.descriptor(Foo.class);
 		var foo = DynamicMessage.newBuilder(desc)
 				.setField(desc.findFieldByName("name"), "foo")
@@ -64,7 +62,7 @@ public class MessageConverterTests {
 
 	@Test
 	public void testConvertToPojoWithNested() {
-		MessageConverter converter = new MessageConverter(registry);
+		MessageConverter converter = new MessageConverter();
 		Descriptor desc = registry.descriptor(Foo.class);
 		var foo = DynamicMessage.newBuilder(desc)
 				.setField(desc.findFieldByName("name"), "foo")
@@ -83,7 +81,7 @@ public class MessageConverterTests {
 
 	@Test
 	public void testConvertToVoid() {
-		MessageConverter converter = new MessageConverter(registry);
+		MessageConverter converter = new MessageConverter();
 		var foo = DynamicMessage.newBuilder(registry.descriptor(Void.class))
 				.build();
 		Object message = converter.convert(foo, Void.class);
@@ -95,15 +93,12 @@ public class MessageConverterTests {
 	public void testConvertToGeneratedMessage() {
 		DescriptorRegistrar catalog = new DescriptorRegistrar();
 		catalog.register(Foo.class, HelloRequest.getDescriptor());
-		MessageConverter converter = new MessageConverter(catalog);
+		MessageConverter converter = new MessageConverter();
 		Descriptor desc = HelloRequest.getDescriptor();
 		Foo foo = new Foo();
 		foo.setName("foo");
 		foo.setAge(30);
 
-		// TODO: a MessageConverter ought to be able to convert a Foo into a number of
-		// different message types, so maybe it needs a method with a Descriptor
-		// argument?
 		AbstractMessage message = converter.convert(foo, desc);
 
 		assertThat(message).isNotNull();
@@ -114,7 +109,7 @@ public class MessageConverterTests {
 
 	@Test
 	public void testConvertToMessage() {
-		MessageConverter converter = new MessageConverter(registry);
+		MessageConverter converter = new MessageConverter();
 		Descriptor desc = registry.descriptor(Foo.class);
 		Foo foo = new Foo();
 		foo.setName("foo");
@@ -129,7 +124,7 @@ public class MessageConverterTests {
 
 	@Test
 	public void testConvertToNestedMessage() {
-		MessageConverter converter = new MessageConverter(registry);
+		MessageConverter converter = new MessageConverter();
 		Descriptor desc = registry.descriptor(Foo.class);
 		Foo foo = new Foo();
 		foo.setName("foo");
@@ -148,7 +143,7 @@ public class MessageConverterTests {
 
 	@Test
 	public void testConvertVoidToMessage() {
-		MessageConverter converter = new MessageConverter(registry);
+		MessageConverter converter = new MessageConverter();
 
 		AbstractMessage message = converter.convert(null, (Descriptor) null);
 
