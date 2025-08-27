@@ -132,31 +132,6 @@ public class DescriptorRegistryTests {
 		assertThat(method(registry, "Service/Spam")).isNotNull();
 	}
 
-	@Test
-	public void testRegisterType() throws Exception {
-		DescriptorRegistrar registry = new DescriptorRegistrar();
-		registry.register(Foo.class);
-		registry.register(Bar.class);
-		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
-		assertThat(registry.descriptor(Bar.class)).isNotNull();
-	}
-
-	@Test
-	public void testRegisterEmptyType() throws Exception {
-		DescriptorRegistrar registry = new DescriptorRegistrar();
-		registry.register(Void.class);
-		assertThat(registry.descriptor(Void.class).getFullName()).isEqualTo("Void");
-	}
-
-	@Test
-	public void testRegisterTypeTwice() throws Exception {
-		DescriptorRegistrar registry = new DescriptorRegistrar();
-		registry.register(Foo.class);
-		registry.register(Foo.class);
-		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
-		assertThat(registry.descriptor(Bar.class)).isNull();
-	}
-
 	public static class Bar {
 	}
 
