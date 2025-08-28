@@ -41,6 +41,12 @@ public class GrpcReactorServerApplicationTests {
 
 	@Test
 	void serverStreams() {
+		HelloReply response = stub.streamHello(HelloRequest.newBuilder().setName("Alien").build()).blockFirst();
+		assertEquals("Hello(0) ==> Alien", response.getMessage());
+	}
+
+	@Test
+	void serverParallels() {
 		HelloReply response = stub.parallelHello(Flux.just(HelloRequest.newBuilder().setName("Alien").build())).blockFirst();
 		assertEquals("Hello ==> Alien", response.getMessage());
 	}

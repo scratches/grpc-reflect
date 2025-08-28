@@ -84,7 +84,6 @@ public class GrpcRequestHandler<I, O> {
 		return entity;
 	}
 
-	// TODO: this isn't working for reactive services
 	private Flux<O> stream(I input, BindableService bindable, ServerMethodDefinition<I, O> serverMethod) {
 		var method = serverMethod.getMethodDescriptor();
 		Flux<O> result = Flux.<O>create(emitter -> {
@@ -93,7 +92,10 @@ public class GrpcRequestHandler<I, O> {
 			listener.onMessage(input);
 			listener.onReady();
 			listener.onHalfClose();
-			listener.onComplete();
+			// TODO: this seems to slow down non-reactive service tests - investigate
+			emitter.onDispose(() -> {
+				listener.onComplete();
+			});
 		});
 		if (!isReactive(bindable, serverMethod)) {
 			result = result.subscribeOn(Schedulers.boundedElastic(), false);

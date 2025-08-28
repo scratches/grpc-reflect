@@ -41,6 +41,12 @@ public class GrpcServerApplicationTests {
 	}
 
 	@Test
+	void serverStreams() {
+		HelloReply response = stub.streamHello(HelloRequest.newBuilder().setName("Alien").build()).next();
+		assertEquals("Hello(0) ==> Alien", response.getMessage());
+	}
+
+	@Test
 	void defaultErrorResponseIsUnknown(@Autowired GrpcChannelFactory channels) {
 		assertThat(assertThrows(StatusRuntimeException.class,
 				() -> stub.sayHello(HelloRequest.newBuilder().setName("internal").build()))
