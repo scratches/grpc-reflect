@@ -67,18 +67,30 @@ public class DescriptorRegistrar implements DescriptorProvider, FileDescriptorPr
 	}
 
 	public <I, O> void unary(String fullMethodName, Class<I> input, Class<O> output) {
-		reflection.unary(fullMethodName, input, output);
-		register(findMethod(reflection, fullMethodName), input, output);
+		MethodDescriptor method = findMethod(catalog, fullMethodName);
+		if (method == null) {
+			reflection.unary(fullMethodName, input, output);
+			method = findMethod(reflection, fullMethodName);
+		}
+		register(method, input, output);
 	}
 
 	public <I, O> void stream(String fullMethodName, Class<I> input, Class<O> output) {
-		reflection.stream(fullMethodName, input, output);
-		register(findMethod(reflection, fullMethodName), input, output);
+		MethodDescriptor method = findMethod(catalog, fullMethodName);
+		if (method == null) {
+			reflection.stream(fullMethodName, input, output);
+			method = findMethod(reflection, fullMethodName);
+		}
+		register(method, input, output);
 	}
 
 	public <I, O> void bidi(String fullMethodName, Class<I> input, Class<O> output) {
-		reflection.bidi(fullMethodName, input, output);
-		register(findMethod(reflection, fullMethodName), input, output);
+		MethodDescriptor method = findMethod(catalog, fullMethodName);
+		if (method == null) {
+			reflection.bidi(fullMethodName, input, output);
+			method = findMethod(reflection, fullMethodName);
+		}
+		register(method, input, output);
 	}
 
 	private void process(String owner) {
