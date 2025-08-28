@@ -15,17 +15,11 @@
  */
 package org.springframework.grpc.reflect;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.reactivestreams.Publisher;
-import org.springframework.util.StringUtils;
 
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
@@ -41,7 +35,6 @@ public class ReflectionFileDescriptorProvider implements FileDescriptorProvider 
 
 	private final DescriptorProtoExtractor protos;
 	private final Map<String, FileDescriptor> catalog = new HashMap<>();
-	// TODO: wrong
 	private Map<Class<?>, FileDescriptor> types = new HashMap<>();
 	private Map<String, ServiceDescriptorProto> serviceProtos = new HashMap<>();
 	private Map<String, List<Class<?>>> typesPerService = new HashMap<>();
@@ -71,33 +64,6 @@ public class ReflectionFileDescriptorProvider implements FileDescriptorProvider 
 		register(fullMethodName, input, output, MethodType.BIDI_STREAMING);
 	}
 
-	public void register(Method method) {
-		Class<?> owner = method.getDeclaringClass();
-		Class<?> inputType = method.getParameterTypes()[0];
-		Class<?> outputType = method.getReturnType();
-
-		if (Publisher.class.isAssignableFrom(outputType)) {
-			Type genericOutputType = method.getGenericReturnType();
-			if (genericOutputType instanceof ParameterizedType parameterized) {
-				outputType = (Class<?>) parameterized.getActualTypeArguments()[0];
-			}
-			if (Publisher.class.isAssignableFrom(inputType)) {
-				Type genericInputType = method.getGenericParameterTypes()[0];
-				if (genericInputType instanceof ParameterizedType parameterized) {
-					inputType = (Class<?>) parameterized.getActualTypeArguments()[0];
-				}
-				bidi(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
-						outputType);
-			} else {
-				stream(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
-						outputType);
-			}
-		} else {
-			unary(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
-					outputType);
-		}
-	}
-
 	private <I, O> void register(String fullMethodName, Class<I> input, Class<O> output, MethodType methodType) {
 		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
 		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
@@ -117,10 +83,10 @@ public class ReflectionFileDescriptorProvider implements FileDescriptorProvider 
 		}
 		MethodDescriptorProto proto = builder
 				.build();
-		register(FileDescriptorProvider.class, serviceName, methodName, proto, input, output);
+		register(serviceName, methodName, proto, input, output);
 	}
 
-	private void register(Class<?> owner, String serviceName, String methodName, MethodDescriptorProto proto,
+	private void register(String serviceName, String methodName, MethodDescriptorProto proto,
 			Class<?> input,
 			Class<?> output) {
 		ServiceDescriptorProto service = this.serviceProtos.get(serviceName);

@@ -18,8 +18,11 @@ package org.springframework.grpc.reflect;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.Publisher;
 import org.springframework.grpc.sample.proto.HelloWorldProto;
 import org.springframework.util.StringUtils;
 
@@ -107,7 +110,30 @@ public class DescriptorRegistryTests {
 	}
 
 	private void register(Method method) {
-		reflection.register(method);
+		Class<?> owner = method.getDeclaringClass();
+		Class<?> inputType = method.getParameterTypes()[0];
+		Class<?> outputType = method.getReturnType();
+
+		if (Publisher.class.isAssignableFrom(outputType)) {
+			Type genericOutputType = method.getGenericReturnType();
+			if (genericOutputType instanceof ParameterizedType parameterized) {
+				outputType = (Class<?>) parameterized.getActualTypeArguments()[0];
+			}
+			if (Publisher.class.isAssignableFrom(inputType)) {
+				Type genericInputType = method.getGenericParameterTypes()[0];
+				if (genericInputType instanceof ParameterizedType parameterized) {
+					inputType = (Class<?>) parameterized.getActualTypeArguments()[0];
+				}
+				reflection.bidi(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
+						outputType);
+			} else {
+				reflection.stream(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
+						outputType);
+			}
+		} else {
+			reflection.unary(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
+					outputType);
+		}
 		registry.register(
 				reflection.file(method.getDeclaringClass().getSimpleName()).findServiceByName(
 						method.getDeclaringClass().getSimpleName())
