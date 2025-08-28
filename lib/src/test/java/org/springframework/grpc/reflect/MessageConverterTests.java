@@ -91,8 +91,6 @@ public class MessageConverterTests {
 
 	@Test
 	public void testConvertToGeneratedMessage() {
-		DescriptorRegistrar catalog = new DescriptorRegistrar();
-		catalog.register(Foo.class, HelloRequest.getDescriptor());
 		MessageConverter converter = new MessageConverter();
 		Descriptor desc = HelloRequest.getDescriptor();
 		Foo foo = new Foo();

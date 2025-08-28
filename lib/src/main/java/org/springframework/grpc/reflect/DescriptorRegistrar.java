@@ -34,7 +34,6 @@ public class DescriptorRegistrar implements FileDescriptorProvider {
 	private final ReflectionFileDescriptorProvider reflection = new ReflectionFileDescriptorProvider(DescriptorProtoExtractor.DEFAULT_INSTANCE);
 	private Map<String, DescriptorMapping> inputs = new HashMap<>();
 	private Map<String, DescriptorMapping> outputs = new HashMap<>();
-	private Map<Class<?>, Descriptor> descriptors = new HashMap<>();
 	private boolean strict = true;
 
 	public DescriptorRegistrar() {
@@ -90,10 +89,6 @@ public class DescriptorRegistrar implements FileDescriptorProvider {
 
 	public void output(String fullMethodName, Class<?> type, Descriptor descriptor) {
 		this.outputs.put(fullMethodName, new DescriptorMapping(type, descriptor));
-	}
-
-	public void register(Class<?> type, Descriptor descriptor) {
-		this.descriptors.put(type, descriptor);
 	}
 
 	public void register(FileDescriptor file) {
