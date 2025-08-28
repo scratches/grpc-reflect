@@ -30,7 +30,7 @@ public class DescriptorRegistryTests {
 
 	private DescriptorProtoExtractor extractor = DescriptorProtoExtractor.DEFAULT_INSTANCE;
 	private DescriptorCatalog catalog = new DescriptorCatalog();
-	private DescriptorRegistrar registry = new DescriptorRegistrar(extractor, catalog);
+	private DescriptorRegistrar registry = new DescriptorRegistrar(catalog);
 	private ReflectionFileDescriptorProvider reflection = new ReflectionFileDescriptorProvider(extractor);
 
 	@Test
