@@ -16,12 +16,15 @@
 package org.springframework.grpc.reflect;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.reactivestreams.Publisher;
 import org.springframework.util.StringUtils;
 
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
@@ -73,8 +76,26 @@ public class ReflectionFileDescriptorProvider implements FileDescriptorProvider 
 		Class<?> inputType = method.getParameterTypes()[0];
 		Class<?> outputType = method.getReturnType();
 
-		unary(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
-				outputType);
+		if (Publisher.class.isAssignableFrom(outputType)) {
+			Type genericOutputType = method.getGenericReturnType();
+			if (genericOutputType instanceof ParameterizedType parameterized) {
+				outputType = (Class<?>) parameterized.getActualTypeArguments()[0];
+			}
+			if (Publisher.class.isAssignableFrom(inputType)) {
+				Type genericInputType = method.getGenericParameterTypes()[0];
+				if (genericInputType instanceof ParameterizedType parameterized) {
+					inputType = (Class<?>) parameterized.getActualTypeArguments()[0];
+				}
+				bidi(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
+						outputType);
+			} else {
+				stream(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
+						outputType);
+			}
+		} else {
+			unary(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
+					outputType);
+		}
 	}
 
 	private <I, O> void register(String fullMethodName, Class<I> input, Class<O> output, MethodType methodType) {
