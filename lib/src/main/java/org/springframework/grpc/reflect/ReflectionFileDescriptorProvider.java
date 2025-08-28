@@ -41,8 +41,6 @@ public class ReflectionFileDescriptorProvider implements FileDescriptorProvider 
 	private final Map<String, FileDescriptor> catalog = new HashMap<>();
 	// TODO: wrong
 	private Map<Class<?>, FileDescriptor> types = new HashMap<>();
-	// TODO: wrong
-	private Map<Class<?>, Descriptor> descriptors = new HashMap<>();
 	private Map<String, ServiceDescriptorProto> serviceProtos = new HashMap<>();
 	private Map<String, List<Class<?>>> typesPerService = new HashMap<>();
 
@@ -214,8 +212,6 @@ public class ReflectionFileDescriptorProvider implements FileDescriptorProvider 
 		try {
 			FileDescriptor proto = FileDescriptor.buildFrom(builder.build(),
 					dependencies.toArray(new FileDescriptor[0]));
-			proto.getMessageTypes()
-					.forEach(descriptor -> this.descriptors.put(types.get(descriptor.getName()), descriptor));
 			proto.getServices()
 					.forEach(descriptor -> this.catalog.put(descriptor.getName(), proto));
 			this.types.put(type, proto);
