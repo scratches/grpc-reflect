@@ -29,7 +29,6 @@ import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto.Builder;
 import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
 import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
-import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.FileDescriptor;
 
@@ -97,7 +96,7 @@ public class ReflectionFileDescriptorProvider implements FileDescriptorProvider 
 		}
 		MethodDescriptorProto proto = builder
 				.build();
-		register(DescriptorRegistrar.class, serviceName, methodName, proto, input, output);
+		register(FileDescriptorProvider.class, serviceName, methodName, proto, input, output);
 	}
 
 	private void register(Class<?> owner, String serviceName, String methodName, MethodDescriptorProto proto,
