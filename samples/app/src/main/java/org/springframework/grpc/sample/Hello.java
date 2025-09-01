@@ -18,6 +18,13 @@ package org.springframework.grpc.sample;
 public class Hello {
 	private String name;
 
+	Hello() {
+	}
+
+	Hello(String name) {
+		this.name = name;
+	}
+
 	public String getName() {
 		return name;
 	}

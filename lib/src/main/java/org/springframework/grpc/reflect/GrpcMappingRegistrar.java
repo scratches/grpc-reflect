@@ -26,6 +26,7 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.grpc.reflect.DynamicServiceFactory.BindableServiceInstanceBuilder;
+import org.springframework.util.StringUtils;
 
 import io.grpc.BindableService;
 
@@ -62,8 +63,13 @@ public class GrpcMappingRegistrar implements ImportBeanDefinitionRegistrar {
 			BindableServiceInstanceBuilder service = dynamic.service(serviceName, instance);
 			for (Method method : instance.getClass().getDeclaredMethods()) {
 				if (method.isAnnotationPresent(GrpcMapping.class)) {
-					// TODO: use the mapping GrpcMapping mapping = method.getAnnotation(GrpcMapping.class);
-					service.method(method.getName());
+					GrpcMapping mapping = method.getAnnotation(GrpcMapping.class);
+					if (mapping.value().isEmpty()) {
+						service.method(method);
+					}
+					else {
+						service.method(method, mapping.value());
+					}
 				}
 			}
 			return service.build();

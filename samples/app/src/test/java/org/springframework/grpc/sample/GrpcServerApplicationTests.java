@@ -139,6 +139,14 @@ public class GrpcServerApplicationTests {
 	}
 
 	@Test
+	void dynamicServiceFromInstanceWithMapping() {
+		DynamicStub stub = new DynamicStub(registry, this.channel);
+		Hello request = new Hello("Foo");
+		Hello response = stub.unary("FooService/Echo", request, Hello.class);
+		assertThat(response).isNotNull();
+	}
+
+	@Test
 	void pojoCall() {
 		DynamicStub stub = new DynamicStub(registry, this.channel);
 		Hello request = new Hello();

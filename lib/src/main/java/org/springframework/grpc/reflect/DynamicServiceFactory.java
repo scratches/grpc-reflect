@@ -131,12 +131,20 @@ public class DynamicServiceFactory {
 				throw new IllegalArgumentException(
 						"Method " + methodName + " must have exactly one parameter in class " + owner.getName());
 			}
+			return method(method);
+		}
+
+		public BindableServiceInstanceBuilder method(Method method) {
+			return method(method, StringUtils.capitalize(method.getName()));
+		}
+
+		public BindableServiceInstanceBuilder method(Method method, String methodName) {
 			Class<?> requestType = method.getParameterTypes()[0];
 			Type genericRequestType = method.getGenericParameterTypes()[0];
 			Class<?> responseType = method.getReturnType();
 			Type genericResponseType = method.getGenericReturnType();
 			if (requestType.equals(genericRequestType) && responseType.equals(genericResponseType)) {
-				this.builder.unary(StringUtils.capitalize(methodName), requestType, responseType,
+				this.builder.unary(methodName, requestType, responseType,
 						request -> invoker(instance, method, request));
 			} else if (Publisher.class.isAssignableFrom(responseType)) {
 				responseType = (Class<?>) ((ParameterizedType) genericResponseType).getActualTypeArguments()[0];

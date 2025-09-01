@@ -19,8 +19,8 @@ public class GrpcServerApplication {
 @GrpcController
 class FooService {
 
-	@GrpcMapping
-	public Foo echo(Foo input) {
+	@GrpcMapping("Echo")
+	public Foo ping(Foo input) {
 		return input;
 	}
 
