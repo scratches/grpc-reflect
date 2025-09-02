@@ -96,7 +96,6 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 		return Message.class.isAssignableFrom(elementType.toClass()) && supportsMimeType(mimeType);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Flux<Message> decode(Publisher<DataBuffer> inputStream, ResolvableType elementType,
 			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
