@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.stereotype.Component;
 
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Component
@@ -23,4 +23,5 @@ public @interface GrpcMapping {
 
 	@AliasFor("value")
 	String path() default "";
+
 }

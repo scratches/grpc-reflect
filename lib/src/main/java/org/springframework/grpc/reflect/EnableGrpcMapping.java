@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Import;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Documented
-@Import({GrpcMappingRegistrar.class, GrpcMappingConfiguration.class})
+@Import({ GrpcMappingRegistrar.class, GrpcMappingConfiguration.class })
 public @interface EnableGrpcMapping {
+
 }

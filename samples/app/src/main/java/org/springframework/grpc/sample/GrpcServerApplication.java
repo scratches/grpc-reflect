@@ -30,9 +30,11 @@ class FooService {
 	}
 
 	static class Input {
+
 	}
-	
+
 	static class Output {
+
 	}
-	
+
 }

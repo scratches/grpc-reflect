@@ -53,8 +53,8 @@ public class DescriptorRegistryValidationTests {
 	public void testValidateBadRequest() throws Exception {
 		DescriptorRegistrar registry = new DescriptorRegistrar();
 		registry.register(HelloWorldProto.getDescriptor().findServiceByName("Simple"));
-		registry.input("Simple/SayHello",
-				Foo.class, HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
+		registry.input("Simple/SayHello", Foo.class,
+				HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
 		registry.validate("Simple/SayHello", Foo.class, Response.class);
 		assertThrows(IllegalArgumentException.class,
 				() -> registry.validate("Simple/SayHello", Response.class, Response.class));
@@ -64,10 +64,12 @@ public class DescriptorRegistryValidationTests {
 	public void testValidateBadProperty() throws Exception {
 		DescriptorRegistrar registry = new DescriptorRegistrar();
 		registry.register(HelloWorldProto.getDescriptor().findServiceByName("Simple"));
-		registry.input("SimpleSayHello", Foo.class, HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
+		registry.input("SimpleSayHello", Foo.class,
+				HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
 		registry.validate("Simple/SayHello", Foo.class, Response.class);
 		String message = assertThrows(IllegalArgumentException.class,
-				() -> registry.validate("Simple/SayHello", Wrong.class, Response.class)).getMessage();
+				() -> registry.validate("Simple/SayHello", Wrong.class, Response.class))
+			.getMessage();
 		assertThat(message).contains("Field 'name'");
 	}
 
@@ -75,21 +77,21 @@ public class DescriptorRegistryValidationTests {
 	public void testValidateBadResponse() throws Exception {
 		DescriptorRegistrar registry = new DescriptorRegistrar();
 		registry.register(HelloWorldProto.getDescriptor().findServiceByName("Simple"));
-		registry.input("Simple/SayHello", Foo.class, HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
+		registry.input("Simple/SayHello", Foo.class,
+				HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
 		registry.validate("Simple/SayHello", Foo.class, Response.class);
-		assertThrows(IllegalArgumentException.class,
-				() -> registry.validate("Simple/SayHello", Foo.class, Foo.class));
+		assertThrows(IllegalArgumentException.class, () -> registry.validate("Simple/SayHello", Foo.class, Foo.class));
 	}
 
 	private void register(DescriptorRegistrar registry, Method method) {
 		Class<?> owner = method.getDeclaringClass();
 		Class<?> inputType = method.getParameterTypes()[0];
 		Class<?> outputType = method.getReturnType();
-		registry.unary(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
-				outputType);
+		registry.unary(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType, outputType);
 	}
 
 	public static class Response {
+
 		private String message;
 
 		public String getMessage() {
@@ -99,9 +101,11 @@ public class DescriptorRegistryValidationTests {
 		public void setMessage(String message) {
 			this.message = message;
 		}
+
 	}
 
 	public static class Wrong {
+
 		private int name;
 
 		public int getName() {

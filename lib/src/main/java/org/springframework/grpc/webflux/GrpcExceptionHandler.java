@@ -20,7 +20,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.AbstractServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
-import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebExceptionHandler;
 
@@ -28,7 +27,6 @@ import io.grpc.Status.Code;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.server.HttpServerResponse;
 
-@Component
 public class GrpcExceptionHandler extends GrpcCodecSupport implements WebExceptionHandler, Ordered {
 
 	@Override
@@ -42,7 +40,8 @@ public class GrpcExceptionHandler extends GrpcCodecSupport implements WebExcepti
 			exchange.getResponse().getHeaders().setContentType(MediaType.parseMediaType("application/grpc"));
 			addTrailer(exchange.getResponse());
 			return exchange.getResponse().setComplete();
-		} else {
+		}
+		else {
 			return Mono.error(ex); // Not a gRPC request, propagate the error
 		}
 	}

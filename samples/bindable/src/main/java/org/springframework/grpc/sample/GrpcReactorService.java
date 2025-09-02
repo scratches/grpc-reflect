@@ -34,8 +34,8 @@ public class GrpcReactorService extends ReactorHelloGrpc.HelloImplBase {
 	public Flux<HelloReply> streamHello(HelloRequest req) {
 		log.info("Hello " + req.getName());
 		return Flux.interval(Duration.ofSeconds(1))
-				.take(5)
-				.map(i -> HelloReply.newBuilder().setMessage("Hello(" + i + ") ==> " + req.getName()).build());
+			.take(5)
+			.map(i -> HelloReply.newBuilder().setMessage("Hello(" + i + ") ==> " + req.getName()).build());
 	}
 
 	@Override

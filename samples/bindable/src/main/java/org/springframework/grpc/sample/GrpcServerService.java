@@ -38,7 +38,8 @@ public class GrpcServerService extends SimpleGrpc.SimpleImplBase {
 			count++;
 			try {
 				Thread.sleep(1000L);
-			} catch (InterruptedException e) {
+			}
+			catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 				responseObserver.onError(e);
 				return;

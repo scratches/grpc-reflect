@@ -34,9 +34,13 @@ import io.grpc.MethodDescriptor.MethodType;
 public class ReflectionFileDescriptorProvider implements FileDescriptorProvider {
 
 	private final DescriptorProtoExtractor protos;
+
 	private final Map<String, FileDescriptor> catalog = new HashMap<>();
+
 	private Map<Class<?>, FileDescriptor> types = new HashMap<>();
+
 	private Map<String, ServiceDescriptorProto> serviceProtos = new HashMap<>();
+
 	private Map<String, List<Class<?>>> typesPerService = new HashMap<>();
 
 	public ReflectionFileDescriptorProvider() {
@@ -68,9 +72,9 @@ public class ReflectionFileDescriptorProvider implements FileDescriptorProvider 
 		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
 		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
 		MethodDescriptorProto.Builder builder = MethodDescriptorProto.newBuilder()
-				.setName(methodName)
-				.setInputType(input.getSimpleName())
-				.setOutputType(output.getSimpleName());
+			.setName(methodName)
+			.setInputType(input.getSimpleName())
+			.setOutputType(output.getSimpleName());
 		switch (methodType) {
 			case SERVER_STREAMING:
 				builder.setServerStreaming(true);
@@ -81,13 +85,11 @@ public class ReflectionFileDescriptorProvider implements FileDescriptorProvider 
 				break;
 			default:
 		}
-		MethodDescriptorProto proto = builder
-				.build();
+		MethodDescriptorProto proto = builder.build();
 		register(serviceName, methodName, proto, input, output);
 	}
 
-	private void register(String serviceName, String methodName, MethodDescriptorProto proto,
-			Class<?> input,
+	private void register(String serviceName, String methodName, MethodDescriptorProto proto, Class<?> input,
 			Class<?> output) {
 		ServiceDescriptorProto service = this.serviceProtos.get(serviceName);
 		if (service == null) {
@@ -128,7 +130,8 @@ public class ReflectionFileDescriptorProvider implements FileDescriptorProvider 
 		FileDescriptorProto.Builder builder = FileDescriptorProto.newBuilder();
 		if (this.catalog.get(owner) != null) {
 			builder = this.catalog.get(owner).toProto().toBuilder();
-		} else {
+		}
+		else {
 			builder.setName(owner + ".proto");
 			builder.setSyntax("proto3");
 		}
@@ -150,7 +153,8 @@ public class ReflectionFileDescriptorProvider implements FileDescriptorProvider 
 			FileDescriptor proto = FileDescriptor.buildFrom(builder.build(),
 					dependencies.toArray(new FileDescriptor[0]));
 			this.catalog.put(service.getName(), proto);
-		} catch (DescriptorValidationException e) {
+		}
+		catch (DescriptorValidationException e) {
 			throw new IllegalStateException(e);
 		}
 	}
@@ -177,7 +181,8 @@ public class ReflectionFileDescriptorProvider implements FileDescriptorProvider 
 		FileDescriptorProto.Builder builder = FileDescriptorProto.newBuilder();
 		if (this.types.containsKey(type)) {
 			builder = this.types.get(type).toProto().toBuilder();
-		} else {
+		}
+		else {
 			builder.setName(type.getSimpleName() + ".proto");
 			builder.setSyntax("proto3");
 		}
@@ -198,11 +203,12 @@ public class ReflectionFileDescriptorProvider implements FileDescriptorProvider 
 		try {
 			FileDescriptor proto = FileDescriptor.buildFrom(builder.build(),
 					dependencies.toArray(new FileDescriptor[0]));
-			proto.getServices()
-					.forEach(descriptor -> this.catalog.put(descriptor.getName(), proto));
+			proto.getServices().forEach(descriptor -> this.catalog.put(descriptor.getName(), proto));
 			this.types.put(type, proto);
-		} catch (DescriptorValidationException e) {
+		}
+		catch (DescriptorValidationException e) {
 			throw new IllegalStateException(e);
 		}
 	}
+
 }

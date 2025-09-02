@@ -43,13 +43,11 @@ public class GrpcRequestHandler<I, O> {
 	}
 
 	public Class<I> getInputType(ServerMethodDefinition<I, O> serverMethod) {
-		return ((PrototypeMarshaller<I>) serverMethod.getMethodDescriptor().getRequestMarshaller())
-				.getMessageClass();
+		return ((PrototypeMarshaller<I>) serverMethod.getMethodDescriptor().getRequestMarshaller()).getMessageClass();
 	}
 
 	public Class<O> getOutputType(ServerMethodDefinition<I, O> serverMethod) {
-		return ((PrototypeMarshaller<O>) serverMethod.getMethodDescriptor().getResponseMarshaller())
-				.getMessageClass();
+		return ((PrototypeMarshaller<O>) serverMethod.getMethodDescriptor().getResponseMarshaller()).getMessageClass();
 	}
 
 	public Publisher<O> handle(BindableService bindable, ServerMethodDefinition<I, O> serverMethod,
@@ -57,8 +55,7 @@ public class GrpcRequestHandler<I, O> {
 		Class<?> inputType = getInputType(serverMethod);
 		@SuppressWarnings("unchecked")
 		Publisher<I> input = (Publisher<I>) (serverMethod.getMethodDescriptor().getType() == MethodType.BIDI_STREAMING
-				? request.bodyToFlux(inputType)
-				: request.bodyToMono(inputType));
+				? request.bodyToFlux(inputType) : request.bodyToMono(inputType));
 		switch (serverMethod.getMethodDescriptor().getType()) {
 			case UNARY:
 				return Mono.from(input).map(item -> unary(item, serverMethod));
@@ -114,17 +111,16 @@ public class GrpcRequestHandler<I, O> {
 			if (!isReactive(bindable, serverMethod)) {
 				source = request.publishOn(Schedulers.boundedElastic());
 			}
-			return Flux.merge(source
-					.doOnNext(input -> {
-						listener.onMessage(input);
-						listener.onReady();
-					}).doFinally(signalType -> {
-						listener.onHalfClose();
-						listener.onComplete();
-						call.complete();
-					})
-					.filter(input -> false).then(Mono.empty()), call.flux());
-		} finally {
+			return Flux.merge(source.doOnNext(input -> {
+				listener.onMessage(input);
+				listener.onReady();
+			}).doFinally(signalType -> {
+				listener.onHalfClose();
+				listener.onComplete();
+				call.complete();
+			}).filter(input -> false).then(Mono.empty()), call.flux());
+		}
+		finally {
 			context.detach(previous);
 		}
 	}
@@ -137,6 +133,7 @@ public class GrpcRequestHandler<I, O> {
 	}
 
 	abstract class LocalServerCall<Req, Res> extends ServerCall<Req, Res> {
+
 		protected MethodDescriptor<Req, Res> method;
 
 		public LocalServerCall(MethodDescriptor<Req, Res> method) {
@@ -179,6 +176,7 @@ public class GrpcRequestHandler<I, O> {
 		public void sendMessage(Res message) {
 			this.response = message;
 		}
+
 	}
 
 	class OneToManyServerCall<Req, Res> extends LocalServerCall<Req, Res> {
@@ -199,6 +197,7 @@ public class GrpcRequestHandler<I, O> {
 		public void close(Status status, Metadata trailers) {
 			emitter.complete();
 		}
+
 	}
 
 	class ManyToManyServerCall<Req, Res> extends LocalServerCall<Req, Res> {
@@ -221,5 +220,7 @@ public class GrpcRequestHandler<I, O> {
 		public void complete() {
 			this.emitter.tryEmitComplete();
 		}
+
 	}
+
 }

@@ -35,8 +35,10 @@ import io.grpc.reflection.v1.ServerReflectionRequest;
 import io.grpc.reflection.v1.ServerReflectionResponse;
 import io.grpc.stub.StreamObserver;
 
-@SpringBootTest(properties = { "spring.grpc.server.port=0",
-		"spring.grpc.client.default-channel.address=0.0.0.0:${local.grpc.port}" }, useMainMethod = UseMainMethod.ALWAYS)
+@SpringBootTest(
+		properties = { "spring.grpc.server.port=0",
+				"spring.grpc.client.default-channel.address=0.0.0.0:${local.grpc.port}" },
+		useMainMethod = UseMainMethod.ALWAYS)
 @DirtiesContext
 public class GrpcServerApplicationTests {
 
@@ -62,22 +64,22 @@ public class GrpcServerApplicationTests {
 		ServerReflectionStub reflectionService = ServerReflectionGrpc.newStub(this.channel);
 		AtomicReference<Throwable> error = new AtomicReference<>();
 		AtomicReference<ServerReflectionResponse> response = new AtomicReference<>();
-		StreamObserver<ServerReflectionRequest> observer = reflectionService.serverReflectionInfo(
-				new StreamObserver<ServerReflectionResponse>() {
-					@Override
-					public void onNext(ServerReflectionResponse value) {
-						response.set(value);
-					}
+		StreamObserver<ServerReflectionRequest> observer = reflectionService
+			.serverReflectionInfo(new StreamObserver<ServerReflectionResponse>() {
+				@Override
+				public void onNext(ServerReflectionResponse value) {
+					response.set(value);
+				}
 
-					@Override
-					public void onError(Throwable t) {
-						error.set(t);
-					}
+				@Override
+				public void onError(Throwable t) {
+					error.set(t);
+				}
 
-					@Override
-					public void onCompleted() {
-					}
-				});
+				@Override
+				public void onCompleted() {
+				}
+			});
 		observer.onNext(ServerReflectionRequest.newBuilder().setListServices("").build());
 		Awaitility.await().until(() -> response.get() != null || error.get() != null);
 		observer.onCompleted();
@@ -90,22 +92,22 @@ public class GrpcServerApplicationTests {
 		ServerReflectionStub reflectionService = ServerReflectionGrpc.newStub(this.channel);
 		AtomicReference<Throwable> error = new AtomicReference<>();
 		AtomicReference<ServerReflectionResponse> response = new AtomicReference<>();
-		StreamObserver<ServerReflectionRequest> observer = reflectionService.serverReflectionInfo(
-				new StreamObserver<ServerReflectionResponse>() {
-					@Override
-					public void onNext(ServerReflectionResponse value) {
-						response.set(value);
-					}
+		StreamObserver<ServerReflectionRequest> observer = reflectionService
+			.serverReflectionInfo(new StreamObserver<ServerReflectionResponse>() {
+				@Override
+				public void onNext(ServerReflectionResponse value) {
+					response.set(value);
+				}
 
-					@Override
-					public void onError(Throwable t) {
-						error.set(t);
-					}
+				@Override
+				public void onError(Throwable t) {
+					error.set(t);
+				}
 
-					@Override
-					public void onCompleted() {
-					}
-				});
+				@Override
+				public void onCompleted() {
+				}
+			});
 		observer.onNext(ServerReflectionRequest.newBuilder().setFileContainingSymbol("FooService").build());
 		Awaitility.await().until(() -> response.get() != null || error.get() != null);
 		observer.onCompleted();
@@ -167,8 +169,7 @@ public class GrpcServerApplicationTests {
 
 		@Bean
 		BindableService echoService(DynamicServiceFactory factory) {
-			return factory.service("EchoService").unary("Echo",
-					Foo.class, Foo.class, Function.identity()).build();
+			return factory.service("EchoService").unary("Echo", Foo.class, Foo.class, Function.identity()).build();
 		}
 
 		@Bean

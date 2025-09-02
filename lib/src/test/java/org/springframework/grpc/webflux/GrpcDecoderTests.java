@@ -33,15 +33,13 @@ public class GrpcDecoderTests {
 	void testCanDecode() {
 		GrpcDecoder decoder = new GrpcDecoder();
 		assertThat(decoder.canDecode(ResolvableType.forClass(HelloReply.class), MimeType.valueOf("application/grpc")))
-				.isTrue();
+			.isTrue();
 	}
 
 	@Test
 	void testDecode() {
 		GrpcDecoder decoder = new GrpcDecoder();
-		HelloReply message = HelloReply.newBuilder()
-				.setMessage("Hello World")
-				.build();
+		HelloReply message = HelloReply.newBuilder().setMessage("Hello World").build();
 		int capacity = message.getSerializedSize() + 5;
 		DataBuffer data = DefaultDataBufferFactory.sharedInstance.allocateBuffer(capacity);
 		ByteBuffer buffer = ByteBuffer.allocate(capacity);
@@ -57,4 +55,5 @@ public class GrpcDecoderTests {
 		assertThat(reply).isNotNull();
 		assertThat(reply.getMessage()).isEqualTo("Hello World");
 	}
+
 }

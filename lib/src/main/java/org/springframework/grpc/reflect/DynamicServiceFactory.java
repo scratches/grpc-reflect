@@ -51,6 +51,7 @@ import reactor.core.publisher.Sinks.Many;
 public class DynamicServiceFactory {
 
 	private final MessageConverter converter;
+
 	private final DescriptorRegistrar registry;
 
 	public DynamicServiceFactory(DescriptorRegistrar registry) {
@@ -68,13 +69,13 @@ public class DynamicServiceFactory {
 	}
 
 	public <T> BindableServiceInstanceBuilder service(String serviceName, T instance) {
-		return new BindableServiceInstanceBuilder(instance, serviceName, this.registry,
-				this.converter);
+		return new BindableServiceInstanceBuilder(instance, serviceName, this.registry, this.converter);
 	}
 
 	static class SimpleBaseDescriptorSupplier implements ProtoServiceDescriptorSupplier {
 
 		private FileDescriptor file;
+
 		private String serviceName;
 
 		public SimpleBaseDescriptorSupplier(FileDescriptor file, String serviceName) {
@@ -94,8 +95,7 @@ public class DynamicServiceFactory {
 
 	}
 
-	static class SimpleMethodDescriptor extends SimpleBaseDescriptorSupplier
-			implements ProtoMethodDescriptorSupplier {
+	static class SimpleMethodDescriptor extends SimpleBaseDescriptorSupplier implements ProtoMethodDescriptorSupplier {
 
 		private final String methodName;
 
@@ -112,7 +112,9 @@ public class DynamicServiceFactory {
 	}
 
 	public static class BindableServiceInstanceBuilder {
+
 		private BindableServiceBuilder builder;
+
 		private Object instance;
 
 		private <T> BindableServiceInstanceBuilder(T instance, String serviceName, DescriptorRegistrar registry,
@@ -146,17 +148,20 @@ public class DynamicServiceFactory {
 			if (requestType.equals(genericRequestType) && responseType.equals(genericResponseType)) {
 				this.builder.unary(methodName, requestType, responseType,
 						request -> invoker(instance, method, request));
-			} else if (Publisher.class.isAssignableFrom(responseType)) {
+			}
+			else if (Publisher.class.isAssignableFrom(responseType)) {
 				responseType = (Class<?>) ((ParameterizedType) genericResponseType).getActualTypeArguments()[0];
 				if (Publisher.class.isAssignableFrom(requestType)) {
 					requestType = (Class<?>) ((ParameterizedType) genericRequestType).getActualTypeArguments()[0];
 					this.builder.bidi(methodName, requestType, responseType,
 							request -> invoker(instance, method, request));
-				} else {
+				}
+				else {
 					this.builder.stream(methodName, requestType, responseType,
 							request -> invoker(instance, method, request));
 				}
-			} else {
+			}
+			else {
 				throw new IllegalStateException(
 						"Unsupported request and response types [" + requestType + ", " + responseType + "]");
 			}
@@ -172,15 +177,21 @@ public class DynamicServiceFactory {
 		public BindableService build() {
 			return this.builder.build();
 		}
+
 	}
 
 	public static class BindableServiceBuilder {
 
 		private String serviceName;
+
 		private FileDescriptorProvider registry;
+
 		private DescriptorRegistrar registrar;
+
 		private MessageConverter converter;
+
 		private Map<String, ServerCallHandler<DynamicMessage, DynamicMessage>> handlers = new HashMap<>();
+
 		private Map<String, MethodDescriptor<DynamicMessage, DynamicMessage>> descriptors = new HashMap<>();
 
 		private BindableServiceBuilder(String serviceName, DescriptorRegistrar registry, MessageConverter converter) {
@@ -192,8 +203,7 @@ public class DynamicServiceFactory {
 
 		public <I, O> BindableServiceBuilder unary(String methodName, Class<I> requestType, Class<O> responseType,
 				Function<I, O> function) {
-			return method(methodName, requestType, responseType, function,
-					MethodDescriptor.MethodType.UNARY);
+			return method(methodName, requestType, responseType, function, MethodDescriptor.MethodType.UNARY);
 		}
 
 		public <I, O> BindableServiceBuilder stream(String methodName, Class<I> requestType, Class<O> responseType,
@@ -204,17 +214,17 @@ public class DynamicServiceFactory {
 
 		public <I, O> BindableServiceBuilder bidi(String methodName, Class<I> requestType, Class<O> responseType,
 				Function<Publisher<I>, Publisher<O>> function) {
-			return method(methodName, requestType, responseType, function,
-					MethodDescriptor.MethodType.BIDI_STREAMING);
+			return method(methodName, requestType, responseType, function, MethodDescriptor.MethodType.BIDI_STREAMING);
 		}
 
-		private <I, O> BindableServiceBuilder method(String methodName, Class<I> requestType,
-				Class<O> responseType,
+		private <I, O> BindableServiceBuilder method(String methodName, Class<I> requestType, Class<O> responseType,
 				Function<?, ?> function, MethodType methodType) {
 			String fullMethodName = serviceName + "/" + methodName;
 			if (this.registry.file(serviceName) == null
-					|| this.registry.file(serviceName).findServiceByName(serviceName) == null || this.registry
-							.file(serviceName).findServiceByName(serviceName).findMethodByName(methodName) == null) {
+					|| this.registry.file(serviceName).findServiceByName(serviceName) == null
+					|| this.registry.file(serviceName)
+						.findServiceByName(serviceName)
+						.findMethodByName(methodName) == null) {
 				switch (methodType) {
 					case UNARY:
 						this.registrar.unary(fullMethodName, requestType, responseType);
@@ -228,26 +238,30 @@ public class DynamicServiceFactory {
 					default:
 						throw new UnsupportedOperationException();
 				}
-			} else {
+			}
+			else {
 				registrar.validate(fullMethodName, requestType, responseType);
 			}
-			Descriptor inputType = registry.file(serviceName).findServiceByName(serviceName)
-					.findMethodByName(methodName).getInputType();
-			Descriptor outputType = registry.file(serviceName).findServiceByName(serviceName)
-					.findMethodByName(methodName).getOutputType();
+			Descriptor inputType = registry.file(serviceName)
+				.findServiceByName(serviceName)
+				.findMethodByName(methodName)
+				.getInputType();
+			Descriptor outputType = registry.file(serviceName)
+				.findServiceByName(serviceName)
+				.findMethodByName(methodName)
+				.getOutputType();
 			Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
-					.marshaller(DynamicMessage.newBuilder(outputType).build());
+				.marshaller(DynamicMessage.newBuilder(outputType).build());
 			Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
-					.marshaller(DynamicMessage.newBuilder(inputType).build());
+				.marshaller(DynamicMessage.newBuilder(inputType).build());
 			MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
-					.<DynamicMessage, DynamicMessage>newBuilder()
-					.setType(methodType)
-					.setFullMethodName(fullMethodName)
-					.setRequestMarshaller(requestMarshaller)
-					.setResponseMarshaller(responseMarshaller)
-					.setSchemaDescriptor(
-							new SimpleMethodDescriptor(registry.file(serviceName), serviceName, methodName))
-					.build();
+				.<DynamicMessage, DynamicMessage>newBuilder()
+				.setType(methodType)
+				.setFullMethodName(fullMethodName)
+				.setRequestMarshaller(requestMarshaller)
+				.setResponseMarshaller(responseMarshaller)
+				.setSchemaDescriptor(new SimpleMethodDescriptor(registry.file(serviceName), serviceName, methodName))
+				.build();
 			ServerCallHandler<DynamicMessage, DynamicMessage> handler = handler(requestType, outputType, function,
 					methodType);
 			this.handlers.put(methodName, handler);
@@ -274,9 +288,7 @@ public class DynamicServiceFactory {
 		}
 
 		private <I, O> ServerCallHandler<DynamicMessage, DynamicMessage> handler(Class<I> requestType,
-				Descriptor descriptor,
-				Function<?, ?> function,
-				MethodType methodType) {
+				Descriptor descriptor, Function<?, ?> function, MethodType methodType) {
 			switch (methodType) {
 				case UNARY:
 					return ServerCalls.asyncUnaryCall((req, obs) -> {
@@ -293,23 +305,26 @@ public class DynamicServiceFactory {
 						Flux<O> output = Flux.from(((Function<I, Publisher<O>>) function).apply(input));
 						output.doOnNext(item -> {
 							obs.onNext((DynamicMessage) converter.convert(item, descriptor));
-						}).doOnComplete(() -> obs.onCompleted())
-								.doOnError(error -> obs.onError(error)).subscribe();
+						}).doOnComplete(() -> obs.onCompleted()).doOnError(error -> obs.onError(error)).subscribe();
 					});
 				case BIDI_STREAMING:
-					return ServerCalls
-							.asyncBidiStreamingCall(
-									obs -> new BidiStreamObserver<I, O>(function, obs, requestType, descriptor));
+					return ServerCalls.asyncBidiStreamingCall(
+							obs -> new BidiStreamObserver<I, O>(function, obs, requestType, descriptor));
 				default:
 					throw new UnsupportedOperationException("Unsupported method type: " + methodType);
 			}
 		}
 
 		private class BidiStreamObserver<I, O> implements StreamObserver<DynamicMessage> {
+
 			private final StreamObserver<DynamicMessage> obs;
+
 			private final Class<I> requestType;
+
 			private Many<I> sink;
+
 			private Flux<O> output;
+
 			private Descriptor descriptor;
 
 			@SuppressWarnings("unchecked")
@@ -342,6 +357,7 @@ public class DynamicServiceFactory {
 				obs.onCompleted();
 				this.sink.tryEmitComplete();
 			}
+
 		}
 
 	}

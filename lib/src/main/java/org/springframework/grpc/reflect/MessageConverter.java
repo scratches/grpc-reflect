@@ -75,9 +75,10 @@ public class MessageConverter {
 				ReflectionUtils.makeAccessible(method);
 				if (field.getType() == FieldDescriptor.Type.MESSAGE) {
 					Object nestedValue = ReflectionUtils.invokeMethod(method, value);
-					AbstractMessage nestedMessage = convert(nestedValue,field.getMessageType());
+					AbstractMessage nestedMessage = convert(nestedValue, field.getMessageType());
 					builder.setField(field, nestedMessage);
-				} else {
+				}
+				else {
 					Object fieldValue = ReflectionUtils.invokeMethod(method, value);
 					builder.setField(field, fieldValue);
 				}
@@ -85,4 +86,5 @@ public class MessageConverter {
 		}
 		return builder.build();
 	}
+
 }

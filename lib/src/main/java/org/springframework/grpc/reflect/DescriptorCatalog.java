@@ -22,7 +22,7 @@ import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.Descriptors.ServiceDescriptor;
 
 public class DescriptorCatalog implements FileDescriptorProvider {
-	
+
 	private Map<String, FileDescriptor> fileDescriptors = new HashMap<>();
 
 	public void register(FileDescriptor file) {

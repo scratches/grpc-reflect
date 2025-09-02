@@ -18,5 +18,7 @@ package org.springframework.grpc.reflect;
 import com.google.protobuf.Descriptors.FileDescriptor;
 
 public interface FileDescriptorProvider {
+
 	FileDescriptor file(String serviceName);
+
 }

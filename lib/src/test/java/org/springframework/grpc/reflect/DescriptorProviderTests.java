@@ -35,6 +35,7 @@ public class DescriptorProviderTests {
 	}
 
 	public static class Bar {
+
 	}
 
 	public Bar translate(Foo foo) {
@@ -44,4 +45,5 @@ public class DescriptorProviderTests {
 	public Foo echo(Foo foo) {
 		return foo;
 	}
+
 }

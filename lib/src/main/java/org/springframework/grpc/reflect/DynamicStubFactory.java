@@ -69,21 +69,21 @@ public class DynamicStubFactory implements StubFactory<Object> {
 			}
 			GrpcClient client = AnnotationUtils.findAnnotation(invocation.getMethod().getDeclaringClass(),
 					GrpcClient.class);
-			GrpcMapping mapping = AnnotationUtils.findAnnotation(invocation.getMethod(),
-					GrpcMapping.class);
+			GrpcMapping mapping = AnnotationUtils.findAnnotation(invocation.getMethod(), GrpcMapping.class);
 			String methodName = service(client, invocation.getMethod().getDeclaringClass()) + "/"
 					+ method(mapping, invocation.getMethod());
 			Object[] arguments = invocation.getArguments();
 			if (Publisher.class.isAssignableFrom(invocation.getMethod().getParameterTypes()[0])) {
 				Class<?> requestType = (Class<?>) ((ParameterizedType) (invocation.getMethod()
-						.getGenericParameterTypes()[0])).getActualTypeArguments()[0];
+					.getGenericParameterTypes()[0])).getActualTypeArguments()[0];
 				if (Publisher.class.isAssignableFrom(invocation.getMethod().getReturnType())) {
 					Class<?> responseType = (Class<?>) ((ParameterizedType) (invocation.getMethod()
-							.getGenericReturnType())).getActualTypeArguments()[0];
+						.getGenericReturnType())).getActualTypeArguments()[0];
 					@SuppressWarnings({ "rawtypes", "unchecked" })
 					Flux<?> result = this.stub.bidi(methodName, (Publisher) arguments[0], responseType, requestType);
 					return result;
-				} else {
+				}
+				else {
 					return this.stub.stream(methodName, requestType, invocation.getMethod().getReturnType());
 				}
 			}
@@ -102,5 +102,7 @@ public class DynamicStubFactory implements StubFactory<Object> {
 			String service = client.service();
 			return service.isEmpty() ? type.getSimpleName() : service;
 		}
+
 	}
+
 }

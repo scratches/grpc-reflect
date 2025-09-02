@@ -58,7 +58,6 @@ public class GrpcHttpMessageWriter extends EncoderHttpMessageWriter<Message> {
 
 	/**
 	 * Create a new {@code ProtobufHttpMessageWriter} with the given encoder.
-	 * 
 	 * @param encoder the Protobuf message encoder to use
 	 */
 	public GrpcHttpMessageWriter(Encoder<Message> encoder) {
@@ -79,7 +78,8 @@ public class GrpcHttpMessageWriter extends EncoderHttpMessageWriter<Message> {
 				inputStream = Flux.from(inputStream);
 			}
 			return super.write(inputStream, elementType, mediaType, message, hints);
-		} catch (Exception ex) {
+		}
+		catch (Exception ex) {
 			return Mono.error(new EncodingException("Could not write Protobuf message: " + ex.getMessage(), ex));
 		}
 	}
@@ -106,7 +106,7 @@ public class GrpcHttpMessageWriter extends EncoderHttpMessageWriter<Message> {
 		if (response instanceof AbstractServerHttpResponse server) {
 			String grpcStatus = status(server.getStatusCode().value());
 			HttpServerResponse httpServerResponse = (HttpServerResponse) ((AbstractServerHttpResponse) response)
-					.getNativeResponse();
+				.getNativeResponse();
 			httpServerResponse.trailerHeaders(h -> {
 				h.set(GRPC_STATUS_HEADER, grpcStatus);
 			});
@@ -116,23 +116,32 @@ public class GrpcHttpMessageWriter extends EncoderHttpMessageWriter<Message> {
 	private String status(int status) {
 		if (status >= 200 && status < 300) {
 			return "0"; // OK
-		} else if (status == 400) {
+		}
+		else if (status == 400) {
 			return "3"; // INVALID_ARGUMENT
-		} else if (status == 401) {
+		}
+		else if (status == 401) {
 			return "16"; // UNAUTHENTICATED
-		} else if (status == 403) {
+		}
+		else if (status == 403) {
 			return "7"; // PERMISSION_DENIED
-		} else if (status == 404) {
+		}
+		else if (status == 404) {
 			return "5"; // NOT_FOUND
-		} else if (status == 408) {
+		}
+		else if (status == 408) {
 			return "4"; // DEADLINE_EXCEEDED
-		} else if (status == 429) {
+		}
+		else if (status == 429) {
 			return "8"; // RESOURCE_EXHAUSTED
-		} else if (status == 501) {
+		}
+		else if (status == 501) {
 			return "12"; // UNIMPLEMENTED
-		} else if (status == 503) {
+		}
+		else if (status == 503) {
 			return "14"; // UNAVAILABLE
-		} else if (status >= 500 && status < 600) {
+		}
+		else if (status >= 500 && status < 600) {
 			return "13"; // INTERNAL
 		}
 		return "2"; // UNKNOWN

@@ -28,6 +28,7 @@ import com.google.protobuf.Descriptors.MethodDescriptor;
 public class ReflectionFileDescriptorProviderTests {
 
 	private DescriptorProtoExtractor extractor = DescriptorProtoExtractor.DEFAULT_INSTANCE;
+
 	private ReflectionFileDescriptorProvider registry = new ReflectionFileDescriptorProvider(extractor);
 
 	@Test
@@ -49,8 +50,7 @@ public class ReflectionFileDescriptorProviderTests {
 		Class<?> owner = method.getDeclaringClass();
 		Class<?> inputType = method.getParameterTypes()[0];
 		Class<?> outputType = method.getReturnType();
-				registry.unary(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
-				outputType);
+		registry.unary(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType, outputType);
 	}
 
 	private MethodDescriptor method(ReflectionFileDescriptorProvider registry, String fullMethodName) {
@@ -69,6 +69,7 @@ public class ReflectionFileDescriptorProviderTests {
 	}
 
 	public static class Bar {
+
 	}
 
 	public Bar translate(Foo foo) {
@@ -78,4 +79,5 @@ public class ReflectionFileDescriptorProviderTests {
 	public Foo echo(Foo foo) {
 		return foo;
 	}
+
 }

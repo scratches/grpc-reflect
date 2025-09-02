@@ -65,7 +65,6 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 	/**
 	 * Construct a new {@code ProtobufDecoder} with an initializer that allows the
 	 * registration of message extensions.
-	 * 
 	 * @param extensionRegistry a message extension registry
 	 */
 	public GrpcDecoder(ExtensionRegistry extensionRegistry) {
@@ -77,7 +76,6 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 	 * The max size allowed per message.
 	 * <p>
 	 * By default, this is set to 256K.
-	 * 
 	 * @param maxMessageSize the max size per message, or -1 for unlimited
 	 */
 	public void setMaxMessageSize(int maxMessageSize) {
@@ -86,7 +84,7 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 
 	/**
 	 * Return the {@link #setMaxMessageSize configured} message size limit.
-	 * 
+	 *
 	 * @since 5.1.11
 	 */
 	public int getMaxMessageSize() {
@@ -106,8 +104,8 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 		MessageDecoderFunction decoderFunction = new MessageDecoderFunction(elementType, this.maxMessageSize);
 
 		return (Flux<Message>) Flux.from(inputStream)
-				.flatMapIterable(decoderFunction)
-				.doOnTerminate(decoderFunction::discard);
+			.flatMapIterable(decoderFunction)
+			.doOnTerminate(decoderFunction::discard);
 	}
 
 	@Override
@@ -115,12 +113,12 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
 
 		return DataBufferUtils.join(inputStream, this.maxMessageSize)
-				.map(dataBuffer -> decode(dataBuffer, elementType, mimeType, hints));
+			.map(dataBuffer -> decode(dataBuffer, elementType, mimeType, hints));
 	}
 
 	@Override
-	public Message decode(DataBuffer dataBuffer, ResolvableType targetType,
-			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints) throws DecodingException {
+	public Message decode(DataBuffer dataBuffer, ResolvableType targetType, @Nullable MimeType mimeType,
+			@Nullable Map<String, Object> hints) throws DecodingException {
 
 		try {
 			Message.Builder builder = getMessageBuilder(targetType.toClass());
@@ -131,11 +129,14 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 			byteBuffer.getInt(); // Read the message size (4 bytes)
 			builder.mergeFrom(CodedInputStream.newInstance(byteBuffer), this.extensionRegistry);
 			return builder.build();
-		} catch (IOException ex) {
+		}
+		catch (IOException ex) {
 			throw new DecodingException("I/O error while parsing input stream", ex);
-		} catch (Exception ex) {
+		}
+		catch (Exception ex) {
 			throw new DecodingException("Could not read Protobuf message: " + ex.getMessage(), ex);
-		} finally {
+		}
+		finally {
 			DataBufferUtils.release(dataBuffer);
 		}
 	}
@@ -189,9 +190,8 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 						}
 						if (this.maxMessageSize > 0 && this.messageBytesToRead > this.maxMessageSize) {
 							throw new DataBufferLimitException(
-									"The number of bytes to read for message " +
-											"(" + this.messageBytesToRead + ") exceeds " +
-											"the configured limit (" + this.maxMessageSize + ")");
+									"The number of bytes to read for message " + "(" + this.messageBytesToRead
+											+ ") exceeds " + "the configured limit (" + this.maxMessageSize + ")");
 						}
 						this.output = input.factory().allocateBuffer(this.messageBytesToRead);
 					}
@@ -211,21 +211,26 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 							CodedInputStream stream = CodedInputStream.newInstance(byteBuffer);
 							DataBufferUtils.release(this.output);
 							Message message = getMessageBuilder(this.elementType.toClass())
-									.mergeFrom(stream, extensionRegistry)
-									.build();
+								.mergeFrom(stream, extensionRegistry)
+								.build();
 							messages.add(message);
 						}
 						this.output = null;
 					}
-				} while (remainingBytesToRead > 0);
+				}
+				while (remainingBytesToRead > 0);
 				return messages;
-			} catch (DecodingException ex) {
+			}
+			catch (DecodingException ex) {
 				throw ex;
-			} catch (IOException ex) {
+			}
+			catch (IOException ex) {
 				throw new DecodingException("I/O error while parsing input stream", ex);
-			} catch (Exception ex) {
+			}
+			catch (Exception ex) {
 				throw new DecodingException("Could not read Protobuf message: " + ex.getMessage(), ex);
-			} finally {
+			}
+			finally {
 				DataBufferUtils.release(input);
 			}
 		}
@@ -242,7 +247,8 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 			ByteBuffer byteBuffer = ByteBuffer.wrap(header);
 			byteBuffer.order(ByteOrder.BIG_ENDIAN);
 			byteBuffer.get(); // Skip the first byte (gRPC header)
-			this.messageBytesToRead = byteBuffer.getInt(); // Read the message size (4 bytes)
+			this.messageBytesToRead = byteBuffer.getInt(); // Read the message size (4
+															// bytes)
 			return true;
 		}
 
@@ -251,6 +257,7 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 				DataBufferUtils.release(this.output);
 			}
 		}
+
 	}
 
 }

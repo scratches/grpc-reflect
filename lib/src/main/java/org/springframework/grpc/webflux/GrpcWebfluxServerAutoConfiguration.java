@@ -63,6 +63,12 @@ public class GrpcWebfluxServerAutoConfiguration {
 			configurer.customCodecs().register(new GrpcHttpMessageWriter());
 			configurer.customCodecs().register(new GrpcDecoder());
 		}
+
+		@Bean
+		public GrpcExceptionHandler grpcExceptionHandler() {
+			return new GrpcExceptionHandler();
+		}
+
 	}
 
 }

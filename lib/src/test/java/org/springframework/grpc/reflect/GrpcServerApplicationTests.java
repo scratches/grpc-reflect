@@ -26,8 +26,10 @@ import io.grpc.BindableService;
 import io.grpc.stub.StreamObserver;
 import reactor.core.publisher.Flux;
 
-@SpringBootTest(properties = { "spring.grpc.server.port=0",
-		"spring.grpc.client.default-channel.address=0.0.0.0:${local.grpc.port}" }, useMainMethod = UseMainMethod.ALWAYS)
+@SpringBootTest(
+		properties = { "spring.grpc.server.port=0",
+				"spring.grpc.client.default-channel.address=0.0.0.0:${local.grpc.port}" },
+		useMainMethod = UseMainMethod.ALWAYS)
 @DirtiesContext
 public class GrpcServerApplicationTests {
 
@@ -91,16 +93,14 @@ public class GrpcServerApplicationTests {
 
 		@Bean
 		BindableService echoService(DynamicServiceFactory factory) {
-			return factory.service("Simple").unary("SayHello",
-					Foo.class, Foo.class, Function.identity())
-					.stream("StreamHello",
-							Foo.class, Foo.class,
-							foo -> Flux.interval(Duration.ofMillis(200)).take(5)
-									.map(val -> new Foo(foo.getName() + " (" + val + ")")))
-					.bidi("ParallelHello",
-							Foo.class, Foo.class,
-							foos -> Flux.from(foos).map(foo -> new Foo(foo.getName())))
-					.build();
+			return factory.service("Simple")
+				.unary("SayHello", Foo.class, Foo.class, Function.identity())
+				.stream("StreamHello", Foo.class, Foo.class,
+						foo -> Flux.interval(Duration.ofMillis(200))
+							.take(5)
+							.map(val -> new Foo(foo.getName() + " (" + val + ")")))
+				.bidi("ParallelHello", Foo.class, Foo.class, foos -> Flux.from(foos).map(foo -> new Foo(foo.getName())))
+				.build();
 		}
 
 	}

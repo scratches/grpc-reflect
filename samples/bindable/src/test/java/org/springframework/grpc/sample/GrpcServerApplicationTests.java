@@ -18,8 +18,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
-		"spring.grpc.client.default-channel.address=0.0.0.0:${local.server.port}" })
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
+		properties = { "debug=true", "spring.grpc.client.default-channel.address=0.0.0.0:${local.server.port}" })
 @DirtiesContext
 public class GrpcServerApplicationTests {
 
@@ -50,9 +50,8 @@ public class GrpcServerApplicationTests {
 	void defaultErrorResponseIsUnknown(@Autowired GrpcChannelFactory channels) {
 		assertThat(assertThrows(StatusRuntimeException.class,
 				() -> stub.sayHello(HelloRequest.newBuilder().setName("internal").build()))
-				.getStatus()
-				// Should be INTERNAL, not UNKNOWN (reactor-netty doesn't send the status code)
-				.getCode()).isEqualTo(Code.UNKNOWN);
+			.getStatus()
+			.getCode()).isEqualTo(Code.INTERNAL);
 	}
 
 }

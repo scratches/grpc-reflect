@@ -27,9 +27,7 @@ public class GrpcServerService {
 		if (req.getName().startsWith("internal")) {
 			throw new RuntimeException();
 		}
-		HelloReply response = HelloReply.newBuilder()
-				.setMessage("Hello ==> " + req.getName())
-				.build();
+		HelloReply response = HelloReply.newBuilder().setMessage("Hello ==> " + req.getName()).build();
 		return response;
 	}
 
@@ -52,6 +50,7 @@ public class GrpcServerService {
 	class ResponseStreamer implements Runnable {
 
 		private final String name;
+
 		private final ResponseBodyEmitter responseObserver;
 
 		ResponseStreamer(String name, ResponseBodyEmitter responseObserver) {
@@ -69,10 +68,12 @@ public class GrpcServerService {
 					responseObserver.send(reply, MediaType.valueOf("application/grpc"));
 					count++;
 					Thread.sleep(1000L);
-				} catch (IOException e) {
+				}
+				catch (IOException e) {
 					responseObserver.completeWithError(e);
 					return;
-				} catch (InterruptedException e) {
+				}
+				catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 					responseObserver.completeWithError(e);
 					return;

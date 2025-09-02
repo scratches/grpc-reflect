@@ -102,12 +102,14 @@ public class EmbeddedGrpcServer extends Server {
 			ServerMethodDefinition<Object, Object> method = (ServerMethodDefinition<Object, Object>) definition;
 			Class<?> outputType = requestHandler.getOutputType(method);
 			this.handlers.put("/" + method.getMethodDescriptor().getFullMethodName(),
-					request -> ServerResponse.ok().contentType(MediaType.valueOf("application/grpc"))
-							.body(requestHandler.handle(bindable, method, request), outputType));
+					request -> ServerResponse.ok()
+						.contentType(MediaType.valueOf("application/grpc"))
+						.body(requestHandler.handle(bindable, method, request), outputType));
 		}
 	}
 
 	public Map<String, HandlerFunction<ServerResponse>> getHandlers() {
 		return this.handlers;
 	}
+
 }

@@ -26,6 +26,7 @@ import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Label;
 
 public class DescriptorProtoProviderTests {
+
 	@Test
 	public void testDefaultInstance() throws Exception {
 		DescriptorProtoExtractor provider = DescriptorProtoExtractor.DEFAULT_INSTANCE;
@@ -69,6 +70,7 @@ public class DescriptorProtoProviderTests {
 	}
 
 	static class TestBean {
+
 		private String[] names;
 
 		public String[] getNames() {
@@ -82,6 +84,7 @@ public class DescriptorProtoProviderTests {
 	}
 
 	static class TestList {
+
 		private List<String> names;
 
 		public List<String> getNames() {
@@ -93,4 +96,5 @@ public class DescriptorProtoProviderTests {
 		}
 
 	}
+
 }

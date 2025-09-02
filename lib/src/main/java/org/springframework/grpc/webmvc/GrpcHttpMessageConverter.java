@@ -64,9 +64,8 @@ public class GrpcHttpMessageConverter extends AbstractHttpMessageConverter<Messa
 	}
 
 	/**
-	 * Construct a new {@code GrpcHttpMessageConverter} with a registry that
-	 * specifies protocol message extensions.
-	 * 
+	 * Construct a new {@code GrpcHttpMessageConverter} with a registry that specifies
+	 * protocol message extensions.
 	 * @param extensionRegistry the registry to populate
 	 */
 	public GrpcHttpMessageConverter(ExtensionRegistry extensionRegistry) {
@@ -106,8 +105,8 @@ public class GrpcHttpMessageConverter extends AbstractHttpMessageConverter<Messa
 		ByteBuffer wrapped = ByteBuffer.wrap(body); // big-endian by default
 		int length = wrapped.getInt(1); // read the length from the 2nd to 5th byte
 		if (length != body.length - 5) {
-			throw new HttpMessageConversionException("gRPC message length mismatch: expected " + length +
-					" but got " + (body.length - 5));
+			throw new HttpMessageConversionException(
+					"gRPC message length mismatch: expected " + length + " but got " + (body.length - 5));
 		}
 		body = Arrays.copyOfRange(body, 5, body.length);
 		builder.mergeFrom(body, this.extensionRegistry);
@@ -127,7 +126,8 @@ public class GrpcHttpMessageConverter extends AbstractHttpMessageConverter<Messa
 				methodCache.put(clazz, method);
 			}
 			return (Message.Builder) method.invoke(clazz);
-		} catch (Exception ex) {
+		}
+		catch (Exception ex) {
 			throw new HttpMessageConversionException(
 					"Invalid Protobuf Message type: no invocable newBuilder() method on " + clazz, ex);
 		}
@@ -155,7 +155,7 @@ public class GrpcHttpMessageConverter extends AbstractHttpMessageConverter<Messa
 		setProtoHeader(outputMessage, message);
 		outputMessage.getHeaders().set("Grpc-Encoding", "identity");
 		outputMessage.getHeaders().set("Grpc-Accept-Encoding", "identity");
-		
+
 		CodedOutputStream codedOutputStream = CodedOutputStream.newInstance(outputMessage.getBody());
 		if (GRPC.isCompatibleWith(contentType)) {
 			// gRPC requires a 5-byte header
@@ -163,7 +163,8 @@ public class GrpcHttpMessageConverter extends AbstractHttpMessageConverter<Messa
 			byte[] buffer = new byte[4];
 			ByteBuffer wrapped = ByteBuffer.wrap(buffer);
 			wrapped.order(ByteOrder.BIG_ENDIAN); // gRPC uses big-endian
-			wrapped.putInt(0, message.getSerializedSize()); // write the length in big-endian
+			wrapped.putInt(0, message.getSerializedSize()); // write the length in
+															// big-endian
 			codedOutputStream.writeRawBytes(buffer); // 4 bytes for the length
 		}
 		message.writeTo(codedOutputStream);
@@ -172,7 +173,7 @@ public class GrpcHttpMessageConverter extends AbstractHttpMessageConverter<Messa
 			setTrailers(outputMessage, message);
 		}
 		codedOutputStream.flush();
-	
+
 	}
 
 	private void setTrailers(HttpOutputMessage outputMessage, Message message) {
@@ -189,7 +190,8 @@ public class GrpcHttpMessageConverter extends AbstractHttpMessageConverter<Messa
 		HttpServletResponse servlet = null;
 		if (outputMessage instanceof ServletServerHttpResponse response) {
 			servlet = response.getServletResponse();
-		} else if (outputMessage instanceof DelegatingServerHttpResponse response) {
+		}
+		else if (outputMessage instanceof DelegatingServerHttpResponse response) {
 			if (response.getDelegate() instanceof ServletServerHttpResponse servletResponse) {
 				servlet = servletResponse.getServletResponse();
 			}
@@ -200,31 +202,40 @@ public class GrpcHttpMessageConverter extends AbstractHttpMessageConverter<Messa
 	private String status(int status) {
 		if (status >= 200 && status < 300) {
 			return "0"; // OK
-		} else if (status == 400) {
+		}
+		else if (status == 400) {
 			return "3"; // INVALID_ARGUMENT
-		} else if (status == 401) {
+		}
+		else if (status == 401) {
 			return "16"; // UNAUTHENTICATED
-		} else if (status == 403) {
+		}
+		else if (status == 403) {
 			return "7"; // PERMISSION_DENIED
-		} else if (status == 404) {
+		}
+		else if (status == 404) {
 			return "5"; // NOT_FOUND
-		} else if (status == 408) {
+		}
+		else if (status == 408) {
 			return "4"; // DEADLINE_EXCEEDED
-		} else if (status == 429) {
+		}
+		else if (status == 429) {
 			return "8"; // RESOURCE_EXHAUSTED
-		} else if (status == 501) {
+		}
+		else if (status == 501) {
 			return "12"; // UNIMPLEMENTED
-		} else if (status == 503) {
+		}
+		else if (status == 503) {
 			return "14"; // UNAVAILABLE
-		} else if (status >= 500 && status < 600) {
+		}
+		else if (status >= 500 && status < 600) {
 			return "13"; // INTERNAL
 		}
 		return "2"; // UNKNOWN
 	}
 
 	/**
-	 * Set the "X-Protobuf-*" HTTP headers when responding with a message of
-	 * content type "application/x-protobuf"
+	 * Set the "X-Protobuf-*" HTTP headers when responding with a message of content type
+	 * "application/x-protobuf"
 	 * <p>
 	 * <b>Note:</b> <code>outputMessage.getBody()</code> should not have been called
 	 * before because it writes HTTP headers (making them read only).

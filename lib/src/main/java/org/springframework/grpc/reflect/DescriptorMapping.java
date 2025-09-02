@@ -18,5 +18,5 @@ package org.springframework.grpc.reflect;
 import com.google.protobuf.Descriptors.Descriptor;
 
 public record DescriptorMapping(Class<?> type, Descriptor descriptor) {
-	
+
 }

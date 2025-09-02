@@ -26,7 +26,6 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.grpc.reflect.DynamicServiceFactory.BindableServiceInstanceBuilder;
-import org.springframework.util.StringUtils;
 
 import io.grpc.BindableService;
 
@@ -41,6 +40,7 @@ public class GrpcMappingRegistrar implements ImportBeanDefinitionRegistrar {
 	}
 
 	static class GrpcMappingPostProcessor implements BeanFactoryPostProcessor {
+
 		static String GRPC_MAPPING_BEAN_NAME = "grpcMappingPostProcessor";
 
 		@Override
@@ -51,7 +51,8 @@ public class GrpcMappingRegistrar implements ImportBeanDefinitionRegistrar {
 				builder.addConstructorArgReference(factoryName);
 				builder.addConstructorArgReference(name);
 				builder.setFactoryMethodOnBean("create", GRPC_MAPPING_BEAN_NAME);
-				((DefaultListableBeanFactory)beanFactory).registerBeanDefinition(name + "_service", builder.getBeanDefinition());
+				((DefaultListableBeanFactory) beanFactory).registerBeanDefinition(name + "_service",
+						builder.getBeanDefinition());
 			}
 		}
 

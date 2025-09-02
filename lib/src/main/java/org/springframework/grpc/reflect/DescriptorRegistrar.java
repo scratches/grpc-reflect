@@ -31,9 +31,14 @@ import com.google.protobuf.Descriptors.ServiceDescriptor;
 public class DescriptorRegistrar implements FileDescriptorProvider {
 
 	private final DescriptorCatalog catalog;
-	private final ReflectionFileDescriptorProvider reflection = new ReflectionFileDescriptorProvider(DescriptorProtoExtractor.DEFAULT_INSTANCE);
+
+	private final ReflectionFileDescriptorProvider reflection = new ReflectionFileDescriptorProvider(
+			DescriptorProtoExtractor.DEFAULT_INSTANCE);
+
 	private Map<String, DescriptorMapping> inputs = new HashMap<>();
+
 	private Map<String, DescriptorMapping> outputs = new HashMap<>();
+
 	private boolean strict = true;
 
 	public DescriptorRegistrar() {
@@ -143,7 +148,8 @@ public class DescriptorRegistrar implements FileDescriptorProvider {
 				validateMessage(fullMethodName, requestType, inputType.getFields());
 				validateMessage(fullMethodName, responseType, outputType.getFields());
 			}
-		} else {
+		}
+		else {
 			throw new IllegalStateException("Service not registered: " + fullMethodName);
 		}
 	}
@@ -207,8 +213,7 @@ public class DescriptorRegistrar implements FileDescriptorProvider {
 						"Field '" + field.getName() + "' is an integer in the schema, but is not in class "
 								+ responseType.getName() + " for method " + fullMethodName);
 			}
-			if (field.getJavaType() == FieldDescriptor.JavaType.LONG
-					&& !descriptor.getPropertyType().equals(Long.class)
+			if (field.getJavaType() == FieldDescriptor.JavaType.LONG && !descriptor.getPropertyType().equals(Long.class)
 					&& !descriptor.getPropertyType().equals(long.class)) {
 				throw new IllegalArgumentException(
 						"Field '" + field.getName() + "' is a long in the schema, but is not in class "
@@ -217,4 +222,5 @@ public class DescriptorRegistrar implements FileDescriptorProvider {
 		}
 		// All fields in the input type must be present in the class
 	}
+
 }

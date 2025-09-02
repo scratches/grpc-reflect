@@ -26,9 +26,7 @@ public class GrpcServerService {
 		if (req.getName().startsWith("internal")) {
 			throw new RuntimeException();
 		}
-		HelloReply response = HelloReply.newBuilder()
-				.setMessage("Hello ==> " + req.getName())
-				.build();
+		HelloReply response = HelloReply.newBuilder().setMessage("Hello ==> " + req.getName()).build();
 		return response;
 	}
 
@@ -41,9 +39,7 @@ public class GrpcServerService {
 			throw new RuntimeException();
 		}
 		Flux<HelloReply> emitter = Flux.interval(Duration.ofSeconds(1)).map(i -> {
-			HelloReply reply = HelloReply.newBuilder()
-					.setMessage("Hello(" + i + ") ==> " + req.getName())
-					.build();
+			HelloReply reply = HelloReply.newBuilder().setMessage("Hello(" + i + ") ==> " + req.getName()).build();
 			return reply;
 		}).take(10);
 		return emitter;

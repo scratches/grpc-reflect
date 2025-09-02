@@ -22,13 +22,13 @@ import org.springframework.grpc.sample.proto.HelloReply;
 import org.springframework.util.MimeType;
 
 public class GrpcEncoderTests {
+
 	@Test
 	void testEncoder() {
 		GrpcEncoder encoder = new GrpcEncoder();
-		HelloReply message = HelloReply.newBuilder()
-				.setMessage("Hello World")
-				.build();
+		HelloReply message = HelloReply.newBuilder().setMessage("Hello World").build();
 		encoder.encodeValue(message, DefaultDataBufferFactory.sharedInstance, ResolvableType.forClass(HelloReply.class),
 				MimeType.valueOf("application/grpc"), null);
 	}
+
 }

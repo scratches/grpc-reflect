@@ -16,7 +16,9 @@
 package org.springframework.grpc.reflect;
 
 public class Foo {
+
 	private String name;
+
 	private int age;
 
 	public Foo() {

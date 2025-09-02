@@ -30,10 +30,12 @@ import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.FileDescriptor;
 
 public interface DescriptorProvider {
+
 	Descriptor descriptor(Class<?> clazz);
 
 	static DescriptorProvider DEFAULT_INSTANCE = new DescriptorProvider() {
 		private DescriptorProtoExtractor extractor = DescriptorProtoExtractor.DEFAULT_INSTANCE;
+
 		private Map<Class<?>, Descriptor> cache = new HashMap<>();
 
 		@Override
@@ -62,10 +64,12 @@ public interface DescriptorProvider {
 				Descriptor result = proto.findMessageTypeByName(message.getName());
 				this.cache.put(clazz, result);
 				return result;
-			} catch (DescriptorValidationException e) {
+			}
+			catch (DescriptorValidationException e) {
 				throw new IllegalStateException(e);
 			}
 
 		}
 	};
+
 }

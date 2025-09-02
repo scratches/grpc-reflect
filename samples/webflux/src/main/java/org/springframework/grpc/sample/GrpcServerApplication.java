@@ -57,7 +57,7 @@ class GrpcServerReflectionService {
 		for (ServiceDescriptor serviceDescriptor : serviceDescriptors) {
 			this.services.add(serviceDescriptor.getName());
 			FileDescriptor fileDescriptor = ((ProtoServiceDescriptorSupplier) serviceDescriptor.getSchemaDescriptor())
-					.getFileDescriptor();
+				.getFileDescriptor();
 			this.files.put(fileDescriptor.getName(), fileDescriptor);
 			this.symbols.put(serviceDescriptor.getName(), fileDescriptor);
 			for (MethodDescriptor<?, ?> method : serviceDescriptor.getMethods()) {
@@ -74,7 +74,7 @@ class GrpcServerReflectionService {
 	@PostMapping(path = "grpc.reflection.v1.ServerReflection/ServerReflectionInfo", produces = "application/grpc")
 	public Flux<ServerReflectionResponse> postMethodName(@RequestBody Flux<ServerReflectionRequest> input) {
 		return input.filter(request -> request.getMessageRequestCase() != MessageRequestCase.MESSAGEREQUEST_NOT_SET)
-				.map(request -> response(request));
+			.map(request -> response(request));
 	}
 
 	private ServerReflectionResponse response(ServerReflectionRequest request) {
@@ -96,31 +96,29 @@ class GrpcServerReflectionService {
 			FileDescriptor fileDescriptor) {
 		if (fileDescriptor == null) {
 			return ServerReflectionResponse.newBuilder()
-					.setValidHost(request.getHost())
-					.setOriginalRequest(request)
-					.setErrorResponse(ErrorResponse.newBuilder()
-							.setErrorCode(Status.Code.NOT_FOUND.value())
-							.setErrorMessage("File not found: " + symbol))
-					.build();
-		}
-		return ServerReflectionResponse.newBuilder()
 				.setValidHost(request.getHost())
 				.setOriginalRequest(request)
-				.setFileDescriptorResponse(FileDescriptorResponse.newBuilder()
-						.addFileDescriptorProto(fileDescriptor.toProto().toByteString()))
+				.setErrorResponse(ErrorResponse.newBuilder()
+					.setErrorCode(Status.Code.NOT_FOUND.value())
+					.setErrorMessage("File not found: " + symbol))
 				.build();
+		}
+		return ServerReflectionResponse.newBuilder()
+			.setValidHost(request.getHost())
+			.setOriginalRequest(request)
+			.setFileDescriptorResponse(
+					FileDescriptorResponse.newBuilder().addFileDescriptorProto(fileDescriptor.toProto().toByteString()))
+			.build();
 	}
 
 	private ServerReflectionResponse errorResponse(ServerReflectionRequest request) {
 		return ServerReflectionResponse.newBuilder()
-				.setValidHost(request.getHost())
-				.setOriginalRequest(request)
-				.setErrorResponse(
-						ErrorResponse.newBuilder()
-								.setErrorCode(Status.Code.UNIMPLEMENTED.value())
-								.setErrorMessage(
-										"not implemented " + request.getMessageRequestCase()))
-				.build();
+			.setValidHost(request.getHost())
+			.setOriginalRequest(request)
+			.setErrorResponse(ErrorResponse.newBuilder()
+				.setErrorCode(Status.Code.UNIMPLEMENTED.value())
+				.setErrorMessage("not implemented " + request.getMessageRequestCase()))
+			.build();
 	}
 
 	private ServerReflectionResponse listServicesResponse(ServerReflectionRequest request) {
@@ -129,10 +127,10 @@ class GrpcServerReflectionService {
 			services.addService(ServiceResponse.newBuilder().setName(serviceName).build());
 		}
 		return ServerReflectionResponse.newBuilder()
-				.setValidHost(request.getHost())
-				.setOriginalRequest(request)
-				.setListServicesResponse(services)
-				.build();
+			.setValidHost(request.getHost())
+			.setOriginalRequest(request)
+			.setListServicesResponse(services)
+			.build();
 	}
 
 }

@@ -16,6 +16,7 @@
 package org.springframework.grpc.sample;
 
 public class Hello {
+
 	private String name;
 
 	Hello() {
@@ -32,4 +33,5 @@ public class Hello {
 	public void setName(String name) {
 		this.name = name;
 	}
+
 }

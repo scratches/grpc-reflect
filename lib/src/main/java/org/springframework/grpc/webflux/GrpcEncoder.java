@@ -45,13 +45,12 @@ public class GrpcEncoder extends GrpcCodecSupport implements Encoder<Message> {
 	public Flux<DataBuffer> encode(Publisher<? extends Message> inputStream, DataBufferFactory bufferFactory,
 			ResolvableType elementType, @Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
 
-		return Flux.from(inputStream)
-				.map(message -> encodeValue(message, bufferFactory));
+		return Flux.from(inputStream).map(message -> encodeValue(message, bufferFactory));
 	}
 
 	@Override
-	public DataBuffer encodeValue(Message message, DataBufferFactory bufferFactory,
-			ResolvableType valueType, @Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
+	public DataBuffer encodeValue(Message message, DataBufferFactory bufferFactory, ResolvableType valueType,
+			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
 
 		return encodeValue(message, bufferFactory);
 	}
@@ -68,7 +67,8 @@ public class GrpcEncoder extends GrpcCodecSupport implements Encoder<Message> {
 			message.writeTo(bos);
 			byte[] bytes = bos.toByteArrayUnsafe();
 			return bufferFactory.wrap(bytes);
-		} catch (IOException ex) {
+		}
+		catch (IOException ex) {
 			throw new IllegalStateException("Unexpected I/O error while writing to data buffer", ex);
 		}
 	}

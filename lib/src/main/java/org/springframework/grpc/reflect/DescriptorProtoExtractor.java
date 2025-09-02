@@ -34,8 +34,10 @@ public interface DescriptorProtoExtractor {
 		int count = 1;
 		for (var field : clazz.getDeclaredFields()) {
 			Type type = findType(field.getType(), field.getGenericType());
-			DescriptorProtos.FieldDescriptorProto.Builder fb = DescriptorProtos.FieldDescriptorProto.newBuilder().setName(field.getName())
-			.setNumber(count).setType(type);
+			DescriptorProtos.FieldDescriptorProto.Builder fb = DescriptorProtos.FieldDescriptorProto.newBuilder()
+				.setName(field.getName())
+				.setNumber(count)
+				.setType(type);
 			if (type == Type.TYPE_MESSAGE) {
 				fb.setTypeName(field.getType().getSimpleName());
 			}
@@ -48,7 +50,8 @@ public interface DescriptorProtoExtractor {
 		return builder.build();
 	};
 
-	private static DescriptorProtos.FieldDescriptorProto.Type findType(Class<?> type, java.lang.reflect.Type genericType) {
+	private static DescriptorProtos.FieldDescriptorProto.Type findType(Class<?> type,
+			java.lang.reflect.Type genericType) {
 		if (type.isArray()) {
 			type = type.getComponentType();
 		}
@@ -86,5 +89,5 @@ public interface DescriptorProtoExtractor {
 		}
 		return DescriptorProtos.FieldDescriptorProto.Type.TYPE_MESSAGE;
 	}
-	
+
 }

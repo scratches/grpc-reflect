@@ -25,9 +25,7 @@ public abstract class GrpcCodecSupport {
 
 	static final String GRPC_STATUS_HEADER = "grpc-status";
 
-	static final MimeType[] MIME_TYPES = new MimeType[]{
-			new MimeType("application", "grpc")
-	};
+	static final MimeType[] MIME_TYPES = new MimeType[] { new MimeType("application", "grpc") };
 
 	static final String DELIMITED_KEY = "delimited";
 

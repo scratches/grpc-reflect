@@ -32,8 +32,11 @@ import com.google.protobuf.Descriptors.MethodDescriptor;
 public class DescriptorRegistryTests {
 
 	private DescriptorProtoExtractor extractor = DescriptorProtoExtractor.DEFAULT_INSTANCE;
+
 	private DescriptorCatalog catalog = new DescriptorCatalog();
+
 	private DescriptorRegistrar registry = new DescriptorRegistrar(catalog);
+
 	private ReflectionFileDescriptorProvider reflection = new ReflectionFileDescriptorProvider(extractor);
 
 	@Test
@@ -126,18 +129,20 @@ public class DescriptorRegistryTests {
 				}
 				reflection.bidi(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
 						outputType);
-			} else {
+			}
+			else {
 				reflection.stream(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
 						outputType);
 			}
-		} else {
+		}
+		else {
 			reflection.unary(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
 					outputType);
 		}
 		registry.register(
-				reflection.file(method.getDeclaringClass().getSimpleName()).findServiceByName(
-						method.getDeclaringClass().getSimpleName())
-						.findMethodByName(StringUtils.capitalize(method.getName())),
+				reflection.file(method.getDeclaringClass().getSimpleName())
+					.findServiceByName(method.getDeclaringClass().getSimpleName())
+					.findMethodByName(StringUtils.capitalize(method.getName())),
 				method.getParameterTypes()[0], method.getReturnType());
 	}
 
@@ -157,6 +162,7 @@ public class DescriptorRegistryTests {
 	}
 
 	public static class Bar {
+
 	}
 
 	public Bar translate(Foo foo) {
@@ -166,4 +172,5 @@ public class DescriptorRegistryTests {
 	public Foo echo(Foo foo) {
 		return foo;
 	}
+
 }

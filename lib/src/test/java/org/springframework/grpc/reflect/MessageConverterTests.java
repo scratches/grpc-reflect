@@ -26,15 +26,15 @@ import com.google.protobuf.DynamicMessage;
 
 public class MessageConverterTests {
 
-	private DescriptorProvider registry = DescriptorProvider.DEFAULT_INSTANCE;;
+	private DescriptorProvider registry = DescriptorProvider.DEFAULT_INSTANCE;
+
+	;
 
 	@Test
 	public void testConvertGeneratedTypeToPojo() {
 		MessageConverter converter = new MessageConverter();
 		Descriptor desc = registry.descriptor(Foo.class);
-		var foo = DynamicMessage.newBuilder(desc)
-				.setField(desc.findFieldByName("name"), "foo")
-				.build();
+		var foo = DynamicMessage.newBuilder(desc).setField(desc.findFieldByName("name"), "foo").build();
 
 		Foo convertedFoo = converter.convert(foo, Foo.class);
 
@@ -49,9 +49,9 @@ public class MessageConverterTests {
 		MessageConverter converter = new MessageConverter();
 		Descriptor desc = registry.descriptor(Foo.class);
 		var foo = DynamicMessage.newBuilder(desc)
-				.setField(desc.findFieldByName("name"), "foo")
-				.setField(desc.findFieldByName("age"), 30)
-				.build();
+			.setField(desc.findFieldByName("name"), "foo")
+			.setField(desc.findFieldByName("age"), 30)
+			.build();
 
 		Foo convertedFoo = converter.convert(foo, Foo.class);
 
@@ -65,12 +65,12 @@ public class MessageConverterTests {
 		MessageConverter converter = new MessageConverter();
 		Descriptor desc = registry.descriptor(Foo.class);
 		var foo = DynamicMessage.newBuilder(desc)
-				.setField(desc.findFieldByName("name"), "foo")
-				.setField(desc.findFieldByName("age"), 30)
-				.build();
+			.setField(desc.findFieldByName("name"), "foo")
+			.setField(desc.findFieldByName("age"), 30)
+			.build();
 		var bar = DynamicMessage.newBuilder(registry.descriptor(Bar.class))
-				.setField(registry.descriptor(Bar.class).findFieldByName("foo"), foo)
-				.build();
+			.setField(registry.descriptor(Bar.class).findFieldByName("foo"), foo)
+			.build();
 
 		Foo convertedFoo = converter.convert(bar, Bar.class).getFoo();
 
@@ -82,8 +82,7 @@ public class MessageConverterTests {
 	@Test
 	public void testConvertToVoid() {
 		MessageConverter converter = new MessageConverter();
-		var foo = DynamicMessage.newBuilder(registry.descriptor(Void.class))
-				.build();
+		var foo = DynamicMessage.newBuilder(registry.descriptor(Void.class)).build();
 		Object message = converter.convert(foo, Void.class);
 
 		assertThat(message).isNull();
@@ -134,7 +133,7 @@ public class MessageConverterTests {
 
 		assertThat(message).isNotNull();
 		AbstractMessage nestedMessage = (AbstractMessage) message
-				.getField(registry.descriptor(Bar.class).findFieldByName("foo"));
+			.getField(registry.descriptor(Bar.class).findFieldByName("foo"));
 		assertThat(nestedMessage.getField(desc.findFieldByName("name"))).isEqualTo("foo");
 		assertThat(nestedMessage.getField(desc.findFieldByName("age"))).isEqualTo(30);
 	}
@@ -150,6 +149,7 @@ public class MessageConverterTests {
 	}
 
 	static class Bar {
+
 		private Foo foo;
 
 		public Foo getFoo() {
@@ -159,5 +159,7 @@ public class MessageConverterTests {
 		public void setFoo(Foo foo) {
 			this.foo = foo;
 		}
+
 	}
+
 }

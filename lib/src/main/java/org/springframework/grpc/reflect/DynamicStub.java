@@ -18,7 +18,6 @@ package org.springframework.grpc.reflect;
 import org.reactivestreams.Publisher;
 
 import com.google.protobuf.DynamicMessage;
-import com.google.protobuf.Descriptors.Descriptor;
 
 import io.grpc.CallOptions;
 import io.grpc.Channel;
@@ -35,6 +34,7 @@ import reactor.core.publisher.Sinks.Many;
 public class DynamicStub extends AbstractStub<DynamicStub> {
 
 	private final MessageConverter converter;
+
 	private final DescriptorRegistrar registry;
 
 	public DynamicStub(DescriptorRegistrar registry, Channel channel) {
@@ -63,8 +63,7 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 				requestType, responseType, MethodDescriptor.MethodType.BIDI_STREAMING);
 		Many<T> sink = Sinks.many().multicast().onBackpressureBuffer();
 		StreamObserver<DynamicMessage> requests = ClientCalls.asyncBidiStreamingCall(
-				getChannel().newCall(methodDescriptor, getCallOptions()),
-				new StreamObserver<DynamicMessage>() {
+				getChannel().newCall(methodDescriptor, getCallOptions()), new StreamObserver<DynamicMessage>() {
 
 					@Override
 					public void onNext(DynamicMessage value) {
@@ -82,10 +81,12 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 					}
 
 				});
-		Flux.from(request).doOnComplete(() -> requests.onCompleted()).doOnError(error -> requests.onError(error))
-				.doOnNext(msg -> requests
-						.onNext((DynamicMessage) converter.convert(msg, this.registry.output(fullMethodName).descriptor())))
-				.subscribe();
+		Flux.from(request)
+			.doOnComplete(() -> requests.onCompleted())
+			.doOnError(error -> requests.onError(error))
+			.doOnNext(msg -> requests
+				.onNext((DynamicMessage) converter.convert(msg, this.registry.output(fullMethodName).descriptor())))
+			.subscribe();
 		return sink.asFlux();
 	}
 
@@ -124,8 +125,7 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 			throw new IllegalArgumentException("Request cannot be null");
 		}
 		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = methodDescriptor(fullMethodName,
-				request.getClass(),
-				responseType, MethodDescriptor.MethodType.UNARY);
+				request.getClass(), responseType, MethodDescriptor.MethodType.UNARY);
 		var response = ClientCalls.blockingUnaryCall(getChannel(), methodDescriptor, getCallOptions(),
 				(DynamicMessage) converter.convert(request, registry.input(fullMethodName).descriptor()));
 		return converter.convert(response, responseType);
@@ -143,16 +143,16 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 			throw new IllegalArgumentException("No descriptor found for output of method: " + fullMethodName);
 		}
 		Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
-				.marshaller(DynamicMessage.newBuilder(registry.input(fullMethodName).descriptor()).build());
+			.marshaller(DynamicMessage.newBuilder(registry.input(fullMethodName).descriptor()).build());
 		Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
-				.marshaller(DynamicMessage.newBuilder(registry.output(fullMethodName).descriptor()).build());
+			.marshaller(DynamicMessage.newBuilder(registry.output(fullMethodName).descriptor()).build());
 		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
-				.<DynamicMessage, DynamicMessage>newBuilder()
-				.setType(methodType)
-				.setFullMethodName(fullMethodName)
-				.setRequestMarshaller(requestMarshaller)
-				.setResponseMarshaller(responseMarshaller)
-				.build();
+			.<DynamicMessage, DynamicMessage>newBuilder()
+			.setType(methodType)
+			.setFullMethodName(fullMethodName)
+			.setRequestMarshaller(requestMarshaller)
+			.setResponseMarshaller(responseMarshaller)
+			.build();
 		return methodDescriptor;
 	}
 
