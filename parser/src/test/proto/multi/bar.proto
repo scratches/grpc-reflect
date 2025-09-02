@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "org.springframework.grpc.sample.proto";
+option java_outer_classname = "AnotherProto";
+
+message AnotherRequest {
+    optional string message = 1;
+}

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.example.proto.deps";
+
+package sample;
+
+enum EchoType {
+    REQUEST = 1;
+    RESPONSE = 2;
+    ERROR = 3;
+}

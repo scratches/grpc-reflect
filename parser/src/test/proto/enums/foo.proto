@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.example.proto.deps";
+option java_outer_classname = "FooProto";
+service Foo {
+    rpc Echo (EchoRequest) returns (EchoRequest) {}
+}
+message EchoRequest {
+    EchoType type = 1;
+    optional string name = 2;
+}
+import "bar.proto";
