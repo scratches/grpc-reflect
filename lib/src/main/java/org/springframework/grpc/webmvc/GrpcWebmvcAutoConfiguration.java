@@ -23,7 +23,6 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.boot.grpc.server.autoconfigure.GrpcServerFactoryAutoConfiguration;
 import org.springframework.boot.grpc.server.autoconfigure.GrpcServerFactoryAutoConfiguration.GrpcServletConfiguration;
 import org.springframework.boot.tomcat.TomcatConnectorCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -60,17 +59,23 @@ public class GrpcWebmvcAutoConfiguration implements WebMvcConfigurer {
 		return new GrpcExceptionHandler();
 	}
 
-	@Bean
-	@ConditionalOnClass(UpgradeProtocol.class)
-	@ConditionalOnMissingBean(GrpcServletConfiguration.class)
-	public TomcatConnectorCustomizer customizer() {
-		return (connector) -> {
-			for (UpgradeProtocol protocol : connector.findUpgradeProtocols()) {
-				if (protocol instanceof Http2Protocol http2Protocol) {
-					http2Protocol.setOverheadWindowUpdateThreshold(0);
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnClass(name = "org.springframework.boot.web.embedded.tomcat.TomcatConnectorCustomizer")
+	static class NestedTomcatConfiguration {
+
+		@Bean
+		@ConditionalOnClass(UpgradeProtocol.class)
+		@ConditionalOnMissingBean(GrpcServletConfiguration.class)
+		public TomcatConnectorCustomizer customizer() {
+			return (connector) -> {
+				for (UpgradeProtocol protocol : connector.findUpgradeProtocols()) {
+					if (protocol instanceof Http2Protocol http2Protocol) {
+						http2Protocol.setOverheadWindowUpdateThreshold(0);
+					}
 				}
-			}
-		};
+			};
+		}
+
 	}
 
 }
