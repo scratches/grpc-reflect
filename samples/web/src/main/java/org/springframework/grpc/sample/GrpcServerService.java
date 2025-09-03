@@ -31,7 +31,7 @@ public class GrpcServerService {
 		return response;
 	}
 
-	// TODO: why does this one have to use ResponseEntity?
+	// This one has to use ResponseEntity until Spring 7
 	@PostMapping("Simple/StreamHello")
 	public ResponseEntity<ResponseBodyEmitter> streamHello(@RequestBody HelloRequest req) {
 		if (req.getName().startsWith("error")) {
