@@ -275,22 +275,6 @@ public class FileDescriptorProtoParser {
 	}
 
 	private FileDescriptorSet parse(Path path) {
-		if (path.toString().endsWith(".proto")) {
-			String location = path.toString();
-			if (location.startsWith("/")) {
-				location = location.substring(1); // Ensure it doesn't start with a slash
-			}
-			InputStream resource = getClass().getClassLoader().getResourceAsStream(path.toString());
-			if (resource != null) {
-				try {
-					FileDescriptorProto proto = parse(path.toString(), CharStreams.fromStream(resource));
-					return resolve(proto);
-				}
-				catch (IOException e) {
-					throw new IllegalStateException("Failed to read resource: " + path, e);
-				}
-			}
-		}
 		Path input = path.isAbsolute() ? path : base.resolve(path);
 		try {
 			if (!input.toFile().exists()) {
@@ -314,8 +298,8 @@ public class FileDescriptorProtoParser {
 					return resolve(urls);
 				}
 			}
-			if (!Files.isDirectory(input) && !input.toString().endsWith(".proto")) {
-				throw new IllegalArgumentException("Input file is not .proto: " + input);
+			if (!Files.isDirectory(input) && !input.toString().endsWith(".proto") && !input.toString().endsWith(".pb")) {
+				throw new IllegalArgumentException("Input file is not .proto or .pb: " + input);
 			}
 			FileDescriptorSet.Builder builder = FileDescriptorSet.newBuilder();
 			Set<String> names = new HashSet<>();
@@ -339,6 +323,9 @@ public class FileDescriptorProtoParser {
 						}
 					});
 				return builder.build();
+			}
+			if (input.toString().endsWith(".pb")) {
+				return FileDescriptorSet.parseFrom(Files.newInputStream(input));
 			}
 			FileDescriptorProto proto = parse(path.toString(), CharStreams.fromPath(input));
 			for (FileDescriptorProto resolved : resolve(proto).getFileList()) {
