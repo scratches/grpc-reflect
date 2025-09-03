@@ -424,6 +424,7 @@ public class FileDescriptorProtoParser {
 				throw new IllegalStateException("Syntax error at line " + line + ": " + msg, e);
 			}
 		});
+		Set<String> localEnumNames = new HashSet<>();
 		parser.addParseListener(new ProtobufBaseListener() {
 			private String packageName;
 
@@ -437,10 +438,11 @@ public class FileDescriptorProtoParser {
 
 			@Override
 			public void exitEnumDef(EnumDefContext ctx) {
-				// TODO: bug here if the enum name is re-used in another package
-				enumNames.add(ctx.enumName().getText());
+				localEnumNames.add(ctx.enumName().getText());
 				if (this.packageName != null) {
 					enumNames.add(this.packageName + "." + ctx.enumName().getText());
+				} else {
+					enumNames.add(ctx.enumName().getText());
 				}
 			}
 		});
@@ -457,7 +459,8 @@ public class FileDescriptorProtoParser {
 			}
 		});
 		parser.reset();
-		FileDescriptorProto proto = parser.proto().accept(new ProtobufDescriptorVisitor(builder)).build();
+		FileDescriptorProto proto = parser.proto().accept(new ProtobufDescriptorVisitor(builder, localEnumNames))
+				.build();
 		cache.put(name, proto);
 		return proto;
 	}
@@ -491,8 +494,11 @@ public class FileDescriptorProtoParser {
 
 		private Stack<FieldDescriptorProto.Builder> field = new Stack<>();
 
-		public ProtobufDescriptorVisitor(FileDescriptorProto.Builder builder) {
+		private final Set<String> localEnumNames;
+
+		public ProtobufDescriptorVisitor(FileDescriptorProto.Builder builder, Set<String> localEnumNames) {
 			this.builder = builder;
+			this.localEnumNames = localEnumNames;
 		}
 
 		@Override
@@ -591,7 +597,8 @@ public class FileDescriptorProtoParser {
 				return FieldDescriptorProto.Type.TYPE_SINT64;
 			}
 			if (ctx.messageType() != null) {
-				if (FileDescriptorProtoParser.this.enumNames.contains(ctx.messageType().getText())) {
+				if (this.localEnumNames.contains(ctx.messageType().getText())
+						|| FileDescriptorProtoParser.this.enumNames.contains(ctx.messageType().getText())) {
 					return FieldDescriptorProto.Type.TYPE_ENUM;
 				}
 				return FieldDescriptorProto.Type.TYPE_MESSAGE;

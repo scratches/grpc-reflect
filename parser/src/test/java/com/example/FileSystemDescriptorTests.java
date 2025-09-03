@@ -82,6 +82,26 @@ public class FileSystemDescriptorTests {
 	}
 
 	@Test
+	public void testDescriptorWithImportedEnumWithMultiPackage() {
+		FileDescriptorProtoParser parser = new FileDescriptorProtoParser(Path.of("src/test/proto/multipkgs"));
+		FileDescriptorSet files = parser.resolve(Path.of("foo.proto"));
+		assertThat(files.getFileCount()).isEqualTo(2);
+		FileDescriptorProto proto = files.getFile(0);
+		assertThat(proto.getName()).isEqualTo("bar.proto");
+		assertThat(proto.getEnumTypeList()).hasSize(1);
+		proto = files.getFile(1);
+		assertThat(proto.getName()).isEqualTo("foo.proto");
+		assertThat(proto.getDependencyList()).containsExactly("bar.proto");
+		assertThat(proto.getMessageTypeList()).hasSize(1);
+		DescriptorProto type = proto.getMessageType(0);
+		assertThat(type.getName()).isEqualTo("EchoRequest");
+		assertThat(type.getFieldList()).hasSize(3);
+		assertThat(type.getField(1).getName()).isEqualTo("type");
+		assertThat(type.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_ENUM);
+		assertThat(type.getField(1).getTypeName()).isEqualTo("sample.EchoType");
+	}
+
+	@Test
 	public void testMultiDescriptor() {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser(Path.of("src/test/proto/multi"));
 		FileDescriptorSet files = parser.resolve(Path.of("foo.proto"), Path.of("bar.proto"));

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.example.proto.deps";
+option java_outer_classname = "FooProto";
+
+package main;
+
+enum EchoType {
+    ONE = 1;
+    TWO = 2;
+}
+service Foo {
+    rpc Echo (EchoRequest) returns (EchoRequest) {}
+}
+message EchoRequest {
+    EchoType local = 1;
+    sample.EchoType type = 1;
+    optional string name = 2;
+}
+import "bar.proto";
