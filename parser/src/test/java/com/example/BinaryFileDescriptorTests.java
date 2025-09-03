@@ -40,4 +40,28 @@ public class BinaryFileDescriptorTests {
 		assertThat(proto.getMessageTypeList()).hasSize(0);
 	}
 
+	@Test
+	public void testDescriptorWithImportsFromClasspath() {
+		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		FileDescriptorSet files = parser.resolve(Path.of("binary/multi.pb"));
+		assertThat(files.getFileCount()).isEqualTo(2);
+		FileDescriptorProto proto = files.getFile(0);
+		assertThat(proto.getName()).isEqualTo("bar.proto");
+		assertThat(proto.getMessageTypeList()).hasSize(1);
+		proto = files.getFile(1);
+		assertThat(proto.getName()).isEqualTo("foo.proto");
+		assertThat(proto.getMessageTypeList()).hasSize(1);
+	}
+
+	@Test
+	public void testDescriptorFromClasspathDirectory() {
+		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		// Classpath directory search
+		FileDescriptorSet files = parser.resolve(Path.of("binary"));
+		assertThat(files.getFileCount()).isEqualTo(2);
+		FileDescriptorProto proto = files.getFile(0);
+		assertThat(proto.getName()).isEqualTo("bar.proto");
+		assertThat(proto.getMessageTypeList()).hasSize(1);
+	}
+
 }
