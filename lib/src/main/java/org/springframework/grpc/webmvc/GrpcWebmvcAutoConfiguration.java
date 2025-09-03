@@ -46,16 +46,22 @@ public class GrpcWebmvcAutoConfiguration implements WebMvcConfigurer {
 		return new GrpcExceptionHandler();
 	}
 
-	@Bean
-	@ConditionalOnClass(UpgradeProtocol.class)
-	public TomcatConnectorCustomizer customizer() {
-		return (connector) -> {
-			for (UpgradeProtocol protocol : connector.findUpgradeProtocols()) {
-				if (protocol instanceof Http2Protocol http2Protocol) {
-					http2Protocol.setOverheadWindowUpdateThreshold(0);
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnClass(name = "org.springframework.boot.web.embedded.tomcat.TomcatConnectorCustomizer")
+	static class NestedTomcatConfiguration {
+
+		@Bean
+		@ConditionalOnClass(UpgradeProtocol.class)
+		public TomcatConnectorCustomizer customizer() {
+			return (connector) -> {
+				for (UpgradeProtocol protocol : connector.findUpgradeProtocols()) {
+					if (protocol instanceof Http2Protocol http2Protocol) {
+						http2Protocol.setOverheadWindowUpdateThreshold(0);
+					}
 				}
-			}
-		};
+			};
+		}
+
 	}
 
 }
