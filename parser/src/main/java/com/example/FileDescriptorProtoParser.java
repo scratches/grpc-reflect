@@ -42,6 +42,8 @@ import com.example.ProtobufParser.EnumFieldContext;
 import com.example.ProtobufParser.FieldContext;
 import com.example.ProtobufParser.FieldLabelContext;
 import com.example.ProtobufParser.ImportStatementContext;
+import com.example.ProtobufParser.KeyTypeContext;
+import com.example.ProtobufParser.MapFieldContext;
 import com.example.ProtobufParser.PackageStatementContext;
 import com.example.ProtobufParser.RpcContext;
 import com.example.ProtobufParser.ServiceDefContext;
@@ -550,6 +552,85 @@ public class FileDescriptorProtoParser {
 			return result;
 		}
 
+		@Override
+		public Builder visitMapField(MapFieldContext ctx) {
+			FieldDescriptorProto.Type fieldType = FieldDescriptorProto.Type.TYPE_MESSAGE;
+			DescriptorProto mapType = mapType(ctx);
+			FieldDescriptorProto.Builder field = FieldDescriptorProto.newBuilder()
+					.setName(ctx.mapName().getText())
+					.setNumber(Integer.valueOf(ctx.fieldNumber().getText()))
+					.setLabel(FieldDescriptorProto.Label.LABEL_REPEATED)
+					.setTypeName(mapType.getName())
+					.setType(fieldType);
+			this.field.push(field);
+			FileDescriptorProto.Builder result = super.visitMapField(ctx);
+			this.type.peek().addNestedType(mapType);
+			this.type.peek().addField(field.build());
+			this.field.pop();
+			return result;
+		}
+
+		private DescriptorProto mapType(MapFieldContext ctx) {
+			DescriptorProto.Builder type = DescriptorProto.newBuilder()
+					.setName(capitalize(ctx.mapName().getText()) + "Entry");
+			FieldDescriptorProto.Builder key = FieldDescriptorProto.newBuilder()
+					.setName("key")
+					.setNumber(1)
+					.setType(findKeyType(ctx.keyType()));
+			FieldDescriptorProto.Builder value = FieldDescriptorProto.newBuilder()
+					.setName("value")
+					.setNumber(2)
+					.setType(findType(ctx.type()));
+			if (value.getType() == FieldDescriptorProto.Type.TYPE_MESSAGE
+					|| value.getType() == FieldDescriptorProto.Type.TYPE_ENUM) {
+				value.setTypeName(ctx.type().getText());
+			}
+			type.setOptions(type.getOptionsBuilder().setMapEntry(true));
+			type.addField(key.build());
+			type.addField(value.build());
+			return type.build();
+		}
+
+		private FieldDescriptorProto.Type findKeyType(KeyTypeContext ctx) {
+			if (ctx.STRING() != null) {
+				return FieldDescriptorProto.Type.TYPE_STRING;
+			}
+			if (ctx.INT32() != null) {
+				return FieldDescriptorProto.Type.TYPE_INT32;
+			}
+			if (ctx.INT64() != null) {
+				return FieldDescriptorProto.Type.TYPE_INT64;
+			}
+			if (ctx.BOOL() != null) {
+				return FieldDescriptorProto.Type.TYPE_BOOL;
+			}
+			if (ctx.FIXED32() != null) {
+				return FieldDescriptorProto.Type.TYPE_FIXED32;
+			}
+			if (ctx.FIXED64() != null) {
+				return FieldDescriptorProto.Type.TYPE_FIXED64;
+			}
+			if (ctx.SFIXED32() != null) {
+				return FieldDescriptorProto.Type.TYPE_SFIXED32;
+			}
+			if (ctx.SFIXED64() != null) {
+				return FieldDescriptorProto.Type.TYPE_SFIXED64;
+			}
+			if (ctx.UINT32() != null) {
+				return FieldDescriptorProto.Type.TYPE_UINT32;
+			}
+			if (ctx.UINT64() != null) {
+				return FieldDescriptorProto.Type.TYPE_UINT64;
+			}
+			if (ctx.SINT32() != null) {
+				return FieldDescriptorProto.Type.TYPE_SINT32;
+			}
+			if (ctx.SINT64() != null) {
+				return FieldDescriptorProto.Type.TYPE_SINT64;
+			}
+			throw new IllegalStateException("Unknown type: " + ctx.getText());
+		}
+
 		private FieldDescriptorProto.Type findType(TypeContext ctx) {
 			if (ctx.STRING() != null) {
 				return FieldDescriptorProto.Type.TYPE_STRING;
@@ -680,6 +761,23 @@ public class FileDescriptorProtoParser {
 			return method.build();
 		}
 
+	}
+
+	static String capitalize(String str) {
+		if (str == null || str.isEmpty()) {
+			return str;
+		}
+
+		char baseChar = str.charAt(0);
+		char updatedChar;
+		updatedChar = Character.toUpperCase(baseChar);
+		if (baseChar == updatedChar) {
+			return str;
+		}
+
+		char[] chars = str.toCharArray();
+		chars[0] = updatedChar;
+		return new String(chars);
 	}
 
 }

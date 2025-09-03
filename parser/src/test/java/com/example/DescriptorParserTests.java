@@ -26,6 +26,7 @@ import com.google.protobuf.DescriptorProtos.EnumDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Label;
 
 public class DescriptorParserTests {
 
@@ -259,6 +260,39 @@ public class DescriptorParserTests {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		FileDescriptorProto proto = parser.parse("test.proto", input);
 		assertThat(proto.getPackage()).isEqualTo("sample");
+	}
+
+
+	@Test
+	public void testParseMapType() {
+		String input = """
+				syntax = "proto3";
+				message TestMessage {
+					map<string, Foo> names = 1;
+				}
+				message Foo {
+					string value = 1;
+					int32 count = 2;
+				}
+				""";
+		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		FileDescriptorProto proto = parser.parse("test.proto", input);
+		assertThat(proto.getMessageTypeList()).hasSize(2);
+		DescriptorProto type = proto.getMessageTypeList().get(0);
+		assertThat(type.getName().toString()).isEqualTo("TestMessage");
+		assertThat(type.getFieldList()).hasSize(1);
+		assertThat(type.getField(0).getName()).isEqualTo("names");
+		assertThat(type.getField(0).getLabel()).isEqualTo(Label.LABEL_REPEATED);
+		assertThat(type.getField(0).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_MESSAGE);
+		assertThat(type.getField(0).getTypeName()).isEqualTo("NamesEntry");
+		// System.err.println(type.getNestedType(0));
+		type = type.getNestedType(0);
+		assertThat(type.getName()).isEqualTo("NamesEntry");
+		assertThat(type.getOptions().getMapEntry()).isTrue();
+		assertThat(type.getFieldList()).hasSize(2);
+		assertThat(type.getField(0).getName()).isEqualTo("key");
+		assertThat(type.getField(1).getName()).isEqualTo("value");
+		assertThat(type.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_MESSAGE);
 	}
 
 }

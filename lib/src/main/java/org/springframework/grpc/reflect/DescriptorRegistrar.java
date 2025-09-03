@@ -162,6 +162,9 @@ public class DescriptorRegistrar implements FileDescriptorProvider {
 						+ responseType.getName() + " for method " + fullMethodName);
 			}
 			// TODO: map types
+			if (field.isMapField()) {
+				
+			}
 			if (field.isRepeated() && !descriptor.getPropertyType().isArray()
 					&& !Iterable.class.isAssignableFrom(descriptor.getPropertyType())) {
 				throw new IllegalArgumentException(
