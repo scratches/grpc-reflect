@@ -17,6 +17,12 @@ package org.springframework.grpc.reflect;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.grpc.sample.proto.HelloRequest;
 
@@ -27,8 +33,6 @@ import com.google.protobuf.DynamicMessage;
 public class MessageConverterTests {
 
 	private DescriptorProvider registry = DescriptorProvider.DEFAULT_INSTANCE;
-
-	;
 
 	@Test
 	public void testConvertGeneratedTypeToPojo() {
@@ -49,9 +53,9 @@ public class MessageConverterTests {
 		MessageConverter converter = new MessageConverter();
 		Descriptor desc = registry.descriptor(Foo.class);
 		var foo = DynamicMessage.newBuilder(desc)
-			.setField(desc.findFieldByName("name"), "foo")
-			.setField(desc.findFieldByName("age"), 30)
-			.build();
+				.setField(desc.findFieldByName("name"), "foo")
+				.setField(desc.findFieldByName("age"), 30)
+				.build();
 
 		Foo convertedFoo = converter.convert(foo, Foo.class);
 
@@ -65,18 +69,50 @@ public class MessageConverterTests {
 		MessageConverter converter = new MessageConverter();
 		Descriptor desc = registry.descriptor(Foo.class);
 		var foo = DynamicMessage.newBuilder(desc)
-			.setField(desc.findFieldByName("name"), "foo")
-			.setField(desc.findFieldByName("age"), 30)
-			.build();
+				.setField(desc.findFieldByName("name"), "foo")
+				.setField(desc.findFieldByName("age"), 30)
+				.build();
 		var bar = DynamicMessage.newBuilder(registry.descriptor(Bar.class))
-			.setField(registry.descriptor(Bar.class).findFieldByName("foo"), foo)
-			.build();
+				.setField(registry.descriptor(Bar.class).findFieldByName("foo"), foo)
+				.build();
 
 		Foo convertedFoo = converter.convert(bar, Bar.class).getFoo();
 
 		assertThat(convertedFoo).isNotNull();
 		assertThat(convertedFoo.getName()).isEqualTo("foo");
 		assertThat(convertedFoo.getAge()).isEqualTo(30);
+	}
+
+	@Test
+	public void testConvertToPojoWithMap() {
+		MessageConverter converter = new MessageConverter();
+		Descriptor desc = registry.descriptor(Spam.class);
+		Spam input = new Spam();
+		input.getValues().put("foo", "bar");
+		input.getValues().put("hello", "world");
+		var foo = converter.convert(input, desc);
+
+		Spam convertedFoo = converter.convert(foo, Spam.class);
+
+		assertThat(convertedFoo).isNotNull();
+		assertThat(convertedFoo.getValues().get("foo")).isEqualTo("bar");
+		assertThat(convertedFoo.getValues().get("hello")).isEqualTo("world");
+	}
+
+	@Test
+	public void testConvertToPojoWithList() {
+		MessageConverter converter = new MessageConverter();
+		Descriptor desc = registry.descriptor(Bucket.class);
+		Bucket input = new Bucket();
+		input.getValues().add("foo");
+		input.getValues().add("bar");
+		var foo = converter.convert(input, desc);
+
+		Bucket convertedFoo = converter.convert(foo, Bucket.class);
+
+		assertThat(convertedFoo).isNotNull();
+		assertThat(convertedFoo.getValues().get(0)).isEqualTo("foo");
+		assertThat(convertedFoo.getValues().get(1)).isEqualTo("bar");
 	}
 
 	@Test
@@ -133,7 +169,7 @@ public class MessageConverterTests {
 
 		assertThat(message).isNotNull();
 		AbstractMessage nestedMessage = (AbstractMessage) message
-			.getField(registry.descriptor(Bar.class).findFieldByName("foo"));
+				.getField(registry.descriptor(Bar.class).findFieldByName("foo"));
 		assertThat(nestedMessage.getField(desc.findFieldByName("name"))).isEqualTo("foo");
 		assertThat(nestedMessage.getField(desc.findFieldByName("age"))).isEqualTo(30);
 	}
@@ -148,6 +184,40 @@ public class MessageConverterTests {
 		assertThat(message.getDescriptorForType().getFields()).isEmpty();
 	}
 
+	@Test
+	public void testConvertToMessageWithMap() {
+		MessageConverter converter = new MessageConverter();
+		Descriptor desc = registry.descriptor(Spam.class);
+		Spam foo = new Spam();
+		foo.getValues().put("foo", "bar");
+
+		AbstractMessage message = converter.convert(foo, desc);
+
+		assertThat(message).isNotNull();
+		@SuppressWarnings("unchecked")
+		DynamicMessage field = ((Iterable<DynamicMessage>) message.getField(desc.findFieldByName("values"))).iterator()
+				.next();
+		assertThat(field.getField(field.getDescriptorForType().findFieldByName("key"))).isEqualTo("foo");
+		assertThat(field.getField(field.getDescriptorForType().findFieldByName("value"))).isEqualTo("bar");
+	}
+
+	@Test
+	public void testConvertToMessageWithList() {
+		MessageConverter converter = new MessageConverter();
+		Descriptor desc = registry.descriptor(Bucket.class);
+		Bucket foo = new Bucket();
+		foo.getValues().add("foo");
+		foo.getValues().add("bar");
+
+		AbstractMessage message = converter.convert(foo, desc);
+
+		assertThat(message).isNotNull();
+		@SuppressWarnings("unchecked")
+		Iterator<String> field = ((Iterable<String>) message.getField(desc.findFieldByName("values"))).iterator();
+		assertThat(field.next()).isEqualTo("foo");
+		assertThat(field.next()).isEqualTo("bar");
+	}
+
 	static class Bar {
 
 		private Foo foo;
@@ -160,6 +230,21 @@ public class MessageConverterTests {
 			this.foo = foo;
 		}
 
+	}
+
+	static class Spam {
+		private Map<String, String> values = new HashMap<>();
+
+		public Map<String, String> getValues() {
+			return values;
+		}
+	}
+
+	static class Bucket {
+		private List<String> values = new ArrayList<>();
+		public List<String> getValues() {
+			return values;
+		}
 	}
 
 }

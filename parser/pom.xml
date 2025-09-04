@@ -71,7 +71,7 @@
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java-util</artifactId>
-			<version>4.31.1</version>
+			<version>${protobuf-java.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -116,6 +116,7 @@
 				</configuration>
 				<executions>
 					<execution>
+						<id>deps</id>
 						<goals>
 							<goal>generate-test</goal>
 						</goals>
@@ -126,6 +127,7 @@
 						</configuration>
 					</execution>
 					<execution>
+						<id>map</id>
 						<goals>
 							<goal>generate-test</goal>
 						</goals>
