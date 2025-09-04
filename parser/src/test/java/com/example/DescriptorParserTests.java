@@ -262,7 +262,6 @@ public class DescriptorParserTests {
 		assertThat(proto.getPackage()).isEqualTo("sample");
 	}
 
-
 	@Test
 	public void testParseMapType() {
 		String input = """

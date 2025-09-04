@@ -43,28 +43,35 @@ public class MessageConverter {
 			String propertyName = propertyDescriptor.getName();
 			if (Collection.class.isAssignableFrom(propertyDescriptor.getPropertyType())) {
 				@SuppressWarnings("unchecked")
-				Collection<Object> list = (Collection<Object>) ReflectionUtils.invokeMethod(propertyDescriptor.getReadMethod(), instance);
+				Collection<Object> list = (Collection<Object>) ReflectionUtils
+					.invokeMethod(propertyDescriptor.getReadMethod(), instance);
 				if (list != null) {
 					@SuppressWarnings("unchecked")
-					Iterable<Object> messages = (Iterable<Object>) message.getField(message.getDescriptorForType().findFieldByName(propertyName));
+					Iterable<Object> messages = (Iterable<Object>) message
+						.getField(message.getDescriptorForType().findFieldByName(propertyName));
 					for (var item : messages) {
 						if (item instanceof AbstractMessage) {
 							FieldDescriptor field = message.getDescriptorForType().findFieldByName(propertyName);
 							item = convert((AbstractMessage) item, field.getMessageType());
-						} else {
+						}
+						else {
 							list.add(item);
 						}
 					}
 				}
-			} else if (Map.class.isAssignableFrom(propertyDescriptor.getPropertyType())) {
+			}
+			else if (Map.class.isAssignableFrom(propertyDescriptor.getPropertyType())) {
 				@SuppressWarnings("unchecked")
-				Map<Object, Object> map = (Map<Object, Object>) ReflectionUtils.invokeMethod(propertyDescriptor.getReadMethod(), instance);
+				Map<Object, Object> map = (Map<Object, Object>) ReflectionUtils
+					.invokeMethod(propertyDescriptor.getReadMethod(), instance);
 				if (map != null) {
 					@SuppressWarnings("unchecked")
-					Iterable<DynamicMessage> messages = (Iterable<DynamicMessage>) message.getField(message.getDescriptorForType().findFieldByName(propertyName));
+					Iterable<DynamicMessage> messages = (Iterable<DynamicMessage>) message
+						.getField(message.getDescriptorForType().findFieldByName(propertyName));
 					for (var entryMessage : messages) {
 						Object key = entryMessage.getField(entryMessage.getDescriptorForType().findFieldByName("key"));
-						Object value = entryMessage.getField(entryMessage.getDescriptorForType().findFieldByName("value"));
+						Object value = entryMessage
+							.getField(entryMessage.getDescriptorForType().findFieldByName("value"));
 						if (value instanceof AbstractMessage) {
 							FieldDescriptor valueField = message.getDescriptorForType().findFieldByName(propertyName);
 							value = convert((AbstractMessage) value, valueField.getMessageType());
@@ -109,7 +116,8 @@ public class MessageConverter {
 			if (valueType == FieldDescriptor.Type.MESSAGE) {
 				AbstractMessage message = convert(entry.getValue(), valueDescriptor.getMessageType());
 				builder.setField(descriptor.findFieldByName("value"), message);
-			} else {
+			}
+			else {
 				builder.setField(descriptor.findFieldByName("value"), entry.getValue());
 			}
 			return builder.build();
@@ -130,11 +138,13 @@ public class MessageConverter {
 							var entryMessage = convert(entry, field.getMessageType());
 							builder.addRepeatedField(field, entryMessage);
 						}
-					} else {
+					}
+					else {
 						AbstractMessage nestedMessage = convert(nestedValue, field.getMessageType());
 						builder.setField(field, nestedMessage);
 					}
-				} else {
+				}
+				else {
 					Object fieldValue = ReflectionUtils.invokeMethod(method, value);
 					builder.setField(field, fieldValue);
 				}
