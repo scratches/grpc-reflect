@@ -37,8 +37,8 @@ public class MessageConverterTests {
 	@Test
 	public void testConvertGeneratedTypeToPojo() {
 		MessageConverter converter = new MessageConverter();
-		Descriptor desc = registry.descriptor(Foo.class);
-		var foo = DynamicMessage.newBuilder(desc).setField(desc.findFieldByName("name"), "foo").build();
+		Descriptor desc = HelloRequest.getDescriptor();
+		var foo = HelloRequest.newBuilder().setName("foo").build();
 
 		Foo convertedFoo = converter.convert(foo, Foo.class);
 
@@ -53,9 +53,9 @@ public class MessageConverterTests {
 		MessageConverter converter = new MessageConverter();
 		Descriptor desc = registry.descriptor(Foo.class);
 		var foo = DynamicMessage.newBuilder(desc)
-			.setField(desc.findFieldByName("name"), "foo")
-			.setField(desc.findFieldByName("age"), 30)
-			.build();
+				.setField(desc.findFieldByName("name"), "foo")
+				.setField(desc.findFieldByName("age"), 30)
+				.build();
 
 		Foo convertedFoo = converter.convert(foo, Foo.class);
 
@@ -69,12 +69,12 @@ public class MessageConverterTests {
 		MessageConverter converter = new MessageConverter();
 		Descriptor desc = registry.descriptor(Foo.class);
 		var foo = DynamicMessage.newBuilder(desc)
-			.setField(desc.findFieldByName("name"), "foo")
-			.setField(desc.findFieldByName("age"), 30)
-			.build();
+				.setField(desc.findFieldByName("name"), "foo")
+				.setField(desc.findFieldByName("age"), 30)
+				.build();
 		var bar = DynamicMessage.newBuilder(registry.descriptor(Bar.class))
-			.setField(registry.descriptor(Bar.class).findFieldByName("foo"), foo)
-			.build();
+				.setField(registry.descriptor(Bar.class).findFieldByName("foo"), foo)
+				.build();
 
 		Foo convertedFoo = converter.convert(bar, Bar.class).getFoo();
 
@@ -125,7 +125,7 @@ public class MessageConverterTests {
 	}
 
 	@Test
-	public void testConvertToGeneratedMessage() {
+	public void testConvertToGeneratedMessage() throws Exception {
 		MessageConverter converter = new MessageConverter();
 		Descriptor desc = HelloRequest.getDescriptor();
 		Foo foo = new Foo();
@@ -138,6 +138,9 @@ public class MessageConverterTests {
 		assertThat(message.getField(desc.findFieldByName("name"))).isEqualTo("foo");
 		// Age is not in the schema
 		assertThat(message.getAllFields().size()).isEqualTo(1);
+
+		HelloRequest request = HelloRequest.parseFrom(message.toByteString());
+		assertThat(request.getName()).isEqualTo("foo");
 	}
 
 	@Test
@@ -169,7 +172,7 @@ public class MessageConverterTests {
 
 		assertThat(message).isNotNull();
 		AbstractMessage nestedMessage = (AbstractMessage) message
-			.getField(registry.descriptor(Bar.class).findFieldByName("foo"));
+				.getField(registry.descriptor(Bar.class).findFieldByName("foo"));
 		assertThat(nestedMessage.getField(desc.findFieldByName("name"))).isEqualTo("foo");
 		assertThat(nestedMessage.getField(desc.findFieldByName("age"))).isEqualTo(30);
 	}
@@ -196,7 +199,7 @@ public class MessageConverterTests {
 		assertThat(message).isNotNull();
 		@SuppressWarnings("unchecked")
 		DynamicMessage field = ((Iterable<DynamicMessage>) message.getField(desc.findFieldByName("values"))).iterator()
-			.next();
+				.next();
 		assertThat(field.getField(field.getDescriptorForType().findFieldByName("key"))).isEqualTo("foo");
 		assertThat(field.getField(field.getDescriptorForType().findFieldByName("value"))).isEqualTo("bar");
 	}
