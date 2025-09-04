@@ -1,14 +1,14 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "com.example.proto.deps";
+option java_package = "com.example.proto.multipkgs";
 option java_outer_classname = "FooProto";
 
 package main;
 
 enum EchoType {
-    ONE = 1;
-    TWO = 2;
+    ONE = 0;
+    TWO = 1;
 }
 service Foo {
     rpc Echo (EchoRequest) returns (EchoRequest) {}

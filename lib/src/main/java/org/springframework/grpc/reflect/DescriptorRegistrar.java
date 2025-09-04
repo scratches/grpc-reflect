@@ -148,8 +148,7 @@ public class DescriptorRegistrar implements FileDescriptorProvider {
 				validateMessage(fullMethodName, requestType, inputType.getFields());
 				validateMessage(fullMethodName, responseType, outputType.getFields());
 			}
-		}
-		else {
+		} else {
 			throw new IllegalStateException("Service not registered: " + fullMethodName);
 		}
 	}
@@ -163,9 +162,12 @@ public class DescriptorRegistrar implements FileDescriptorProvider {
 			}
 			// TODO: map types
 			if (field.isMapField()) {
-				
-			}
-			if (field.isRepeated() && !descriptor.getPropertyType().isArray()
+				if (!Map.class.isAssignableFrom(descriptor.getPropertyType())) {
+					throw new IllegalArgumentException(
+							"Field " + field.getName() + " is a map in the schema, but is not a map in class "
+									+ responseType.getName() + " for method " + fullMethodName);
+				}
+			} else if (field.isRepeated() && !descriptor.getPropertyType().isArray()
 					&& !Iterable.class.isAssignableFrom(descriptor.getPropertyType())) {
 				throw new IllegalArgumentException(
 						"Field " + field.getName() + " is repeated in the schema, but is not a collection in class "
