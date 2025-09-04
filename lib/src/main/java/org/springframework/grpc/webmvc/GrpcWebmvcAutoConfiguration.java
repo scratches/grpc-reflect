@@ -60,6 +60,7 @@ public class GrpcWebmvcAutoConfiguration implements WebMvcConfigurer {
 	}
 
 	@Configuration(proxyBeanMethods = false)
+	// TODO: change package when we upgrade to Spring Boot 4.0
 	@ConditionalOnClass(name = "org.springframework.boot.web.embedded.tomcat.TomcatConnectorCustomizer")
 	static class NestedTomcatConfiguration {
 
