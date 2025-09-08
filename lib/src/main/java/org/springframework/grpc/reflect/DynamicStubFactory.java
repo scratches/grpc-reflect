@@ -39,7 +39,7 @@ public class DynamicStubFactory implements StubFactory<Object> {
 	}
 
 	public static boolean supports(Class<?> type) {
-		return type.isInterface() && type.isAnnotationPresent(GrpcClient.class);
+		return type.isInterface() && type.isAnnotationPresent(GrpcService.class);
 	}
 
 	@Override
@@ -67,8 +67,8 @@ public class DynamicStubFactory implements StubFactory<Object> {
 			if (invocation.getMethod().getDeclaringClass() == Object.class) {
 				return invocation.getMethod().invoke(this.stub, invocation.getArguments());
 			}
-			GrpcClient client = AnnotationUtils.findAnnotation(invocation.getMethod().getDeclaringClass(),
-					GrpcClient.class);
+			GrpcService client = AnnotationUtils.findAnnotation(invocation.getMethod().getDeclaringClass(),
+					GrpcService.class);
 			GrpcMapping mapping = AnnotationUtils.findAnnotation(invocation.getMethod(), GrpcMapping.class);
 			String methodName = service(client, invocation.getMethod().getDeclaringClass()) + "/"
 					+ method(mapping, invocation.getMethod());
@@ -98,7 +98,7 @@ public class DynamicStubFactory implements StubFactory<Object> {
 			return StringUtils.capitalize(method.getName());
 		}
 
-		private String service(GrpcClient client, Class<?> type) {
+		private String service(GrpcService client, Class<?> type) {
 			String service = client.service();
 			return service.isEmpty() ? type.getSimpleName() : service;
 		}

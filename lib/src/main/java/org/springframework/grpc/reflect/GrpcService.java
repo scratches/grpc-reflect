@@ -11,7 +11,7 @@ import org.springframework.core.annotation.AliasFor;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface GrpcClient {
+public @interface GrpcService {
 
 	/**
 	 * Alias for "service".

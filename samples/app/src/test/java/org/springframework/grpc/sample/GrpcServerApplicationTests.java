@@ -21,7 +21,7 @@ import org.springframework.grpc.reflect.DescriptorRegistrar;
 import org.springframework.grpc.reflect.DynamicServiceFactory;
 import org.springframework.grpc.reflect.DynamicStub;
 import org.springframework.grpc.reflect.DynamicStubFactory;
-import org.springframework.grpc.reflect.GrpcClient;
+import org.springframework.grpc.reflect.GrpcService;
 import org.springframework.grpc.reflect.GrpcMapping;
 import org.springframework.grpc.sample.FooService.Input;
 import org.springframework.grpc.sample.FooService.Output;
@@ -181,7 +181,7 @@ public class GrpcServerApplicationTests {
 
 }
 
-@GrpcClient(service = "FooService")
+@GrpcService(service = "FooService")
 interface FooClient {
 
 	@GrpcMapping(path = "Echo")
