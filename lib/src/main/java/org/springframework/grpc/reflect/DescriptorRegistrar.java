@@ -28,6 +28,16 @@ import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.google.protobuf.Descriptors.ServiceDescriptor;
 
+/**
+ * Registrar for managing protocol buffer file descriptors in the application context.
+ * <p>
+ * This class handles the registration and management of gRPC service descriptors,
+ * implementing {@link FileDescriptorProvider} to supply descriptor information
+ * for reflection and dynamic service operations.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class DescriptorRegistrar implements FileDescriptorProvider {
 
 	private final DescriptorCatalog catalog;

@@ -30,6 +30,16 @@ import org.springframework.util.StringUtils;
 import io.grpc.ManagedChannel;
 import reactor.core.publisher.Flux;
 
+/**
+ * Factory for creating dynamic gRPC client stubs.
+ * <p>
+ * This factory implements {@link StubFactory} to provide dynamic stub creation
+ * capabilities, allowing clients to interact with gRPC services without
+ * requiring compile-time generated stub classes.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class DynamicStubFactory implements StubFactory<Object> {
 
 	private final DescriptorRegistrar descriptorRegistry;

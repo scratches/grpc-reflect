@@ -47,6 +47,16 @@ import com.google.protobuf.Message;
 
 import jakarta.servlet.http.HttpServletResponse;
 
+/**
+ * HTTP message converter for gRPC protocol buffer messages in Spring WebMVC.
+ * <p>
+ * This converter extends {@link AbstractHttpMessageConverter} to provide
+ * conversion capabilities between HTTP requests/responses and gRPC {@link Message}
+ * objects in traditional servlet-based Spring applications.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class GrpcHttpMessageConverter extends AbstractHttpMessageConverter<Message> {
 
 	/**

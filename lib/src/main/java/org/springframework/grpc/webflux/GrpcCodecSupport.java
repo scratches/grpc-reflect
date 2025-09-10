@@ -21,6 +21,16 @@ import java.util.List;
 import org.springframework.lang.Nullable;
 import org.springframework.util.MimeType;
 
+/**
+ * Abstract base class providing common codec functionality for gRPC WebFlux integration.
+ * <p>
+ * This class contains shared utilities and helper methods used by gRPC encoders
+ * and decoders in the WebFlux reactive stack, providing consistent codec behavior
+ * across different message processing scenarios.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public abstract class GrpcCodecSupport {
 
 	static final String GRPC_STATUS_HEADER = "grpc-status";

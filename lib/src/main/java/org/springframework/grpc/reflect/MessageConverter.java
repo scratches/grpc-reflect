@@ -29,6 +29,16 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.DynamicMessage.Builder;
 
+/**
+ * Converter for transforming between protocol buffer messages and other formats.
+ * <p>
+ * This class provides conversion capabilities for gRPC message types,
+ * enabling seamless integration between protocol buffer messages and
+ * other data representations used in Spring applications.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class MessageConverter {
 
 	public <T> T convert(AbstractMessage message, Class<T> targetType) {

@@ -17,6 +17,15 @@ package org.springframework.grpc.reflect;
 
 import com.google.protobuf.Descriptors.FileDescriptor;
 
+/**
+ * Provider interface for accessing protocol buffer file descriptors.
+ * <p>
+ * This interface defines the contract for obtaining file descriptor information
+ * that describes gRPC services and their associated message types.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public interface FileDescriptorProvider {
 
 	FileDescriptor file(String serviceName);

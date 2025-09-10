@@ -27,6 +27,16 @@ import io.grpc.Status.Code;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.server.HttpServerResponse;
 
+/**
+ * Exception handler for gRPC operations in Spring WebFlux applications.
+ * <p>
+ * This handler extends {@link GrpcCodecSupport} and implements {@link WebExceptionHandler}
+ * and {@link Ordered} to provide centralized exception handling for gRPC-related
+ * errors in reactive web applications, converting exceptions to appropriate HTTP responses.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class GrpcExceptionHandler extends GrpcCodecSupport implements WebExceptionHandler, Ordered {
 
 	@Override

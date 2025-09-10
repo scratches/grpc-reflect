@@ -27,6 +27,16 @@ import io.grpc.BindableService;
 @Configuration
 @ConditionalOnMissingBean(BindableService.class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+/**
+ * Auto-configuration for gRPC integration with Spring WebFlux.
+ * <p>
+ * This configuration class implements {@link WebFluxConfigurer} to automatically
+ * configure the necessary components for gRPC support in Spring WebFlux
+ * applications, including codecs, handlers, and other integration components.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class GrpcWebfluxAutoConfiguration implements WebFluxConfigurer {
 
 	@Override

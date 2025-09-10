@@ -33,6 +33,16 @@ import io.grpc.Server;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
 
+/**
+ * An embedded gRPC server implementation for Spring WebFlux applications.
+ * <p>
+ * This server extends the base {@link Server} class and provides integration
+ * with Spring WebFlux, enabling gRPC services to run within a reactive
+ * Spring Boot application context.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class EmbeddedGrpcServer extends Server {
 
 	static final Context.Key<Server> SERVER_CONTEXT_KEY = InternalServer.SERVER_CONTEXT_KEY;

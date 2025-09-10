@@ -48,6 +48,16 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 import reactor.core.publisher.Sinks.Many;
 
+/**
+ * Factory for creating dynamic gRPC services at runtime.
+ * <p>
+ * This factory enables the creation of gRPC services without static compilation,
+ * using reflection and descriptor information to dynamically construct service
+ * implementations based on protocol buffer definitions.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class DynamicServiceFactory {
 
 	private final MessageConverter converter;

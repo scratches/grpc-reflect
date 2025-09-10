@@ -31,6 +31,16 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 import reactor.core.publisher.Sinks.Many;
 
+/**
+ * A dynamic gRPC stub that can invoke methods without compile-time generated code.
+ * <p>
+ * This stub extends {@link AbstractStub} and provides the ability to make gRPC
+ * calls using reflection and dynamic method resolution, enabling flexible
+ * client interactions with gRPC services.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class DynamicStub extends AbstractStub<DynamicStub> {
 
 	private final MessageConverter converter;

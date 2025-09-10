@@ -44,6 +44,16 @@ import com.google.protobuf.Message;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * WebFlux decoder for gRPC protocol buffer messages.
+ * <p>
+ * This decoder extends {@link GrpcCodecSupport} and implements {@link Decoder}
+ * to provide decoding capabilities for gRPC messages in Spring WebFlux
+ * reactive streams, converting byte streams to protocol buffer {@link Message} objects.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 
 	/** The default max size for aggregating messages. */

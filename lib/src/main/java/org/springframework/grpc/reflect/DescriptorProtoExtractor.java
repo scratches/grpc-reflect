@@ -26,6 +26,15 @@ import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type;
 
+/**
+ * Interface for extracting protocol buffer descriptors from various sources.
+ * <p>
+ * Implementations of this interface provide different strategies for obtaining
+ * descriptor information needed for gRPC reflection and dynamic service creation.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public interface DescriptorProtoExtractor {
 
 	DescriptorProto proto(Class<?> clazz);

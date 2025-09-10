@@ -31,6 +31,16 @@ import com.google.protobuf.Descriptors.FileDescriptor;
 
 import io.grpc.MethodDescriptor.MethodType;
 
+/**
+ * File descriptor provider that uses reflection to obtain descriptor information.
+ * <p>
+ * This implementation of {@link FileDescriptorProvider} leverages Java reflection
+ * to extract protocol buffer file descriptors from compiled classes, enabling
+ * dynamic access to gRPC service definitions.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class ReflectionFileDescriptorProvider implements FileDescriptorProvider {
 
 	private final DescriptorProtoExtractor protos;

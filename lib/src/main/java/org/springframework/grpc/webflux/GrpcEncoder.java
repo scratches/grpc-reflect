@@ -34,6 +34,16 @@ import com.google.protobuf.Message;
 
 import reactor.core.publisher.Flux;
 
+/**
+ * WebFlux encoder for gRPC protocol buffer messages.
+ * <p>
+ * This encoder extends {@link GrpcCodecSupport} and implements {@link Encoder}
+ * to provide encoding capabilities for protocol buffer {@link Message} objects
+ * in Spring WebFlux reactive streams, converting messages to byte streams.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class GrpcEncoder extends GrpcCodecSupport implements Encoder<Message> {
 
 	@Override

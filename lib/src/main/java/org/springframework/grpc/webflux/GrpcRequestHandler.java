@@ -34,6 +34,18 @@ import reactor.core.publisher.Sinks;
 import reactor.core.publisher.Sinks.Many;
 import reactor.core.scheduler.Schedulers;
 
+/**
+ * Request handler for processing gRPC requests in Spring WebFlux applications.
+ * <p>
+ * This generic handler processes incoming gRPC requests of type {@code I} and
+ * produces responses of type {@code O}, providing the core request processing
+ * logic for gRPC operations in reactive web environments.
+ * 
+ * @param <I> the input message type
+ * @param <O> the output message type
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class GrpcRequestHandler<I, O> {
 
 	private EmbeddedGrpcServer server;

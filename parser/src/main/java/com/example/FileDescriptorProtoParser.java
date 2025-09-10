@@ -60,6 +60,7 @@ import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
 
 /**
  * A parser for Protocol Buffers (.proto) files that can parse, resolve dependencies, and
+ * A parser for Protocol Buffers (.proto) files that can parse, resolve dependencies, and
  * build {@link FileDescriptorProto} and {@link FileDescriptorSet} objects.
  *
  * <p>

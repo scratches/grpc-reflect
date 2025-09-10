@@ -21,6 +21,15 @@ import java.util.Map;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.Descriptors.ServiceDescriptor;
 
+/**
+ * A catalog that manages and provides access to protocol buffer file descriptors.
+ * <p>
+ * This class implements {@link FileDescriptorProvider} and serves as a central
+ * repository for storing and retrieving gRPC service descriptors used in reflection.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class DescriptorCatalog implements FileDescriptorProvider {
 
 	private Map<String, FileDescriptor> fileDescriptors = new HashMap<>();

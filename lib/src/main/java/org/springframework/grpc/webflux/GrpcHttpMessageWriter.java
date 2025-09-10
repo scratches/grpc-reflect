@@ -38,6 +38,16 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.server.HttpServerResponse;
 
+/**
+ * HTTP message writer for gRPC protocol buffer messages in WebFlux.
+ * <p>
+ * This writer extends {@link EncoderHttpMessageWriter} to provide specialized
+ * HTTP message writing capabilities for gRPC {@link Message} objects in
+ * Spring WebFlux applications, handling the conversion from messages to HTTP responses.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class GrpcHttpMessageWriter extends EncoderHttpMessageWriter<Message> {
 
 	private static final String GRPC_STATUS_HEADER = "grpc-status";

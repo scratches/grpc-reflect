@@ -33,6 +33,9 @@ import com.google.protobuf.ProtocolStringList;
  * FileDescriptorManager manager = new FileDescriptorManager();
  * FileDescriptor[] descriptors = manager.convert(fileDescriptorSet);
  * </pre>
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
  */
 public class FileDescriptorManager {
 

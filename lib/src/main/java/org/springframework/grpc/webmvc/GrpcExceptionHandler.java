@@ -25,6 +25,16 @@ import org.springframework.web.servlet.ModelAndView;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+/**
+ * Exception handler for gRPC operations in Spring WebMVC applications.
+ * <p>
+ * This handler implements {@link HandlerExceptionResolver} and {@link Ordered}
+ * to provide centralized exception handling for gRPC-related errors in
+ * traditional servlet-based Spring applications, converting exceptions to appropriate responses.
+ * 
+ * @author Dave Syer
+ * @since 1.0.0
+ */
 public class GrpcExceptionHandler implements HandlerExceptionResolver, Ordered {
 
 	@Override
