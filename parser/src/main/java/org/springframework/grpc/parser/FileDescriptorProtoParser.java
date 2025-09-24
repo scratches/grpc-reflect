@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example;
+package org.springframework.grpc.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,18 +36,18 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.grpc.parser.ProtobufParser.EnumDefContext;
+import org.springframework.grpc.parser.ProtobufParser.EnumFieldContext;
+import org.springframework.grpc.parser.ProtobufParser.FieldContext;
+import org.springframework.grpc.parser.ProtobufParser.FieldLabelContext;
+import org.springframework.grpc.parser.ProtobufParser.ImportStatementContext;
+import org.springframework.grpc.parser.ProtobufParser.KeyTypeContext;
+import org.springframework.grpc.parser.ProtobufParser.MapFieldContext;
+import org.springframework.grpc.parser.ProtobufParser.PackageStatementContext;
+import org.springframework.grpc.parser.ProtobufParser.RpcContext;
+import org.springframework.grpc.parser.ProtobufParser.ServiceDefContext;
+import org.springframework.grpc.parser.ProtobufParser.TypeContext;
 
-import com.example.ProtobufParser.EnumDefContext;
-import com.example.ProtobufParser.EnumFieldContext;
-import com.example.ProtobufParser.FieldContext;
-import com.example.ProtobufParser.FieldLabelContext;
-import com.example.ProtobufParser.ImportStatementContext;
-import com.example.ProtobufParser.KeyTypeContext;
-import com.example.ProtobufParser.MapFieldContext;
-import com.example.ProtobufParser.PackageStatementContext;
-import com.example.ProtobufParser.RpcContext;
-import com.example.ProtobufParser.ServiceDefContext;
-import com.example.ProtobufParser.TypeContext;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.EnumDescriptorProto;
 import com.google.protobuf.DescriptorProtos.EnumValueDescriptorProto;
