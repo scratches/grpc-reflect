@@ -30,8 +30,8 @@ public class ClasspathDescriptorTests {
 	public void testClasspathDescriptor() {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		// Comes with the protobuf-java library:
-		FileDescriptorProto proto = parser.parse("descriptor.proto",
-				getClass().getResourceAsStream("/google/protobuf/empty.proto"));
+		FileDescriptorProto proto = parser.resolve("descriptor.proto",
+				getClass().getResourceAsStream("/google/protobuf/empty.proto")).getFile(0);
 		assertThat(proto.getName()).isEqualTo("descriptor.proto");
 		assertThat(proto.getMessageTypeList()).hasSize(1);
 		assertThat(proto.getMessageType(0).getName()).isEqualTo("Empty");

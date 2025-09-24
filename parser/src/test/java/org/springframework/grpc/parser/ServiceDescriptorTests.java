@@ -39,7 +39,7 @@ public class ServiceDescriptorTests {
 				};
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.parse("test.proto", input);
+		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
 		assertThat(proto.getServiceList()).hasSize(1);
 		ServiceDescriptorProto service = proto.getService(0);
 		assertThat(service.getName()).isEqualTo("Foo");
@@ -60,7 +60,7 @@ public class ServiceDescriptorTests {
 				};
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.parse("test.proto", input);
+		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
 		ServiceDescriptorProto service = proto.getService(0);
 		assertThat(service.getMethodCount()).isEqualTo(2);
 		assertThat(service.getName()).isEqualTo("Foo");
@@ -77,7 +77,7 @@ public class ServiceDescriptorTests {
 				};
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.parse("test.proto", input);
+		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
 		ServiceDescriptorProto service = proto.getService(0);
 		assertThat(service.getMethodList()).hasSize(1);
 		assertThat(service.getMethod(0).getName()).isEqualTo("Echo");

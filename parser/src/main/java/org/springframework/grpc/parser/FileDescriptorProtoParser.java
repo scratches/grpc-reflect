@@ -131,39 +131,6 @@ public class FileDescriptorProtoParser {
 	}
 
 	/**
-	 * Parses the given input string into a FileDescriptorProto object.
-	 *
-	 * @see #resolve(String, String) for resolving dependencies
-	 * @param name  the name associated with the input, typically used for error
-	 *              reporting
-	 * @param input the input string to be parsed, must be a single "proto3"
-	 *              definition
-	 * @return a FileDescriptorProto object representing the parsed input
-	 */
-	public FileDescriptorProto parse(String name, String input) {
-		CharStream stream = CharStreams.fromString(input);
-		return parse(name, stream);
-	}
-
-	/**
-	 * Parses a protocol buffer descriptor from the given input stream.
-	 *
-	 * @see #resolve(String, InputStream) for resolving dependencies
-	 * @param name  the name associated with the descriptor being parsed
-	 * @param input the input stream containing the protocol buffer descriptor data
-	 * @return the parsed {@link FileDescriptorProto} object
-	 * @throws IllegalStateException if an I/O error occurs while reading the input
-	 *                               stream
-	 */
-	public FileDescriptorProto parse(String name, InputStream input) {
-		try {
-			return parse(name, CharStreams.fromStream(input));
-		} catch (IOException e) {
-			throw new IllegalStateException("Failed to read input stream: " + input, e);
-		}
-	}
-
-	/**
 	 * Resolves a set of {@link FileDescriptorProto} inputs into a
 	 * {@link FileDescriptorSet}. This method processes each input, ensuring that
 	 * all

@@ -41,7 +41,7 @@ public class DescriptorParserTests {
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		assertThrows(IllegalStateException.class, () -> {
-			parser.parse("test.proto", input);
+			parser.resolve("test.proto", input);
 		});
 	}
 
@@ -71,7 +71,7 @@ public class DescriptorParserTests {
 				}
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.parse("test.proto", input);
+		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
 		assertThat(proto.getMessageTypeList()).hasSize(1);
 		DescriptorProto type = proto.getMessageTypeList().get(0);
 		assertThat(type.getName().toString()).isEqualTo("TestMessage");
@@ -97,7 +97,7 @@ public class DescriptorParserTests {
 				}
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.parse("test.proto", input);
+		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
 		assertThat(proto.getMessageTypeList()).hasSize(2);
 		DescriptorProto type = proto.getMessageTypeList().get(0);
 		assertThat(type.getName().toString()).isEqualTo("TestMessage");
@@ -117,7 +117,7 @@ public class DescriptorParserTests {
 				}
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.parse("test.proto", input);
+		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
 		assertThat(proto.getMessageTypeList()).hasSize(1);
 		DescriptorProto type = proto.getMessageTypeList().get(0);
 		assertThat(type.getName().toString()).isEqualTo("TestMessage");
@@ -142,7 +142,7 @@ public class DescriptorParserTests {
 				}
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.parse("test.proto", input);
+		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
 		assertThat(proto.getMessageTypeList()).hasSize(2);
 		DescriptorProto type = proto.getMessageTypeList().get(1);
 		assertThat(type.getName().toString()).isEqualTo("TestMessage");
@@ -167,7 +167,7 @@ public class DescriptorParserTests {
 				}
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.parse("test.proto", input);
+		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
 		assertThat(proto.getEnumTypeList()).hasSize(1);
 		EnumDescriptorProto enumType = proto.getEnumTypeList().get(0);
 		assertThat(enumType.getName().toString()).isEqualTo("TestEnum");
@@ -215,7 +215,7 @@ public class DescriptorParserTests {
 				}
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.parse("test.proto", input);
+		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
 		DescriptorProto type = proto.getMessageTypeList().get(1);
 		assertThat(type.getName().toString()).isEqualTo("HelloReply");
 		assertThat(type.getFieldList()).hasSize(2);
@@ -233,7 +233,7 @@ public class DescriptorParserTests {
 				}
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.parse("test.proto", input);
+		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(1);
 		FileDescriptorSet files = parser.resolve(proto);
 		assertThat(proto.getDependencyList()).hasSize(1);
 		assertThat(proto.getDependency(0)).isEqualTo("google/protobuf/any.proto");
@@ -258,7 +258,7 @@ public class DescriptorParserTests {
 				}
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.parse("test.proto", input);
+		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
 		assertThat(proto.getPackage()).isEqualTo("sample");
 	}
 
@@ -275,7 +275,7 @@ public class DescriptorParserTests {
 				}
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.parse("test.proto", input);
+		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
 		assertThat(proto.getMessageTypeList()).hasSize(2);
 		DescriptorProto type = proto.getMessageTypeList().get(0);
 		assertThat(type.getName().toString()).isEqualTo("TestMessage");
