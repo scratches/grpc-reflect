@@ -127,7 +127,7 @@ public class FileDescriptorProtoParser {
 	 */
 	public FileDescriptorProtoParser(Path base) {
 		this.base = base;
-		this.v3 = new ProtoParserV3(base);
+		this.v3 = new ProtoParserV3();
 	}
 
 	/**
@@ -372,7 +372,7 @@ public class FileDescriptorProtoParser {
 	}
 
 	private FileDescriptorProto parse(String name, CharStream stream) {
-		return v3.parse(name, stream);
+		return v3.parse(name, stream, path -> resolve(path, findImport(path)));
 	}
 
 }

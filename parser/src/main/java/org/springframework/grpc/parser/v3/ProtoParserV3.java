@@ -16,19 +16,13 @@
 
 package org.springframework.grpc.parser.v3;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import java.util.function.Consumer;
 
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
@@ -55,38 +49,9 @@ import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
 
 public class ProtoParserV3 {
 
-	private Map<String, FileDescriptorProto> cache = new HashMap<>();
-
 	private Set<String> enumNames = new HashSet<>();
 
-	private final Path base;
-
-	/**
-	 * Constructs a new {@code FileDescriptorProtoParser} with a default path. This
-	 * constructor initializes the parser with an empty path.
-	 */
-	public ProtoParserV3() {
-		this(Path.of(""));
-	}
-
-	/**
-	 * Constructs a new {@code FileDescriptorProtoParser} with the specified base
-	 * path.
-	 * Imports in .proto files will be resolved relative to this base path and paths
-	 * to
-	 * .proto files will be resolved relative to this base path as well.
-	 * 
-	 * @param base the base path to be used by the parser
-	 */
-	public ProtoParserV3(Path base) {
-		this.base = base;
-	}
-
-	public FileDescriptorProto parse(String name, CharStream stream) {
-
-		if (cache.containsKey(name)) {
-			return cache.get(name);
-		}
+	public FileDescriptorProto parse(String name, CharStream stream, Consumer<String> importHandler) {
 
 		ProtobufLexer lexer = new ProtobufLexer(stream);
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -132,45 +97,15 @@ public class ProtoParserV3 {
 			public Object visitImportStatement(ImportStatementContext ctx) {
 				String path = ctx.strLit().getText();
 				path = path.replace("\"", "").replace("'", "");
-				if (!cache.containsKey(path)) {
-					parse(path, findImport(path));
-				}
+				importHandler.accept(path);
 				return super.visitImportStatement(ctx);
 			}
 		});
 		parser.reset();
 		FileDescriptorProto proto = parser.proto()
-				.accept(new ProtobufDescriptorVisitor(builder, localEnumNames))
+				.accept(new ProtobufDescriptorVisitor(builder, localEnumNames, importHandler))
 				.build();
-		cache.put(name, proto);
 		return proto;
-	}
-
-	private InputStream findImport(String path) {
-		if (path.startsWith("/")) {
-			path = path.substring(1);
-		}
-		InputStream stream = getClass().getClassLoader().getResourceAsStream(path);
-		if (stream == null) {
-			if (base.resolve(path).toFile().exists()) {
-				try {
-					stream = Files.newInputStream(base.resolve(path));
-				} catch (IOException e) {
-					throw new IllegalStateException("Failed to read import: " + path, e);
-				}
-			} else {
-				throw new IllegalArgumentException("Import not found: " + path);
-			}
-		}
-		return stream;
-	}
-
-	private FileDescriptorProto parse(String name, InputStream input) {
-		try {
-			return parse(name, CharStreams.fromStream(input));
-		} catch (IOException e) {
-			throw new IllegalStateException("Failed to read input stream: " + input, e);
-		}
 	}
 
 	class ProtobufDescriptorVisitor extends ProtobufBaseVisitor<FileDescriptorProto.Builder> {
@@ -185,9 +120,12 @@ public class ProtoParserV3 {
 
 		private final Set<String> localEnumNames;
 
-		public ProtobufDescriptorVisitor(FileDescriptorProto.Builder builder, Set<String> localEnumNames) {
+		private Consumer<String> importHandler;
+
+		public ProtobufDescriptorVisitor(FileDescriptorProto.Builder builder, Set<String> localEnumNames, Consumer<String> importHandler) {
 			this.builder = builder;
 			this.localEnumNames = localEnumNames;
+			this.importHandler = importHandler;
 		}
 
 		@Override
@@ -413,9 +351,7 @@ public class ProtoParserV3 {
 		public FileDescriptorProto.Builder visitImportStatement(ImportStatementContext ctx) {
 			String path = ctx.strLit().getText();
 			path = path.replace("\"", "").replace("'", "");
-			if (!cache.containsKey(path)) {
-				parse(path, findImport(path));
-			}
+			importHandler.accept(path);
 			builder.addDependency(path);
 			return super.visitImportStatement(ctx);
 		}
