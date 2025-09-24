@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.grpc.parser;
+package org.springframework.grpc.parser.v3;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,8 +25,8 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.junit.jupiter.api.Test;
-import org.springframework.grpc.parser.ProtobufParser.MessageBodyContext;
-import org.springframework.grpc.parser.ProtobufParser.ProtoContext;
+import org.springframework.grpc.parser.v3.ProtobufParser.MessageBodyContext;
+import org.springframework.grpc.parser.v3.ProtobufParser.ProtoContext;
 
 public class ProtobufParserTests {
 
