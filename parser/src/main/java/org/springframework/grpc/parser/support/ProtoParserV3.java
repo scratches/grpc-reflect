@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.grpc.parser.v3;
+package org.springframework.grpc.parser.support;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -26,6 +26,10 @@ import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
+import org.springframework.grpc.parser.v3.ProtobufBaseListener;
+import org.springframework.grpc.parser.v3.ProtobufBaseVisitor;
+import org.springframework.grpc.parser.v3.ProtobufLexer;
+import org.springframework.grpc.parser.v3.ProtobufParser;
 import org.springframework.grpc.parser.v3.ProtobufParser.EnumDefContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.EnumFieldContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.FieldContext;
