@@ -53,6 +53,8 @@ import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
 
 public class ProtoParserV3 {
 
+	// TODO: extract shared code with V2
+
 	private Set<String> enumNames = new HashSet<>();
 
 	public FileDescriptorProto parse(String name, CharStream stream, Consumer<String> importHandler) {
@@ -126,7 +128,8 @@ public class ProtoParserV3 {
 
 		private Consumer<String> importHandler;
 
-		public ProtobufDescriptorVisitor(FileDescriptorProto.Builder builder, Set<String> localEnumNames, Consumer<String> importHandler) {
+		public ProtobufDescriptorVisitor(FileDescriptorProto.Builder builder, Set<String> localEnumNames,
+				Consumer<String> importHandler) {
 			this.builder = builder;
 			this.localEnumNames = localEnumNames;
 			this.importHandler = importHandler;
@@ -168,7 +171,7 @@ public class ProtoParserV3 {
 			FieldDescriptorProto.Type fieldType = findType(ctx.type());
 			FieldDescriptorProto.Builder field = FieldDescriptorProto.newBuilder()
 					.setName(ctx.fieldName().getText())
-					.setNumber(Integer.valueOf(ctx.fieldNumber().getText()))
+					.setNumber(parseInt(ctx.fieldNumber().getText()))
 					.setType(fieldType);
 			this.field.push(field);
 			if (fieldType == FieldDescriptorProto.Type.TYPE_MESSAGE
@@ -179,6 +182,16 @@ public class ProtoParserV3 {
 			this.type.peek().addField(field.build());
 			this.field.pop();
 			return result;
+		}
+
+		private int parseInt(String text) {
+			if (text.startsWith("0x") || text.startsWith("0X")) {
+				return Integer.parseInt(text.substring(2), 16);
+			}
+			if (text.startsWith("0") && text.length() > 1) {
+				return Integer.parseInt(text.substring(1), 8);
+			}
+			return Integer.parseInt(text, 10);
 		}
 
 		@Override
@@ -333,8 +346,10 @@ public class ProtoParserV3 {
 		@Override
 		public FileDescriptorProto.Builder visitEnumField(EnumFieldContext ctx) {
 			// System.err.println("Enum field: " + ctx.enumFieldName().getText());
+			String name = ctx.ident().IDENTIFIER() == null ? ctx.ident().keywords().getText()
+					: ctx.ident().IDENTIFIER().getText();
 			EnumValueDescriptorProto.Builder field = EnumValueDescriptorProto.newBuilder()
-					.setName(ctx.ident().IDENTIFIER().getText())
+					.setName(name)
 					.setNumber(Integer.valueOf(ctx.intLit().INT_LIT().getText()));
 			this.enumType.peek().addValue(field.build());
 			return super.visitEnumField(ctx);

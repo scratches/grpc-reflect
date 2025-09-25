@@ -18,7 +18,6 @@ package org.springframework.grpc.parser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
@@ -208,8 +207,8 @@ public class DescriptorParserV3Tests {
 		String input = """
 				syntax = "proto3";
 				enum TestEnum {
-					DECLARATION = 0;
-					UNVERIFIED = 1;
+					message = 0;
+					enum = 1;
 				}
 				message TestMessage {
 					TestEnum value = 1;
@@ -221,7 +220,7 @@ public class DescriptorParserV3Tests {
 		EnumDescriptorProto enumType = proto.getEnumTypeList().get(0);
 		assertThat(enumType.getName().toString()).isEqualTo("TestEnum");
 		assertThat(enumType.getValueList()).hasSize(2);
-		assertThat(enumType.getValueList().get(0).getName()).isEqualTo("DECLARATION");
+		assertThat(enumType.getValueList().get(0).getName()).isEqualTo("message");
 		assertThat(proto.getMessageTypeList()).hasSize(1);
 		DescriptorProto type = proto.getMessageTypeList().get(0);
 		assertThat(type.getName().toString()).isEqualTo("TestMessage");
@@ -341,5 +340,28 @@ public class DescriptorParserV3Tests {
 		assertThat(type.getField(1).getName()).isEqualTo("value");
 		assertThat(type.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_MESSAGE);
 	}
+
+		@Test
+	public void testParseHexLiteral() {
+		String input = """
+				syntax = "proto3";
+				message TestMessage {
+					string name = 1;
+					int32 age = 0x02;
+				}
+				""";
+		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
+		assertThat(proto.getMessageTypeList()).hasSize(1);
+		DescriptorProto type = proto.getMessageTypeList().get(0);
+		assertThat(type.getName().toString()).isEqualTo("TestMessage");
+		assertThat(type.getFieldList()).hasSize(2);
+		assertThat(type.getField(0).getName()).isEqualTo("name");
+		assertThat(type.getField(0).getNumber()).isEqualTo(1);
+		assertThat(type.getField(1).getName()).isEqualTo("age");
+		assertThat(type.getField(1).getNumber()).isEqualTo(2);
+		assertThat(type.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_INT32);
+	}
+
 
 }
