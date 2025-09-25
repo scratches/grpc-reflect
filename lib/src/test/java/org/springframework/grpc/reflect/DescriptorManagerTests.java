@@ -37,7 +37,7 @@ public class DescriptorManagerTests {
 				}
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
+		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(1);
 		FileDescriptorSet files = parser.resolve(proto);
 		FileDescriptor[] descriptors = new FileDescriptorManager().convert(files);
 		assertThat(descriptors).hasSize(2);
@@ -79,7 +79,7 @@ public class DescriptorManagerTests {
 				}
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
+		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(1);
 		FileDescriptorSet files = FileDescriptorSet.newBuilder().addFile(proto).build();
 		assertThat(assertThrows(IllegalStateException.class, () -> {
 			new FileDescriptorManager().convert(files);

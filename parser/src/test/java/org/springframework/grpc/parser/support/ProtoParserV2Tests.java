@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.grpc.parser.v2.ProtobufBaseVisitor;
 import org.springframework.grpc.parser.v2.ProtobufLexer;
 import org.springframework.grpc.parser.v2.ProtobufParser;
+import org.springframework.grpc.parser.v2.ProtobufParser.FieldLabelContext;
 import org.springframework.grpc.parser.v2.ProtobufParser.MessageBodyContext;
 import org.springframework.grpc.parser.v2.ProtobufParser.ProtoContext;
 
@@ -69,6 +70,12 @@ public class ProtoParserV2Tests {
 			public Object visitMessageBody(MessageBodyContext ctx) {
 				System.err.println("Field: " + ctx.messageElement().get(0).field().fieldName().getText());
 				return super.visitMessageBody(ctx);
+			}
+
+			@Override
+			public Object visitFieldLabel(FieldLabelContext ctx) {
+				System.err.println("Label: " + ctx.getText());
+				return super.visitFieldLabel(ctx);
 			}
 		});
 		assertThat(errorCount.get()).isEqualTo(0);

@@ -20,7 +20,7 @@ proto
 // Syntax
 
 syntax
-    : SYNTAX EQ (PROTO2_LIT_SINGLE | PROTO2_LIT_DOBULE) SEMI
+    : SYNTAX EQ (PROTO2_LIT_SINGLE | PROTO2_LIT_DOUBLE) SEMI
     ;
 
 // Import Statement
@@ -132,7 +132,28 @@ type
 // Extensions
 
 extensions
-    : EXTENSIONS ranges SEMI
+    : EXTENSIONS ranges (LB (verificationDef | declarationsDef) RB)? SEMI
+    ;
+
+verificationDef
+    : VERIFICATION EQ verification
+    ;
+
+verification
+    : DECLARATION_LIT
+    | UNVERIFIED_LIT
+    ;
+
+declarationsDef
+    : declarationDef (COMMA declarationDef)*
+    ;
+
+declarationDef
+    : DECLARATION EQ LC (declaration (declaration)*)? RC
+    ;
+
+declaration
+    : fieldName COLON constant (COMMA)?
     ;
 
 // Reserved
@@ -175,6 +196,7 @@ enumBody
 enumElement
     : optionStatement
     | enumField
+    | reserved
     | emptyStatement_
     ;
 
@@ -266,7 +288,7 @@ constant
 
 // not specified in specification but used in tests
 blockLit
-    : LC (ident COLON constant)* RC
+    : LC (ident COLON constant (COMMA)?)* RC
     ;
 
 emptyStatement_
@@ -335,7 +357,7 @@ intLit
 strLit
     : STR_LIT
     | PROTO2_LIT_SINGLE
-    | PROTO2_LIT_DOBULE
+    | PROTO2_LIT_DOUBLE
     ;
 
 boolLit
@@ -471,6 +493,22 @@ MAX
     : 'max'
     ;
 
+VERIFICATION
+    : 'verification'
+    ;
+
+DECLARATION
+    : 'declaration'
+    ;
+
+DECLARATION_LIT
+    : 'DECLARATION'
+    ;
+
+UNVERIFIED_LIT
+    : 'UNVERIFIED'
+    ;
+
 ENUM
     : 'enum'
     ;
@@ -503,7 +541,7 @@ PROTO2_LIT_SINGLE
     : '"proto2"'
     ;
 
-PROTO2_LIT_DOBULE
+PROTO2_LIT_DOUBLE
     : '\'proto2\''
     ;
 
@@ -706,4 +744,8 @@ keywords
     | STREAM
     | RETURNS
     | BOOL_LIT
+    | DECLARATION
+    | VERIFICATION
+    | DECLARATION_LIT
+    | UNVERIFIED_LIT
     ;

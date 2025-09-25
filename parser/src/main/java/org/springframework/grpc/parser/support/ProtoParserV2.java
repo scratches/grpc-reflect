@@ -148,11 +148,18 @@ public class ProtoParserV2 {
 
 		@Override
 		public FileDescriptorProto.Builder visitFieldLabel(FieldLabelContext ctx) {
+			if (this.field.isEmpty()) {
+				// Field outside message (e.g. extension)
+				return super.visitFieldLabel(ctx);
+			}
 			this.field.peek().setLabel(findLabel(ctx));
 			return super.visitFieldLabel(ctx);
 		}
 
 		private FieldDescriptorProto.Label findLabel(FieldLabelContext ctx) {
+			if (ctx.REQUIRED() != null) {
+				return FieldDescriptorProto.Label.LABEL_REQUIRED;
+			}
 			if (ctx.OPTIONAL() != null) {
 				return FieldDescriptorProto.Label.LABEL_OPTIONAL;
 			}
@@ -165,6 +172,10 @@ public class ProtoParserV2 {
 		@Override
 		public FileDescriptorProto.Builder visitField(FieldContext ctx) {
 			// TODO: handle field options if needed
+			if (this.type.isEmpty()) {
+				// Field outside message (e.g. extension)
+				return super.visitField(ctx);
+			}
 			FieldDescriptorProto.Type fieldType = findType(ctx.type());
 			FieldDescriptorProto.Builder field = FieldDescriptorProto.newBuilder()
 					.setName(ctx.fieldName().getText())
@@ -176,6 +187,7 @@ public class ProtoParserV2 {
 				field.setTypeName(ctx.type().messageType().getText());
 			}
 			FileDescriptorProto.Builder result = super.visitField(ctx);
+			// System.err.println("Field: " + ctx.getText());
 			this.type.peek().addField(field.build());
 			this.field.pop();
 			return result;
@@ -183,6 +195,10 @@ public class ProtoParserV2 {
 
 		@Override
 		public Builder visitMapField(MapFieldContext ctx) {
+			if (this.type.isEmpty()) {
+				// Field outside message (e.g. extension)
+				return super.visitMapField(ctx);
+			}
 			FieldDescriptorProto.Type fieldType = FieldDescriptorProto.Type.TYPE_MESSAGE;
 			DescriptorProto mapType = mapType(ctx);
 			FieldDescriptorProto.Builder field = FieldDescriptorProto.newBuilder()
@@ -332,12 +348,23 @@ public class ProtoParserV2 {
 
 		@Override
 		public FileDescriptorProto.Builder visitEnumField(EnumFieldContext ctx) {
-			// System.err.println("Enum field: " + ctx.enumFieldName().getText());
-			EnumValueDescriptorProto.Builder field = EnumValueDescriptorProto.newBuilder()
-					.setName(ctx.ident().IDENTIFIER().getText())
-					.setNumber(Integer.valueOf(ctx.intLit().INT_LIT().getText()));
+			// System.err.println("Enum field: " + ctx.getText());
+			int value = parseInt(ctx.intLit().INT_LIT().getText());
+			String name = ctx.ident().IDENTIFIER() == null ? ctx.ident().keywords().getText() : ctx.ident().IDENTIFIER().getText();
+			EnumValueDescriptorProto.Builder field = EnumValueDescriptorProto.newBuilder().setName(name)
+					.setNumber(value);
 			this.enumType.peek().addValue(field.build());
 			return super.visitEnumField(ctx);
+		}
+
+		private int parseInt(String text) {
+			if (text.startsWith("0x") || text.startsWith("0X")) {
+				return Integer.parseInt(text.substring(2), 16);
+			}
+			if (text.startsWith("0") && text.length() > 1) {
+				return Integer.parseInt(text.substring(1), 8);
+			}
+			return Integer.parseInt(text, 10);
 		}
 
 		@Override

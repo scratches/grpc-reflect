@@ -92,4 +92,26 @@ public class ClasspathDescriptorTests {
 		assertThat(proto.getMessageTypeList()).hasSize(1);
 	}
 
+	@Test
+	public void testDescriptorV2() {
+		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		FileDescriptorSet files = parser.resolve(Path.of("protobuf/descriptor.proto"));
+		assertThat(files.getFileCount()).isEqualTo(1);
+		FileDescriptorProto proto = files.getFile(0);
+		assertThat(proto.getName()).isEqualTo("protobuf/descriptor.proto");
+		assertThat(proto.getMessageTypeList()).hasSize(34);
+	}
+
+	@Test
+	public void testValidatorV2() {
+		// TODO: handle extend keyword instead of ignoring it
+		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		FileDescriptorSet files = parser.resolve(Path.of("protobuf/validate.proto"));
+		assertThat(files.getFileCount()).isEqualTo(4);
+		FileDescriptorProto proto = files.getFile(3);
+		assertThat(proto.getName()).isEqualTo("protobuf/validate.proto");
+		assertThat(proto.getMessageTypeList()).hasSize(23);
+	}
+
+
 }
