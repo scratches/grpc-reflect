@@ -37,9 +37,7 @@ public class DescriptorManagerTests {
 				}
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(1);
-		FileDescriptorSet files = parser.resolve(proto);
-		FileDescriptor[] descriptors = new FileDescriptorManager().convert(files);
+		FileDescriptor[] descriptors = new FileDescriptorManager().convert(parser.resolve("test.proto", input));
 		assertThat(descriptors).hasSize(2);
 		FileDescriptor descriptor = descriptors[1];
 		assertThat(descriptor.getName()).isEqualTo("test.proto");
@@ -59,8 +57,7 @@ public class DescriptorManagerTests {
 				};
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
-		FileDescriptorSet files = parser.resolve(proto);
+		FileDescriptorSet files = parser.resolve("test.proto", input);
 		FileDescriptor[] descriptors = new FileDescriptorManager().convert(files);
 		assertThat(descriptors).hasSize(1);
 		FileDescriptor descriptor = descriptors[0];
