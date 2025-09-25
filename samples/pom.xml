@@ -6,12 +6,12 @@
 	<parent>
 		<groupId>org.springframework.grpc</groupId>
 		<artifactId>grpc-reflect-demo</artifactId>
-		<version>0.11.0-SNAPSHOT</version>
+		<version>0.12.0-SNAPSHOT</version>
 	</parent>
 
 	<groupId>org.springframework.grpc</groupId>
 	<artifactId>spring-grpc-reflect-samples</artifactId>
-	<version>0.11.0-SNAPSHOT</version>
+	<version>0.12.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Samples Parent</name>
 

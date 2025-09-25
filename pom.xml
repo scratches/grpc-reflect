@@ -10,7 +10,7 @@
 
 	<groupId>org.springframework.grpc</groupId>
 	<artifactId>grpc-reflect-demo</artifactId>
-	<version>0.11.0-SNAPSHOT</version>
+	<version>0.12.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>gRPC Reflect Parent</name>
 
