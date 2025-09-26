@@ -45,20 +45,20 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 
 	private final MessageConverter converter;
 
-	private final DescriptorRegistrar registry;
+	private final DescriptorRegistry registry;
 
-	public DynamicStub(DescriptorRegistrar registry, Channel channel) {
+	public DynamicStub(DescriptorRegistry registry, Channel channel) {
 		this(registry, channel, CallOptions.DEFAULT);
 	}
 
-	public DynamicStub(DescriptorRegistrar registry, Channel channel, CallOptions callOptions) {
+	public DynamicStub(DescriptorRegistry registry, Channel channel, CallOptions callOptions) {
 		super(channel, callOptions);
 		this.registry = registry;
 		this.converter = new MessageConverter();
 	}
 
 	public static DynamicStub newStub(Channel channel) {
-		return new DynamicStub(new DescriptorRegistrar(), channel);
+		return new DynamicStub(new DescriptorRegistry(), channel);
 	}
 
 	public <S, T> Flux<T> bidi(String fullMethodName, Publisher<S> request, Class<S> requestType,

@@ -42,9 +42,9 @@ import reactor.core.publisher.Flux;
  */
 public class DynamicStubFactory implements StubFactory<Object> {
 
-	private final DescriptorRegistrar descriptorRegistry;
+	private final DescriptorRegistry descriptorRegistry;
 
-	public DynamicStubFactory(DescriptorRegistrar descriptorRegistry) {
+	public DynamicStubFactory(DescriptorRegistry descriptorRegistry) {
 		this.descriptorRegistry = descriptorRegistry;
 	}
 

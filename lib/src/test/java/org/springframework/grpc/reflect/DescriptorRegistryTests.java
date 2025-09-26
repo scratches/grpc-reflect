@@ -35,7 +35,7 @@ public class DescriptorRegistryTests {
 
 	private DescriptorCatalog catalog = new DescriptorCatalog();
 
-	private DescriptorRegistrar registry = new DescriptorRegistrar(catalog);
+	private DescriptorRegistry registry = new DescriptorRegistry(catalog);
 
 	private ReflectionFileDescriptorProvider reflection = new ReflectionFileDescriptorProvider(extractor);
 

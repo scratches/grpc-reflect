@@ -62,9 +62,9 @@ public class DynamicServiceFactory {
 
 	private final MessageConverter converter;
 
-	private final DescriptorRegistrar registry;
+	private final DescriptorRegistry registry;
 
-	public DynamicServiceFactory(DescriptorRegistrar registry) {
+	public DynamicServiceFactory(DescriptorRegistry registry) {
 		this.registry = registry;
 		this.converter = new MessageConverter();
 	}
@@ -127,7 +127,7 @@ public class DynamicServiceFactory {
 
 		private Object instance;
 
-		private <T> BindableServiceInstanceBuilder(T instance, String serviceName, DescriptorRegistrar registry,
+		private <T> BindableServiceInstanceBuilder(T instance, String serviceName, DescriptorRegistry registry,
 				MessageConverter converter) {
 			this.instance = instance;
 			this.builder = new BindableServiceBuilder(serviceName, registry, converter);
@@ -194,9 +194,9 @@ public class DynamicServiceFactory {
 
 		private String serviceName;
 
-		private FileDescriptorProvider registry;
+		private FileDescriptorProvider fileDescriptors;
 
-		private DescriptorRegistrar registrar;
+		private DescriptorRegistry registry;
 
 		private MessageConverter converter;
 
@@ -204,10 +204,10 @@ public class DynamicServiceFactory {
 
 		private Map<String, MethodDescriptor<DynamicMessage, DynamicMessage>> descriptors = new HashMap<>();
 
-		private BindableServiceBuilder(String serviceName, DescriptorRegistrar registry, MessageConverter converter) {
+		private BindableServiceBuilder(String serviceName, DescriptorRegistry registry, MessageConverter converter) {
 			this.serviceName = serviceName;
+			this.fileDescriptors = registry;
 			this.registry = registry;
-			this.registrar = registry;
 			this.converter = converter;
 		}
 
@@ -230,33 +230,33 @@ public class DynamicServiceFactory {
 		private <I, O> BindableServiceBuilder method(String methodName, Class<I> requestType, Class<O> responseType,
 				Function<?, ?> function, MethodType methodType) {
 			String fullMethodName = serviceName + "/" + methodName;
-			if (this.registry.file(serviceName) == null
-					|| this.registry.file(serviceName).findServiceByName(serviceName) == null
-					|| this.registry.file(serviceName)
+			if (this.fileDescriptors.file(serviceName) == null
+					|| this.fileDescriptors.file(serviceName).findServiceByName(serviceName) == null
+					|| this.fileDescriptors.file(serviceName)
 						.findServiceByName(serviceName)
 						.findMethodByName(methodName) == null) {
 				switch (methodType) {
 					case UNARY:
-						this.registrar.unary(fullMethodName, requestType, responseType);
+						this.registry.unary(fullMethodName, requestType, responseType);
 						break;
 					case SERVER_STREAMING:
-						this.registrar.stream(fullMethodName, requestType, responseType);
+						this.registry.stream(fullMethodName, requestType, responseType);
 						break;
 					case BIDI_STREAMING:
-						this.registrar.bidi(fullMethodName, requestType, responseType);
+						this.registry.bidi(fullMethodName, requestType, responseType);
 						break;
 					default:
 						throw new UnsupportedOperationException();
 				}
 			}
 			else {
-				registrar.validate(fullMethodName, requestType, responseType);
+				registry.validate(fullMethodName, requestType, responseType);
 			}
-			Descriptor inputType = registry.file(serviceName)
+			Descriptor inputType = fileDescriptors.file(serviceName)
 				.findServiceByName(serviceName)
 				.findMethodByName(methodName)
 				.getInputType();
-			Descriptor outputType = registry.file(serviceName)
+			Descriptor outputType = fileDescriptors.file(serviceName)
 				.findServiceByName(serviceName)
 				.findMethodByName(methodName)
 				.getOutputType();
@@ -270,7 +270,7 @@ public class DynamicServiceFactory {
 				.setFullMethodName(fullMethodName)
 				.setRequestMarshaller(requestMarshaller)
 				.setResponseMarshaller(responseMarshaller)
-				.setSchemaDescriptor(new SimpleMethodDescriptor(registry.file(serviceName), serviceName, methodName))
+				.setSchemaDescriptor(new SimpleMethodDescriptor(fileDescriptors.file(serviceName), serviceName, methodName))
 				.build();
 			ServerCallHandler<DynamicMessage, DynamicMessage> handler = handler(requestType, outputType, function,
 					methodType);
@@ -281,7 +281,7 @@ public class DynamicServiceFactory {
 
 		public BindableService build() {
 			Builder descriptor = ServiceDescriptor.newBuilder(serviceName);
-			descriptor.setSchemaDescriptor(new SimpleBaseDescriptorSupplier(registry.file(serviceName), serviceName));
+			descriptor.setSchemaDescriptor(new SimpleBaseDescriptorSupplier(fileDescriptors.file(serviceName), serviceName));
 			for (Map.Entry<String, ServerCallHandler<DynamicMessage, DynamicMessage>> entry : handlers.entrySet()) {
 				String methodName = entry.getKey();
 				MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = descriptors.get(methodName);

@@ -38,7 +38,7 @@ import com.google.protobuf.Descriptors.ServiceDescriptor;
  * @author Dave Syer
  * @since 1.0.0
  */
-public class DescriptorRegistrar implements FileDescriptorProvider {
+public class DescriptorRegistry implements FileDescriptorProvider {
 
 	private final DescriptorCatalog catalog;
 
@@ -51,11 +51,11 @@ public class DescriptorRegistrar implements FileDescriptorProvider {
 
 	private boolean strict = true;
 
-	public DescriptorRegistrar() {
+	public DescriptorRegistry() {
 		this(new DescriptorCatalog());
 	}
 
-	public DescriptorRegistrar(DescriptorCatalog catalog) {
+	public DescriptorRegistry(DescriptorCatalog catalog) {
 		this.catalog = catalog;
 	}
 

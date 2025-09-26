@@ -28,21 +28,21 @@ public class DescriptorRegistryValidationTests {
 
 	@Test
 	public void testValidateUnregistered() throws Exception {
-		DescriptorRegistrar registry = new DescriptorRegistrar();
+		DescriptorRegistry registry = new DescriptorRegistry();
 		assertThrows(IllegalStateException.class,
 				() -> registry.validate("DescriptorRegistryValidationTests/Echo", Foo.class, Foo.class));
 	}
 
 	@Test
 	public void testValidateReflectedTypes() throws Exception {
-		DescriptorRegistrar registry = new DescriptorRegistrar();
+		DescriptorRegistry registry = new DescriptorRegistry();
 		register(registry, DescriptorRegistryValidationTests.class.getMethod("echo", Foo.class));
 		registry.validate("DescriptorRegistryValidationTests/Echo", Foo.class, Foo.class);
 	}
 
 	@Test
 	public void testValidateGeneratedTypes() throws Exception {
-		DescriptorRegistrar registry = new DescriptorRegistrar();
+		DescriptorRegistry registry = new DescriptorRegistry();
 		registry.register(HelloWorldProto.getDescriptor().findServiceByName("Simple"));
 		registry.input("Simple/SayHello", Foo.class,
 				HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
@@ -51,7 +51,7 @@ public class DescriptorRegistryValidationTests {
 
 	@Test
 	public void testValidateBadRequest() throws Exception {
-		DescriptorRegistrar registry = new DescriptorRegistrar();
+		DescriptorRegistry registry = new DescriptorRegistry();
 		registry.register(HelloWorldProto.getDescriptor().findServiceByName("Simple"));
 		registry.input("Simple/SayHello", Foo.class,
 				HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
@@ -62,7 +62,7 @@ public class DescriptorRegistryValidationTests {
 
 	@Test
 	public void testValidateBadProperty() throws Exception {
-		DescriptorRegistrar registry = new DescriptorRegistrar();
+		DescriptorRegistry registry = new DescriptorRegistry();
 		registry.register(HelloWorldProto.getDescriptor().findServiceByName("Simple"));
 		registry.input("SimpleSayHello", Foo.class,
 				HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
@@ -75,7 +75,7 @@ public class DescriptorRegistryValidationTests {
 
 	@Test
 	public void testValidateBadResponse() throws Exception {
-		DescriptorRegistrar registry = new DescriptorRegistrar();
+		DescriptorRegistry registry = new DescriptorRegistry();
 		registry.register(HelloWorldProto.getDescriptor().findServiceByName("Simple"));
 		registry.input("Simple/SayHello", Foo.class,
 				HelloWorldProto.getDescriptor().findMessageTypeByName("HelloRequest"));
@@ -83,7 +83,7 @@ public class DescriptorRegistryValidationTests {
 		assertThrows(IllegalArgumentException.class, () -> registry.validate("Simple/SayHello", Foo.class, Foo.class));
 	}
 
-	private void register(DescriptorRegistrar registry, Method method) {
+	private void register(DescriptorRegistry registry, Method method) {
 		Class<?> owner = method.getDeclaringClass();
 		Class<?> inputType = method.getParameterTypes()[0];
 		Class<?> outputType = method.getReturnType();

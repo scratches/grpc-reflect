@@ -33,14 +33,14 @@ public class GrpcMappingConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	DynamicServiceFactory grpcDynamicServiceFactory(DescriptorRegistrar descriptorRegistry) {
+	DynamicServiceFactory grpcDynamicServiceFactory(DescriptorRegistry descriptorRegistry) {
 		return new DynamicServiceFactory(descriptorRegistry);
 	}
 
 	@Bean
 	@ConditionalOnMissingBean
-	DescriptorRegistrar grpcDescriptorRegistry() {
-		return new DescriptorRegistrar();
+	DescriptorRegistry grpcDescriptorRegistry() {
+		return new DescriptorRegistry();
 	}
 
 }
