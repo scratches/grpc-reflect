@@ -56,6 +56,12 @@ public class BinaryFileDescriptorTests {
 	@Test
 	public void testDescriptorFromClasspathDirectory() {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		parser.setPathLocator(input -> {
+			if (input.equals("binary")) {
+				return new Path[] { Path.of("binary/multi.pb") };
+			}
+			return new Path[0];
+		});
 		// Classpath directory search
 		FileDescriptorSet files = parser.resolve(Path.of("binary"));
 		assertThat(files.getFileCount()).isEqualTo(2);

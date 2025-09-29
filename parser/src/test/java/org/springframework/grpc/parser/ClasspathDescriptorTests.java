@@ -73,6 +73,12 @@ public class ClasspathDescriptorTests {
 	@Test
 	public void testDescriptorFromClasspathDirectory() {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		parser.setPathLocator(path -> {
+			if (path.equals("multi")) {
+				return new Path[] { Path.of("multi/bar.proto"), Path.of("multi/foo.proto") };
+			}
+			return new Path[0];
+		});
 		// Classpath directory search
 		FileDescriptorSet files = parser.resolve(Path.of("multi"));
 		assertThat(files.getFileCount()).isEqualTo(2);
@@ -84,6 +90,12 @@ public class ClasspathDescriptorTests {
 	@Test
 	public void testDescriptorFromClasspathDirectoryAndBasePath() {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser(Path.of("multi"));
+		parser.setPathLocator(path -> {
+			if (path.equals("multi")) {
+				return new Path[] { Path.of("multi/bar.proto"), Path.of("multi/foo.proto") };
+			}
+			return new Path[0];
+		});
 		// With a base path:
 		FileDescriptorSet files = parser.resolve(Path.of(""));
 		assertThat(files.getFileCount()).isEqualTo(2);

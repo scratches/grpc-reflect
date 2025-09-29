@@ -30,8 +30,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.antlr.v4.runtime.CharStreams;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.grpc.parser.support.ProtoParserV2;
 import org.springframework.grpc.parser.support.ProtoParserV3;
 
@@ -109,8 +107,9 @@ public class FileDescriptorProtoParser {
 
 	private final Path base;
 
-	private static final boolean IS_SPRING = FileDescriptorProtoParser.class.getClassLoader()
-			.getResource("org/springframework/core/io/support/PathMatchingResourcePatternResolver.class") != null;
+	private final FileDescriptorProtoParser baseless;
+
+	private PathLocator locator = null;
 
 	/**
 	 * Constructs a new {@code FileDescriptorProtoParser} with a default path. This
@@ -131,8 +130,21 @@ public class FileDescriptorProtoParser {
 	 */
 	public FileDescriptorProtoParser(Path base) {
 		this.base = base;
+		this.baseless = base == null || base.toString().isEmpty() ? this : new FileDescriptorProtoParser();
 		this.v3 = new ProtoParserV3();
 		this.v2 = new ProtoParserV2();
+	}
+
+	/**
+	 * Sets a custom {@link PathLocator} to resolve import paths. If not set, the
+	 * parser only resolve from the filesystem or individual resources (not
+	 * directories)
+	 * in the classpath.
+	 * 
+	 * @param locator the {@link PathLocator} to use for resolving import paths
+	 */
+	public void setPathLocator(PathLocator locator) {
+		this.locator = locator;
 	}
 
 	/**
@@ -296,10 +308,26 @@ public class FileDescriptorProtoParser {
 						throw new IllegalStateException("Failed to read resource: " + input, e);
 					}
 				}
-				if (IS_SPRING) {
-					// Use Spring's resource loader if available
-					Path[] urls = findResources(input.toString());
-					return resolve(urls);
+				if (this.locator != null) {
+					Path[] urls = this.locator.find(input.toString());
+					FileDescriptorSet.Builder builder = this.baseless.resolve(urls).toBuilder();
+					if (this.baseless != this) {
+						for (int i = 0; i < builder.getFileCount(); i++) {
+							FileDescriptorProto file = builder.getFile(i);
+							if (file.getName().startsWith(this.base + "/")) {
+								// Adjust the name to be relative to the base
+								FileDescriptorProto adjusted = file.toBuilder()
+										.setName(file.getName().substring(this.base.toString().length() + 1))
+										.build();
+								this.cache.put(adjusted.getName(), adjusted);
+								builder.setFile(i, adjusted);
+							} else {
+								this.cache.put(file.getName(), file);
+								builder.setFile(i, file);
+							}
+						}
+					}
+					return builder.build();
 				}
 			}
 			if (!Files.isDirectory(input) && !input.toString().endsWith(".proto")
@@ -338,36 +366,6 @@ public class FileDescriptorProtoParser {
 			return builder.build();
 		} catch (IOException e) {
 			throw new IllegalStateException("Failed to read input file: " + input, e);
-		}
-	}
-
-	private Path[] findResources(String path) {
-		PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-		Resource[] resources;
-		try {
-			resources = resolver.getResources("classpath*:" + path + "/**/*.proto");
-			if (resources.length == 0) {
-				resources = resolver.getResources("classpath*:" + path + "/**/*.pb");
-				if (resources.length == 0) {
-					return new Path[0];
-				}
-			}
-			Path[] urls = new Path[resources.length];
-			for (int i = 0; i < resources.length; i++) {
-				try {
-					String url = resources[i].getURL().toString();
-					url = url.substring(url.lastIndexOf(path)); // Remove the path prefix
-					if (!base.toString().isEmpty() && url.startsWith(base.toString())) {
-						url = url.substring(url.lastIndexOf(base.toString()) + base.toString().length() + 1);
-					}
-					urls[i] = Path.of(url);
-				} catch (IOException e) {
-					throw new IllegalStateException("Failed to get URL for resource: " + resources[i], e);
-				}
-			}
-			return urls;
-		} catch (IOException e) {
-			throw new IllegalStateException("Failed to get URL for path: " + path, e);
 		}
 	}
 
