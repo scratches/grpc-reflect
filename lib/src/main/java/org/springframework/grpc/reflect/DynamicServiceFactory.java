@@ -62,9 +62,9 @@ public class DynamicServiceFactory {
 
 	private final MessageConverter converter;
 
-	private final DescriptorRegistry registry;
+	private final DefaultDescriptorRegistry registry;
 
-	public DynamicServiceFactory(DescriptorRegistry registry) {
+	public DynamicServiceFactory(DefaultDescriptorRegistry registry) {
 		this.registry = registry;
 		this.converter = new MessageConverter();
 	}
@@ -127,7 +127,7 @@ public class DynamicServiceFactory {
 
 		private Object instance;
 
-		private <T> BindableServiceInstanceBuilder(T instance, String serviceName, DescriptorRegistry registry,
+		private <T> BindableServiceInstanceBuilder(T instance, String serviceName, DefaultDescriptorRegistry registry,
 				MessageConverter converter) {
 			this.instance = instance;
 			this.builder = new BindableServiceBuilder(serviceName, registry, converter);
@@ -196,7 +196,7 @@ public class DynamicServiceFactory {
 
 		private FileDescriptorProvider fileDescriptors;
 
-		private DescriptorRegistry registry;
+		private DefaultDescriptorRegistry registry;
 
 		private MessageConverter converter;
 
@@ -204,7 +204,7 @@ public class DynamicServiceFactory {
 
 		private Map<String, MethodDescriptor<DynamicMessage, DynamicMessage>> descriptors = new HashMap<>();
 
-		private BindableServiceBuilder(String serviceName, DescriptorRegistry registry, MessageConverter converter) {
+		private BindableServiceBuilder(String serviceName, DefaultDescriptorRegistry registry, MessageConverter converter) {
 			this.serviceName = serviceName;
 			this.fileDescriptors = registry;
 			this.registry = registry;

@@ -15,16 +15,11 @@
  */
 package org.springframework.grpc.reflect;
 
-import com.google.protobuf.Descriptors.FileDescriptor;
-import com.google.protobuf.Descriptors.MethodDescriptor;
-import com.google.protobuf.Descriptors.ServiceDescriptor;
-
-public interface DescriptorRegistry {
-
-	void register(FileDescriptor file);
-
-	void register(ServiceDescriptor service);
-
-	void register(MethodDescriptor method, Class<?> input, Class<?> output);
-
+/**
+ * Marker interface for registering descriptors with a {@link DescriptorRegistry}.
+ * Implementations of this interface are responsible for providing the necessary
+ * descriptors to the registry during the registration process.
+ */
+public interface DescriptorRegistrar {
+	void register(DescriptorRegistry registry);
 }

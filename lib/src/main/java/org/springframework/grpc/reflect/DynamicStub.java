@@ -32,7 +32,8 @@ import reactor.core.publisher.Sinks;
 import reactor.core.publisher.Sinks.Many;
 
 /**
- * A dynamic gRPC stub that can invoke methods without compile-time generated code.
+ * A dynamic gRPC stub that can invoke methods without compile-time generated
+ * code.
  * <p>
  * This stub extends {@link AbstractStub} and provides the ability to make gRPC
  * calls using reflection and dynamic method resolution, enabling flexible
@@ -45,24 +46,23 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 
 	private final MessageConverter converter;
 
-	private final DescriptorRegistry registry;
+	private final DefaultDescriptorRegistry registry;
 
-	public DynamicStub(DescriptorRegistry registry, Channel channel) {
+	public DynamicStub(DefaultDescriptorRegistry registry, Channel channel) {
 		this(registry, channel, CallOptions.DEFAULT);
 	}
 
-	public DynamicStub(DescriptorRegistry registry, Channel channel, CallOptions callOptions) {
+	public DynamicStub(DefaultDescriptorRegistry registry, Channel channel, CallOptions callOptions) {
 		super(channel, callOptions);
 		this.registry = registry;
 		this.converter = new MessageConverter();
 	}
 
 	public static DynamicStub newStub(Channel channel) {
-		return new DynamicStub(new DescriptorRegistry(), channel);
+		return new DynamicStub(new DefaultDescriptorRegistry(), channel);
 	}
 
-	public <S, T> Flux<T> bidi(String fullMethodName, Publisher<S> request, Class<S> requestType,
-			Class<T> responseType) {
+	public <S, T> Flux<T> bidi(String fullMethodName, Publisher<S> request, Class<T> responseType) {
 		if (request == null) {
 			throw new IllegalArgumentException("Request cannot be null");
 		}
@@ -70,7 +70,7 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 			throw new IllegalArgumentException("Response type cannot be null");
 		}
 		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = methodDescriptor(fullMethodName,
-				requestType, responseType, MethodDescriptor.MethodType.BIDI_STREAMING);
+				MethodDescriptor.MethodType.BIDI_STREAMING);
 		Many<T> sink = Sinks.many().multicast().onBackpressureBuffer();
 		StreamObserver<DynamicMessage> requests = ClientCalls.asyncBidiStreamingCall(
 				getChannel().newCall(methodDescriptor, getCallOptions()), new StreamObserver<DynamicMessage>() {
@@ -92,11 +92,12 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 
 				});
 		Flux.from(request)
-			.doOnComplete(() -> requests.onCompleted())
-			.doOnError(error -> requests.onError(error))
-			.doOnNext(msg -> requests
-				.onNext((DynamicMessage) converter.convert(msg, this.registry.output(fullMethodName).descriptor())))
-			.subscribe();
+				.doOnComplete(() -> requests.onCompleted())
+				.doOnError(error -> requests.onError(error))
+				.doOnNext(msg -> requests
+						.onNext((DynamicMessage) converter.convert(msg,
+								this.registry.output(fullMethodName).descriptor())))
+				.subscribe();
 		return sink.asFlux();
 	}
 
@@ -105,7 +106,7 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 			throw new IllegalArgumentException("Request cannot be null");
 		}
 		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = methodDescriptor(fullMethodName,
-				request.getClass(), responseType, MethodDescriptor.MethodType.SERVER_STREAMING);
+				MethodDescriptor.MethodType.SERVER_STREAMING);
 		Many<T> sink = Sinks.many().multicast().onBackpressureBuffer();
 		ClientCalls.asyncServerStreamingCall(getChannel().newCall(methodDescriptor, getCallOptions()),
 				(DynamicMessage) converter.convert(request, this.registry.input(fullMethodName).descriptor()),
@@ -135,17 +136,14 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 			throw new IllegalArgumentException("Request cannot be null");
 		}
 		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = methodDescriptor(fullMethodName,
-				request.getClass(), responseType, MethodDescriptor.MethodType.UNARY);
+				MethodDescriptor.MethodType.UNARY);
 		var response = ClientCalls.blockingUnaryCall(getChannel(), methodDescriptor, getCallOptions(),
 				(DynamicMessage) converter.convert(request, registry.input(fullMethodName).descriptor()));
 		return converter.convert(response, responseType);
 	}
 
 	private <T> MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor(String fullMethodName,
-			Class<?> requestType, Class<T> responseType, MethodDescriptor.MethodType methodType) {
-		if (responseType == null) {
-			throw new IllegalArgumentException("Response type cannot be null");
-		}
+			MethodDescriptor.MethodType methodType) {
 		if (registry.input(fullMethodName) == null) {
 			throw new IllegalArgumentException("No descriptor found for input of method: " + fullMethodName);
 		}
@@ -153,16 +151,16 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 			throw new IllegalArgumentException("No descriptor found for output of method: " + fullMethodName);
 		}
 		Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
-			.marshaller(DynamicMessage.newBuilder(registry.input(fullMethodName).descriptor()).build());
+				.marshaller(DynamicMessage.newBuilder(registry.input(fullMethodName).descriptor()).build());
 		Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
-			.marshaller(DynamicMessage.newBuilder(registry.output(fullMethodName).descriptor()).build());
+				.marshaller(DynamicMessage.newBuilder(registry.output(fullMethodName).descriptor()).build());
 		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
-			.<DynamicMessage, DynamicMessage>newBuilder()
-			.setType(methodType)
-			.setFullMethodName(fullMethodName)
-			.setRequestMarshaller(requestMarshaller)
-			.setResponseMarshaller(responseMarshaller)
-			.build();
+				.<DynamicMessage, DynamicMessage>newBuilder()
+				.setType(methodType)
+				.setFullMethodName(fullMethodName)
+				.setRequestMarshaller(requestMarshaller)
+				.setResponseMarshaller(responseMarshaller)
+				.build();
 		return methodDescriptor;
 	}
 

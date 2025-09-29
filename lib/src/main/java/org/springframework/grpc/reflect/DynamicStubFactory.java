@@ -42,9 +42,9 @@ import reactor.core.publisher.Flux;
  */
 public class DynamicStubFactory implements StubFactory<Object> {
 
-	private final DescriptorRegistry descriptorRegistry;
+	private final DefaultDescriptorRegistry descriptorRegistry;
 
-	public DynamicStubFactory(DescriptorRegistry descriptorRegistry) {
+	public DynamicStubFactory(DefaultDescriptorRegistry descriptorRegistry) {
 		this.descriptorRegistry = descriptorRegistry;
 	}
 
@@ -84,17 +84,15 @@ public class DynamicStubFactory implements StubFactory<Object> {
 					+ method(mapping, invocation.getMethod());
 			Object[] arguments = invocation.getArguments();
 			if (Publisher.class.isAssignableFrom(invocation.getMethod().getParameterTypes()[0])) {
-				Class<?> requestType = (Class<?>) ((ParameterizedType) (invocation.getMethod()
-					.getGenericParameterTypes()[0])).getActualTypeArguments()[0];
 				if (Publisher.class.isAssignableFrom(invocation.getMethod().getReturnType())) {
 					Class<?> responseType = (Class<?>) ((ParameterizedType) (invocation.getMethod()
 						.getGenericReturnType())).getActualTypeArguments()[0];
 					@SuppressWarnings({ "rawtypes", "unchecked" })
-					Flux<?> result = this.stub.bidi(methodName, (Publisher) arguments[0], responseType, requestType);
+					Flux<?> result = this.stub.bidi(methodName, (Publisher) arguments[0], responseType);
 					return result;
 				}
 				else {
-					return this.stub.stream(methodName, requestType, invocation.getMethod().getReturnType());
+					return this.stub.stream(methodName, arguments[0], invocation.getMethod().getReturnType());
 				}
 			}
 			return this.stub.unary(methodName, arguments[0], invocation.getMethod().getReturnType());

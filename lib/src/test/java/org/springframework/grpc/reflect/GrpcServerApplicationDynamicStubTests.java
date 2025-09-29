@@ -37,7 +37,7 @@ public class GrpcServerApplicationDynamicStubTests {
 	private GrpcChannelFactory channelFactory;
 
 	@Autowired
-	private DescriptorRegistry registry;
+	private DefaultDescriptorRegistry registry;
 
 	@Test
 	void contextLoads() {
@@ -55,7 +55,7 @@ public class GrpcServerApplicationDynamicStubTests {
 	@Test
 	void dynamicStreamFromFunction() {
 		// It doesn't have to be the registry from the application context
-		DescriptorRegistry registry = new DescriptorRegistry();
+		DefaultDescriptorRegistry registry = new DefaultDescriptorRegistry();
 		registry.unary("EchoService/Stream", Foo.class, Foo.class);
 		DynamicStub stub = new DynamicStub(registry, this.channelFactory.createChannel("default"));
 		Foo request = new Foo();
@@ -69,7 +69,7 @@ public class GrpcServerApplicationDynamicStubTests {
 		DynamicStub stub = new DynamicStub(this.registry, this.channelFactory.createChannel("default"));
 		Foo request = new Foo();
 		request.setName("Alien");
-		Flux<Foo> response = stub.bidi("EchoService/Parallel", Mono.just(request), Foo.class, Foo.class);
+		Flux<Foo> response = stub.bidi("EchoService/Parallel", Mono.just(request), Foo.class);
 		assertEquals("Alien", response.blockFirst().getName());
 	}
 
