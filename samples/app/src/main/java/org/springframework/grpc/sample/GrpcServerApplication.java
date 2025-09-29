@@ -22,6 +22,8 @@ import org.springframework.grpc.reflect.EnableGrpcMapping;
 import org.springframework.grpc.reflect.GrpcController;
 import org.springframework.grpc.reflect.GrpcMapping;
 
+import reactor.core.publisher.Flux;
+
 @SpringBootApplication
 @EnableGrpcMapping
 public class GrpcServerApplication {
@@ -43,6 +45,11 @@ class FooService {
 	@GrpcMapping
 	public Output process(Input input) {
 		return new Output();
+	}
+
+	@GrpcMapping
+	public Flux<Output> stream(Input input) {
+		return Flux.just(new Output());
 	}
 
 	static class Input {

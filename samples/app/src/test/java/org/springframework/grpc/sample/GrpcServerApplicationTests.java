@@ -3,6 +3,7 @@ package org.springframework.grpc.sample;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.OutputStream;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -21,8 +22,8 @@ import org.springframework.grpc.reflect.DefaultDescriptorRegistry;
 import org.springframework.grpc.reflect.DynamicServiceFactory;
 import org.springframework.grpc.reflect.DynamicStub;
 import org.springframework.grpc.reflect.DynamicStubFactory;
-import org.springframework.grpc.reflect.GrpcService;
 import org.springframework.grpc.reflect.GrpcMapping;
+import org.springframework.grpc.reflect.GrpcService;
 import org.springframework.grpc.sample.FooService.Input;
 import org.springframework.grpc.sample.FooService.Output;
 import org.springframework.test.annotation.DirtiesContext;
@@ -34,6 +35,7 @@ import io.grpc.reflection.v1.ServerReflectionGrpc.ServerReflectionStub;
 import io.grpc.reflection.v1.ServerReflectionRequest;
 import io.grpc.reflection.v1.ServerReflectionResponse;
 import io.grpc.stub.StreamObserver;
+import reactor.core.publisher.Flux;
 
 @SpringBootTest(
 		properties = { "spring.grpc.server.port=0",
@@ -116,11 +118,18 @@ public class GrpcServerApplicationTests {
 	}
 
 	@Test
-	void dynamicServiceFromFunction() {
+	void dynamicServiceFromMapping() {
 		Hello request = new Hello();
 		request.setName("Alien");
 		Hello response = fooClient.ping(request);
 		assertEquals("Alien", response.getName());
+	}
+
+	@Test
+	void dynamicStreamingServiceFromMapping() {
+		Input request = new Input();
+		Output response = fooClient.stream(request).blockFirst();
+		assertThat(response).isNotNull();
 	}
 
 	@Test
@@ -188,5 +197,7 @@ interface FooClient {
 	Hello ping(Hello request);
 
 	Output process(Input request);
+
+	Flux<Output> stream(Input request);
 
 }
