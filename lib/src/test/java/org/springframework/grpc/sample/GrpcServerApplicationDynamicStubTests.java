@@ -1,4 +1,4 @@
-package org.springframework.grpc.reflect;
+package org.springframework.grpc.sample;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,8 +14,15 @@ import org.springframework.boot.test.context.SpringBootTest.UseMainMethod;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.grpc.client.GrpcChannelFactory;
-import org.springframework.grpc.reflect.FooService.Input;
-import org.springframework.grpc.reflect.FooService.Output;
+import org.springframework.grpc.reflect.DefaultDescriptorRegistry;
+import org.springframework.grpc.reflect.DynamicServiceFactory;
+import org.springframework.grpc.reflect.DynamicStub;
+import org.springframework.grpc.reflect.EnableGrpcMapping;
+import org.springframework.grpc.reflect.Foo;
+import org.springframework.grpc.reflect.GrpcController;
+import org.springframework.grpc.reflect.GrpcMapping;
+import org.springframework.grpc.sample.FooService.Input;
+import org.springframework.grpc.sample.FooService.Output;
 import org.springframework.test.annotation.DirtiesContext;
 
 import io.grpc.BindableService;

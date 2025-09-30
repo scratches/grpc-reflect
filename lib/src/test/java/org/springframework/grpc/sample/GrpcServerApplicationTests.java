@@ -1,4 +1,4 @@
-package org.springframework.grpc.reflect;
+package org.springframework.grpc.sample;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -15,6 +15,8 @@ import org.springframework.boot.test.context.SpringBootTest.UseMainMethod;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.grpc.client.GrpcChannelFactory;
+import org.springframework.grpc.reflect.DynamicServiceFactory;
+import org.springframework.grpc.reflect.Foo;
 import org.springframework.grpc.sample.proto.HelloReply;
 import org.springframework.grpc.sample.proto.HelloRequest;
 import org.springframework.grpc.sample.proto.SimpleGrpc;
