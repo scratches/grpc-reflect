@@ -107,8 +107,6 @@ public class FileDescriptorProtoParser {
 
 	private final Path base;
 
-	private final FileDescriptorProtoParser baseless;
-
 	private PathLocator locator = null;
 
 	/**
@@ -130,7 +128,6 @@ public class FileDescriptorProtoParser {
 	 */
 	public FileDescriptorProtoParser(Path base) {
 		this.base = base;
-		this.baseless = base == null || base.toString().isEmpty() ? this : new FileDescriptorProtoParser();
 		this.v3 = new ProtoParserV3();
 		this.v2 = new ProtoParserV2();
 	}
@@ -310,24 +307,12 @@ public class FileDescriptorProtoParser {
 				}
 				if (this.locator != null) {
 					Path[] urls = this.locator.find(input.toString());
-					FileDescriptorSet.Builder builder = this.baseless.resolve(urls).toBuilder();
-					if (this.baseless != this) {
-						for (int i = 0; i < builder.getFileCount(); i++) {
-							FileDescriptorProto file = builder.getFile(i);
-							if (file.getName().startsWith(this.base + "/")) {
-								// Adjust the name to be relative to the base
-								FileDescriptorProto adjusted = file.toBuilder()
-										.setName(file.getName().substring(this.base.toString().length() + 1))
-										.build();
-								this.cache.put(adjusted.getName(), adjusted);
-								builder.setFile(i, adjusted);
-							} else {
-								this.cache.put(file.getName(), file);
-								builder.setFile(i, file);
-							}
+					for (int i = 0; i < urls.length; i++) {
+						if (urls[i].startsWith(this.base)) {
+							urls[i] = base.relativize(urls[i]);
 						}
 					}
-					return builder.build();
+					return resolve(urls);
 				}
 			}
 			if (!Files.isDirectory(input) && !input.toString().endsWith(".proto")
