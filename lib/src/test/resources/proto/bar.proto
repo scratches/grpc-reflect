@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.example.proto.deps";
+
+message EchoRequest {
+    optional string name = 1;
+}
+
+service Foo {
+    // Sends a greeting
+    rpc Echo (EchoRequest) returns (EchoRequest) {}
+}

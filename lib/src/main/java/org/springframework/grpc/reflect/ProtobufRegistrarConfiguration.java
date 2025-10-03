@@ -15,68 +15,119 @@
  */
 package org.springframework.grpc.reflect;
 
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.ImportAware;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ResourceLoaderAware;
+import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.grpc.parser.FileDescriptorProtoParser;
 
 import com.google.protobuf.Descriptors.FileDescriptor;
 
-@Configuration(proxyBeanMethods = false)
-public class ProtobufRegistrarConfiguration implements ImportAware, DescriptorRegistrar {
+public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegistrar {
 
-	private String[] locations;
+	private static int counter = 0;
 
-	private FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-
-	private FileDescriptorManager manager = new FileDescriptorManager();
+	private static final String BEAN_NAME = ProtobufRegistrarConfiguration.class.getName() + ".registrar";
 
 	@Override
-	public void register(DescriptorRegistry registry) {
-		if (this.locations != null) {
-			Path[] paths = new Path[this.locations.length];
-			for (int i = 0; i < this.locations.length; i++) {
-				paths[i] = Path.of(this.locations[i].trim());
-			}
-			for (FileDescriptor proto : manager.convert(this.parser.resolve(paths))) {
-				registry.register(proto);
-			}
+	public void registerBeanDefinitions(AnnotationMetadata meta, BeanDefinitionRegistry registry) {
+		if (!registry.containsBeanDefinition(BEAN_NAME)) {
+			registry.registerBeanDefinition("grpcDescriptorRegistry",
+					BeanDefinitionBuilder.genericBeanDefinition(DefaultDescriptorRegistry.class).getBeanDefinition());
+			registry.registerBeanDefinition(BEAN_NAME,
+					BeanDefinitionBuilder.genericBeanDefinition(ProtobufRegistrarPostProcessor.class)
+							.getBeanDefinition());
 		}
-	}
-
-	@Bean
-	public DefaultDescriptorRegistry grpcDescriptorRegistry() {
-		return new DefaultDescriptorRegistry();
-	}
-
-	@Bean
-	public static BeanFactoryPostProcessor descriptorRegistrarPostProcessor(
-			ObjectProvider<DescriptorRegistrar> registrars, DescriptorRegistry registry) {
-		return new BeanFactoryPostProcessor() {
-			@Override
-			public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
-					throws BeansException {
-				registrars.orderedStream().forEach(registrar -> registrar.register(registry));
-			}
-		};
-	}
-
-	@Override
-	public void setImportMetadata(AnnotationMetadata meta) {
 		ImportProtobuf annotation = ImportProtobuf.class
 				.cast(meta.getAnnotations().get(ImportProtobuf.class.getName()).synthesize());
 		String[] locations = annotation.locations();
 		if (locations.length == 0) {
 			locations = annotation.value();
 		}
-		this.locations = locations;
+		BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(ProtobufRegistrar.class);
+		builder.addConstructorArgValue(locations);
+		registry.registerBeanDefinition(BEAN_NAME + (counter++), builder.getBeanDefinition());
+	}
+
+	static class ProtobufRegistrar implements DescriptorRegistrar, ResourceLoaderAware {
+
+		private String[] locations;
+
+		private PathMatchingResourcePatternResolver resourceLoader;
+
+		public ProtobufRegistrar(String[] locations) {
+			this.locations = locations;
+		}
+
+		@Override
+		public void register(DescriptorRegistry registry) {
+			FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+			FileDescriptorManager manager = new FileDescriptorManager();
+			if (this.locations != null) {
+				List<Path> paths = new ArrayList<>();
+				for (String location : this.locations) {
+					try {
+						Resource[] resources = resourceLoader.getResources(location);
+						for (Resource resource : resources) {
+							if (resource.exists()) {
+								String url = location;
+								if (url.contains(":")) {
+									url = url.substring(url.indexOf(":") + 1);
+								}
+								if (url.startsWith("//")) {
+									url = url.substring(2);
+								}
+								paths.add(Path.of(url));
+							}
+						}
+					} catch (IOException e) {
+						throw new IllegalStateException("Failed to find resources for location: " + location, e);
+					}
+				}
+				for (FileDescriptor proto : manager.convert(parser.resolve(paths.toArray(new Path[0])))) {
+					registry.register(proto);
+				}
+			}
+		}
+
+		@Override
+		public void setResourceLoader(ResourceLoader resourceLoader) {
+			this.resourceLoader = new PathMatchingResourcePatternResolver(resourceLoader);
+		}
+
+	}
+
+	static class ProtobufRegistrarPostProcessor implements BeanFactoryPostProcessor, ApplicationContextAware {
+
+		private ApplicationContext context;
+
+		@Override
+		public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+			this.context = applicationContext;
+		}
+
+		@Override
+		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
+				throws BeansException {
+			ObjectProvider<DescriptorRegistrar> registrars = context.getBeanProvider(DescriptorRegistrar.class);
+			DescriptorRegistry registry = context.getBean(DescriptorRegistry.class);
+			registrars.orderedStream().forEach(registrar -> registrar.register(registry));
+		}
 	}
 
 }
