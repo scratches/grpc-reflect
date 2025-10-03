@@ -46,8 +46,10 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 	@Override
 	public void registerBeanDefinitions(AnnotationMetadata meta, BeanDefinitionRegistry registry) {
 		if (!registry.containsBeanDefinition(BEAN_NAME)) {
-			registry.registerBeanDefinition("grpcDescriptorRegistry",
-					BeanDefinitionBuilder.genericBeanDefinition(DefaultDescriptorRegistry.class).getBeanDefinition());
+			if (!registry.containsBeanDefinition("grpcDescriptorRegistry")) {
+				registry.registerBeanDefinition("grpcDescriptorRegistry",
+						BeanDefinitionBuilder.genericBeanDefinition(DefaultDescriptorRegistry.class).getBeanDefinition());
+			}
 			registry.registerBeanDefinition(BEAN_NAME,
 					BeanDefinitionBuilder.genericBeanDefinition(ProtobufRegistrarPostProcessor.class)
 							.getBeanDefinition());

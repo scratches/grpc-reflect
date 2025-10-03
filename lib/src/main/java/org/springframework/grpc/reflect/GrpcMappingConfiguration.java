@@ -27,8 +27,8 @@ import org.springframework.context.annotation.Configuration;
  * 
  * @author Dave Syer
  * @since 1.0.0
- @Configuration(proxyBeanMethods = false)
  */
+@Configuration(proxyBeanMethods = false)
 public class GrpcMappingConfiguration {
 
 	@Bean
