@@ -50,6 +50,14 @@ public class ProtobufRegistrationTests {
 	}
 
 	@Test
+	public void testBase() {
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(BaseExample.class);
+		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
+		assertThat(registry.file("Simple")).isNotNull();
+		context.close();
+	}
+
+	@Test
 	public void testMultiple() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(MultipleExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
@@ -92,4 +100,10 @@ public class ProtobufRegistrationTests {
 	@ImportProtobuf({"proto/bar.proto", "file:src/test/proto/hello.proto"})
 	static class MultipleExample {
 	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ImportProtobuf(locations = "simple.proto", base = "proto")
+	static class BaseExample {
+	}
+
 }

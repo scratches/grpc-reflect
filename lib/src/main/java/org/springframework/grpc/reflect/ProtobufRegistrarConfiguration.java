@@ -59,7 +59,9 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 		if (locations.length == 0) {
 			locations = annotation.value();
 		}
+		String base = annotation.base();
 		BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(ProtobufRegistrar.class);
+		builder.addConstructorArgValue(base);
 		builder.addConstructorArgValue(locations);
 		registry.registerBeanDefinition(BEAN_NAME + (counter++), builder.getBeanDefinition());
 	}
@@ -68,10 +70,13 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 
 		private String[] locations;
 
+		private String base;
+
 		private PathMatchingResourcePatternResolver resourceLoader;
 
-		public ProtobufRegistrar(String[] locations) {
+		public ProtobufRegistrar(String base, String[] locations) {
 			this.locations = locations;
+			this.base = base;
 		}
 
 		@Override
@@ -81,6 +86,11 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 			if (this.locations != null) {
 				List<Path> paths = new ArrayList<>();
 				for (String location : this.locations) {
+					if (base.length() > 0) {
+						if (!location.contains(":") && !location.startsWith("/")) {
+							location = base + (base.endsWith("/") ? "" : "/") + location;
+						}
+					}
 					try {
 						Resource[] resources = resourceLoader.getResources(location);
 						for (Resource resource : resources) {

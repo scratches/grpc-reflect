@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package org.springframework.grpc.reflect;
 
 import java.lang.annotation.Documented;
@@ -36,6 +35,7 @@ public @interface ImportProtobuf {
 
 	/**
 	 * Alias for {@link #locations}.
+	 * 
 	 * @see #locations
 	 * @see #reader
 	 */
@@ -44,12 +44,26 @@ public @interface ImportProtobuf {
 
 	/**
 	 * Resource locations from which to import.
-	 * <p>Supports resource-loading prefixes such as {@code classpath:},
+	 * <p>
+	 * Supports resource-loading prefixes such as {@code classpath:},
 	 * {@code file:}, etc.
+	 * 
 	 * @see #value
 	 * @see #reader
 	 */
 	@AliasFor("value")
 	String[] locations() default {};
+
+	/**
+	 * Base location relative to which other non-absolte resource locations are
+	 * imported.
+	 * <p>
+	 * Supports resource-loading prefixes such as {@code classpath:},
+	 * {@code file:}, etc.
+	 * 
+	 * @see #value
+	 * @see #reader
+	 */
+	String base() default "";
 
 }
