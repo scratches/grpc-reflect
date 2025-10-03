@@ -24,6 +24,7 @@ import org.springframework.grpc.reflect.DynamicStub;
 import org.springframework.grpc.reflect.DynamicStubFactory;
 import org.springframework.grpc.reflect.GrpcMapping;
 import org.springframework.grpc.reflect.GrpcService;
+import org.springframework.grpc.reflect.ImportProtobuf;
 import org.springframework.grpc.sample.FooService.Input;
 import org.springframework.grpc.sample.FooService.Output;
 import org.springframework.test.annotation.DirtiesContext;
@@ -168,6 +169,7 @@ public class GrpcServerApplicationTests {
 
 	@TestConfiguration(proxyBeanMethods = false)
 	@ImportGrpcClients(factory = DynamicStubFactory.class, types = FooClient.class)
+	@ImportProtobuf("proto/echo.proto")
 	static class ExtraConfiguration {
 
 		@Bean

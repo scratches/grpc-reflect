@@ -21,11 +21,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.grpc.reflect.EnableGrpcMapping;
 import org.springframework.grpc.reflect.GrpcController;
 import org.springframework.grpc.reflect.GrpcMapping;
+import org.springframework.grpc.reflect.ImportProtobuf;
 
 import reactor.core.publisher.Flux;
 
 @SpringBootApplication
 @EnableGrpcMapping
+@ImportProtobuf({"proto/foo.proto", "proto/simple.proto"})
 public class GrpcServerApplication {
 
 	public static void main(String[] args) {
