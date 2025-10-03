@@ -22,8 +22,7 @@ import java.util.List;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.ApplicationContext;
@@ -81,26 +80,30 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 
 		@Override
 		public void register(DescriptorRegistry registry) {
-			FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+			FileDescriptorProtoParser parser = new FileDescriptorProtoParser(Path.of(base));
 			FileDescriptorManager manager = new FileDescriptorManager();
 			if (this.locations != null) {
 				List<Path> paths = new ArrayList<>();
 				for (String location : this.locations) {
+					boolean hasBase = false;
 					if (base.length() > 0) {
 						if (!location.contains(":") && !location.startsWith("/")) {
 							location = base + (base.endsWith("/") ? "" : "/") + location;
+							hasBase = true;
 						}
 					}
+					String rootDir = determineRootDir(location);
 					try {
 						Resource[] resources = resourceLoader.getResources(location);
 						for (Resource resource : resources) {
 							if (resource.exists()) {
-								String url = location;
-								if (url.contains(":")) {
-									url = url.substring(url.indexOf(":") + 1);
-								}
-								if (url.startsWith("//")) {
-									url = url.substring(2);
+								String url = resource.getURL().getPath();
+								url = url.substring(url.lastIndexOf(rootDir));
+								if (hasBase && url.startsWith(base)) {
+									url = url.substring(base.length());
+									if (url.startsWith("/")) {
+										url = url.substring(1);
+									}
 								}
 								paths.add(Path.of(url));
 							}
@@ -120,9 +123,27 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 			this.resourceLoader = new PathMatchingResourcePatternResolver(resourceLoader);
 		}
 
+		private String determineRootDir(String location) {
+			if (location.contains(":")) {
+				location = location.substring(location.indexOf(':') + 1);
+			}
+			if (!this.resourceLoader.getPathMatcher().isPattern(location)) {
+				return location;
+			}
+			int rootDirEnd = location.length();
+			while (rootDirEnd > 0
+					&& this.resourceLoader.getPathMatcher().isPattern(location.substring(0, rootDirEnd))) {
+				rootDirEnd = location.lastIndexOf('/', rootDirEnd - 2) + 1;
+			}
+			if (rootDirEnd == 0) {
+				rootDirEnd = 0;
+			}
+			return location.substring(0, rootDirEnd);
+		}
+
 	}
 
-	static class ProtobufRegistrarPostProcessor implements BeanFactoryPostProcessor, ApplicationContextAware {
+	static class ProtobufRegistrarPostProcessor implements BeanPostProcessor, ApplicationContextAware {
 
 		private ApplicationContext context;
 
@@ -132,11 +153,12 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 		}
 
 		@Override
-		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
-				throws BeansException {
-			ObjectProvider<DescriptorRegistrar> registrars = context.getBeanProvider(DescriptorRegistrar.class);
-			DescriptorRegistry registry = context.getBean(DescriptorRegistry.class);
-			registrars.orderedStream().forEach(registrar -> registrar.register(registry));
+		public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+			if (bean instanceof DescriptorRegistry registry) {
+				ObjectProvider<DescriptorRegistrar> registrars = context.getBeanProvider(DescriptorRegistrar.class);
+				registrars.orderedStream().forEach(registrar -> registrar.register(registry));
+			}
+			return bean;
 		}
 	}
 

@@ -53,7 +53,7 @@ public class ProtobufRegistrationTests {
 	public void testBase() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(BaseExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
-		assertThat(registry.file("Simple")).isNotNull();
+		assertThat(registry.file("Simple").getName()).isEqualTo("simple.proto");
 		context.close();
 	}
 
@@ -68,11 +68,29 @@ public class ProtobufRegistrationTests {
 
 	@Test
 	public void testMultipleImports() {
-		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(NoServiceExample.class,
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(OtherExample.class,
 				FileSystemExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(registry.file("Simple")).isNotNull();
 		assertThat(registry.file("Foo")).isNotNull();
+		context.close();
+	}
+
+	@Test
+	public void testPatternImports() {
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(PatternExample.class);
+		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
+		assertThat(registry.file("Simple").getName()).isEqualTo("proto/simple.proto");
+		assertThat(registry.file("Foo").getName()).isEqualTo("proto/bar.proto");
+		context.close();
+	}
+
+	@Test
+	public void testBasePatternImports() {
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(BasePatternExample.class);
+		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
+		assertThat(registry.file("Simple").getName()).isEqualTo("simple.proto");
+		assertThat(registry.file("Foo").getName()).isEqualTo("bar.proto");
 		context.close();
 	}
 
@@ -93,17 +111,27 @@ public class ProtobufRegistrationTests {
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf("proto/bar.proto")
-	static class NoServiceExample {
+	static class OtherExample {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	@ImportProtobuf({"proto/bar.proto", "file:src/test/proto/hello.proto"})
+	@ImportProtobuf("proto/*.proto")
+	static class PatternExample {
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ImportProtobuf({ "proto/bar.proto", "file:src/test/proto/hello.proto" })
 	static class MultipleExample {
 	}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "simple.proto", base = "proto")
 	static class BaseExample {
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ImportProtobuf(locations = "*.proto", base = "proto")
+	static class BasePatternExample {
 	}
 
 }
