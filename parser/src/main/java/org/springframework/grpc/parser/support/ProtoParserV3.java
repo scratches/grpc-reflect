@@ -72,7 +72,7 @@ public class ProtoParserV3 {
 			@Override
 			public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
 					int charPositionInLine, String msg, RecognitionException e) {
-				throw new IllegalStateException("Syntax error at line " + line + ": " + msg, e);
+				throw new IllegalStateException("Syntax error at line " + line + " in " + name + ": " + msg, e);
 			}
 		});
 		Set<String> localEnumNames = new HashSet<>();

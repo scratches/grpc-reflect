@@ -230,11 +230,8 @@ public class DynamicServiceFactory {
 		private <I, O> BindableServiceBuilder method(String methodName, Class<I> requestType, Class<O> responseType,
 				Function<?, ?> function, MethodType methodType) {
 			String fullMethodName = serviceName + "/" + methodName;
-			if (this.fileDescriptors.file(serviceName) == null
-					|| this.fileDescriptors.file(serviceName).findServiceByName(serviceName) == null
-					|| this.fileDescriptors.file(serviceName)
-						.findServiceByName(serviceName)
-						.findMethodByName(methodName) == null) {
+			if (this.registry.input(fullMethodName) == null
+					|| this.registry.output(fullMethodName) == null) {
 				switch (methodType) {
 					case UNARY:
 						this.registry.unary(fullMethodName, requestType, responseType);
