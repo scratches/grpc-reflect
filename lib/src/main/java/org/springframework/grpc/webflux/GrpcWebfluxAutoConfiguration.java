@@ -15,18 +15,12 @@
  */
 package org.springframework.grpc.webflux;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 
-import io.grpc.BindableService;
-
-@Configuration
-@ConditionalOnMissingBean(BindableService.class)
-@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 /**
  * Auto-configuration for gRPC integration with Spring WebFlux.
  * <p>
@@ -37,6 +31,8 @@ import io.grpc.BindableService;
  * @author Dave Syer
  * @since 1.0.0
  */
+@Configuration
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 public class GrpcWebfluxAutoConfiguration implements WebFluxConfigurer {
 
 	@Override

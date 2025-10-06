@@ -22,17 +22,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.codec.ServerCodecConfigurer;
-import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
 import io.grpc.BindableService;
 
-@Configuration
-@ConditionalOnBean(BindableService.class)
-@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 /**
  * Auto-configuration for gRPC server functionality in Spring WebFlux.
  * <p>
@@ -43,6 +38,9 @@ import io.grpc.BindableService;
  * @author Dave Syer
  * @since 1.0.0
  */
+@Configuration
+@ConditionalOnBean(BindableService.class)
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 public class GrpcWebfluxServerAutoConfiguration {
 
 	@Bean
@@ -63,22 +61,6 @@ public class GrpcWebfluxServerAutoConfiguration {
 			builder.POST(path, server.getHandlers().get(path));
 		}
 		return builder.build();
-	}
-
-	@Configuration
-	static class WebConfiguration implements WebFluxConfigurer {
-
-		@Override
-		public void configureHttpMessageCodecs(ServerCodecConfigurer configurer) {
-			configurer.customCodecs().register(new GrpcHttpMessageWriter());
-			configurer.customCodecs().register(new GrpcDecoder());
-		}
-
-		@Bean
-		public GrpcExceptionHandler grpcExceptionHandler() {
-			return new GrpcExceptionHandler();
-		}
-
 	}
 
 }
