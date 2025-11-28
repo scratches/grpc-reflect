@@ -307,9 +307,15 @@ public class FileDescriptorProtoParser {
 				}
 				if (this.locator != null) {
 					Path[] urls = this.locator.find(input.toString());
-					for (int i = 0; i < urls.length; i++) {
-						if (urls[i].startsWith(this.base)) {
-							urls[i] = base.relativize(urls[i]);
+					Set<Path> bases = resolveBase(this.base);
+					if (!bases.isEmpty()) {
+						for (int i = 0; i < urls.length; i++) {
+							for (Path base : bases) {
+								if (urls[i].startsWith(base)) {
+									urls[i] = base.relativize(urls[i]);
+									break;
+								}
+							}
 						}
 					}
 					return resolve(urls);
@@ -352,6 +358,22 @@ public class FileDescriptorProtoParser {
 		} catch (IOException e) {
 			throw new IllegalStateException("Failed to read input file: " + input, e);
 		}
+	}
+
+	private Set<Path> resolveBase(Path base) {
+		Set<Path> bases = new HashSet<>();
+		bases.add(base);
+		if (this.locator != null) {
+			for (Path extra : this.locator.find(base.toString())) {
+				if (extra.getFileName().toString().endsWith(".proto") ||
+						extra.getFileName().toString().endsWith(".pb")) {
+					extra = extra.getParent();
+				}
+				bases.add(extra);
+			}
+		}
+		return bases;
+
 	}
 
 	private FileDescriptorProto parse(String name, InputStream stream) {

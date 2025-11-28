@@ -17,6 +17,9 @@ package org.springframework.grpc.reflect;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -28,23 +31,22 @@ public class ResourceLoaderPathLocator implements PathLocator {
 
 	@Override
 	public Path[] find(String path) {
-		Resource[] resources;
+		Set<Resource> resources = new HashSet<>();
 		try {
-			resources = resolver.getResources("classpath*:" + path + "/**/*.proto");
-			if (resources.length == 0) {
-				resources = resolver.getResources("classpath*:" + path + "/**/*.pb");
-				if (resources.length == 0) {
-					return new Path[0];
-				}
+			resources.addAll(Arrays.asList(resolver.getResources("classpath*:" + path + "/**/*.proto")));
+			resources.addAll(Arrays.asList(resolver.getResources("classpath*:" + path + "/**/*.pb")));
+			if (resources.isEmpty()) {
+				return new Path[0];
 			}
-			Path[] urls = new Path[resources.length];
-			for (int i = 0; i < resources.length; i++) {
+			Path[] urls = new Path[resources.size()];
+			int i = 0;
+			for (Resource resource : resources) {
 				try {
-					String url = resources[i].getURL().toString();
+					String url = resource.getURL().toString();
 					url = url.substring(url.lastIndexOf(path)); // Remove the path prefix
-					urls[i] = Path.of(url);
+					urls[i++] = Path.of(url);
 				} catch (IOException e) {
-					throw new IllegalStateException("Failed to get URL for resource: " + resources[i], e);
+					throw new IllegalStateException("Failed to get URL for resource: " + resource, e);
 				}
 			}
 			return urls;

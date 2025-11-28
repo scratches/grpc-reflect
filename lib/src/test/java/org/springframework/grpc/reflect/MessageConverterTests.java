@@ -37,7 +37,6 @@ public class MessageConverterTests {
 	@Test
 	public void testConvertGeneratedTypeToPojo() {
 		MessageConverter converter = new MessageConverter();
-		Descriptor desc = HelloRequest.getDescriptor();
 		var foo = HelloRequest.newBuilder().setName("foo").build();
 
 		Foo convertedFoo = converter.convert(foo, Foo.class);

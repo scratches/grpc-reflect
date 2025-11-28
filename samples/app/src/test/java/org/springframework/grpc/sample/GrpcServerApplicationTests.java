@@ -3,7 +3,6 @@ package org.springframework.grpc.sample;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.OutputStream;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
