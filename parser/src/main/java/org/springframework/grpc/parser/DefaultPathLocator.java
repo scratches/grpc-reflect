@@ -49,7 +49,7 @@ public class DefaultPathLocator implements PathLocator {
 		Path input = path.isAbsolute() ? path : base.resolve(path);
 		if (!input.toFile().exists()) {
 			try {
-				Enumeration<URL> resources = getClass().getClassLoader().getResources(input.toString());
+				Enumeration<URL> resources = getClass().getClassLoader().getResources(input.toString().replace("\\", "/"));
 				if (!resources.hasMoreElements()) {
 					throw new IllegalArgumentException("Input file does not exist: " + input);
 				}
