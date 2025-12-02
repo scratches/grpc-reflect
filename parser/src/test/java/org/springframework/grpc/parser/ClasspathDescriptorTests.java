@@ -17,9 +17,11 @@ package org.springframework.grpc.parser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.grpc.parser.PathLocator.NamedBytes;
 
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
@@ -70,15 +72,34 @@ public class ClasspathDescriptorTests {
 		assertThat(proto.getMessageTypeList()).hasSize(1);
 	}
 
+	private NamedBytes[] multi(String path) {
+		if (path.equals("multi")) {
+			return new NamedBytes[] { new NamedBytes("multi/bar.proto", () -> single("multi/bar.proto")),
+					new NamedBytes("multi/foo.proto", () -> single("multi/foo.proto")) };
+		}
+		return new NamedBytes[0];
+	}
+
+	private NamedBytes[] base(String path) {
+		if (path.equals("")) {
+			return new NamedBytes[] { new NamedBytes("bar.proto", () -> single("multi/bar.proto")),
+					new NamedBytes("foo.proto", () -> single("multi/foo.proto")) };
+		}
+		return new NamedBytes[0];
+	}
+
+	private byte[] single(String path) {
+		try {
+			return getClass().getClassLoader().getResourceAsStream(path).readAllBytes();
+		} catch (IOException e) {
+			throw new IllegalStateException("Failed to read resource: " + path, e);
+		}
+	}
+
 	@Test
 	public void testDescriptorFromClasspathDirectory() {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		parser.setPathLocator(path -> {
-			if (path.equals("multi")) {
-				return new Path[] { Path.of("multi/bar.proto"), Path.of("multi/foo.proto") };
-			}
-			return new Path[0];
-		});
+		parser.setPathLocator(this::multi);
 		// Classpath directory search
 		FileDescriptorSet files = parser.resolve(Path.of("multi"));
 		assertThat(files.getFileCount()).isEqualTo(2);
@@ -89,13 +110,8 @@ public class ClasspathDescriptorTests {
 
 	@Test
 	public void testDescriptorFromClasspathDirectoryAndBasePath() {
-		FileDescriptorProtoParser parser = new FileDescriptorProtoParser(Path.of("multi"));
-		parser.setPathLocator(path -> {
-			if (path.equals("multi")) {
-				return new Path[] { Path.of("multi/bar.proto"), Path.of("multi/foo.proto") };
-			}
-			return new Path[0];
-		});
+		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		parser.setPathLocator(this::base);
 		// With a base path:
 		FileDescriptorSet files = parser.resolve(Path.of(""));
 		assertThat(files.getFileCount()).isEqualTo(2);
@@ -124,6 +140,5 @@ public class ClasspathDescriptorTests {
 		assertThat(proto.getName()).isEqualTo("protobuf/validate.proto");
 		assertThat(proto.getMessageTypeList()).hasSize(23);
 	}
-
 
 }

@@ -15,8 +15,11 @@
  */
 package org.springframework.grpc.parser;
 
-import java.nio.file.Path;
+import java.util.function.Supplier;
 
 public interface PathLocator {
-	Path[] find(String path);
+	NamedBytes[] find(String path);
+
+	record NamedBytes(String name, Supplier<byte[]> bytes) {
+	}
 }

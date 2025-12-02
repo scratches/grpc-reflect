@@ -30,21 +30,27 @@ public class ResourceLoaderPathLocator implements PathLocator {
 	private final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 
 	@Override
-	public Path[] find(String path) {
+	public NamedBytes[] find(String path) {
 		Set<Resource> resources = new HashSet<>();
 		try {
 			resources.addAll(Arrays.asList(resolver.getResources("classpath*:" + path + "/**/*.proto")));
 			resources.addAll(Arrays.asList(resolver.getResources("classpath*:" + path + "/**/*.pb")));
 			if (resources.isEmpty()) {
-				return new Path[0];
+				return new NamedBytes[0];
 			}
-			Path[] urls = new Path[resources.size()];
+			NamedBytes[] urls = new NamedBytes[resources.size()];
 			int i = 0;
 			for (Resource resource : resources) {
 				try {
 					String url = resource.getURL().toString();
 					url = url.substring(url.lastIndexOf(path)); // Remove the path prefix
-					urls[i++] = Path.of(url);
+					urls[i++] = new NamedBytes(url, () -> {
+						try {
+							return resource.getInputStream().readAllBytes();
+						} catch (IOException e) {
+							throw new IllegalStateException("Failed to read resource: " + resource, e);
+						}
+					});
 				} catch (IOException e) {
 					throw new IllegalStateException("Failed to get URL for resource: " + resource, e);
 				}

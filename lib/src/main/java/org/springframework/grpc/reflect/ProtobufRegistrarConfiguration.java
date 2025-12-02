@@ -33,6 +33,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.type.AnnotationMetadata;
+import org.springframework.grpc.parser.DefaultPathLocator;
 import org.springframework.grpc.parser.FileDescriptorProtoParser;
 
 import com.google.protobuf.Descriptors.FileDescriptor;
@@ -82,7 +83,8 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 
 		@Override
 		public void register(DescriptorRegistry registry) {
-			FileDescriptorProtoParser parser = new FileDescriptorProtoParser(Path.of(base));
+			FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+			parser.setPathLocator(new DefaultPathLocator(base));
 			FileDescriptorManager manager = new FileDescriptorManager();
 			if (this.locations != null) {
 				List<Path> paths = new ArrayList<>();

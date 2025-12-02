@@ -17,19 +17,16 @@
 package org.springframework.grpc.parser;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.antlr.v4.runtime.CharStreams;
+import org.springframework.grpc.parser.PathLocator.NamedBytes;
 import org.springframework.grpc.parser.support.ProtoParserV2;
 import org.springframework.grpc.parser.support.ProtoParserV3;
 
@@ -105,17 +102,7 @@ public class FileDescriptorProtoParser {
 
 	private Map<String, FileDescriptorProto> cache = new HashMap<>();
 
-	private final Path base;
-
-	private PathLocator locator = null;
-
-	/**
-	 * Constructs a new {@code FileDescriptorProtoParser} with a default path. This
-	 * constructor initializes the parser with an empty path.
-	 */
-	public FileDescriptorProtoParser() {
-		this(Path.of(""));
-	}
+	private PathLocator locator = new DefaultPathLocator();
 
 	/**
 	 * Constructs a new {@code FileDescriptorProtoParser} with the specified base
@@ -125,9 +112,8 @@ public class FileDescriptorProtoParser {
 	 * .proto files will be resolved relative to this base path as well.
 	 * 
 	 * @param base the base path to be used by the parser
-	 */
-	public FileDescriptorProtoParser(Path base) {
-		this.base = base;
+	*/
+	public FileDescriptorProtoParser() {
 		this.v3 = new ProtoParserV3();
 		this.v2 = new ProtoParserV2();
 	}
@@ -181,8 +167,13 @@ public class FileDescriptorProtoParser {
 	 *                                  stream.
 	 */
 	public FileDescriptorSet resolve(String name, InputStream input) {
-		FileDescriptorProto proto = parse(name, input);
-		return resolve(proto);
+		FileDescriptorProto proto;
+		try {
+			proto = parse(name, input.readAllBytes());
+			return resolve(proto);
+		} catch (IOException e) {
+			throw new IllegalStateException("Failed to read input stream for: " + name, e);
+		}
 	}
 
 	/**
@@ -205,7 +196,7 @@ public class FileDescriptorProtoParser {
 	 * @throws IllegalStateException    if an error occurs during parsing
 	 */
 	public FileDescriptorSet resolve(String name, String input) {
-		FileDescriptorProto proto = parse(name, new ByteArrayInputStream(input.getBytes()));
+		FileDescriptorProto proto = parse(name, input.getBytes());
 		return resolve(proto);
 	}
 
@@ -249,7 +240,7 @@ public class FileDescriptorProtoParser {
 				dependency = cache.get(name);
 			} else {
 				try (InputStream stream = findImport(name)) {
-					dependency = parse(name, stream);
+					dependency = parse(name, stream.readAllBytes());
 				} catch (IOException e) {
 					throw new IllegalStateException("Failed to read import: " + name, e);
 				}
@@ -260,134 +251,53 @@ public class FileDescriptorProtoParser {
 		names.add(proto.getName());
 	}
 
+	// TODO: return bytes directly?
 	private InputStream findImport(String path) {
 		if (path.startsWith("/")) {
 			path = path.substring(1);
 		}
-		InputStream stream = getClass().getClassLoader().getResourceAsStream(path);
-		if (stream == null) {
-			if (base.resolve(path).toFile().exists()) {
-				try {
-					stream = Files.newInputStream(base.resolve(path));
-				} catch (IOException e) {
-					throw new IllegalStateException("Failed to read import: " + path, e);
-				}
-			} else {
-				throw new IllegalArgumentException("Import not found: " + path);
-			}
+		NamedBytes[] named = this.locator.find(path);
+		if (named.length > 0) {
+			return new ByteArrayInputStream(named[0].bytes().get());
 		}
-		return stream;
+		throw new IllegalArgumentException("Import not found: " + path);
 	}
 
 	private FileDescriptorSet parse(Path path) {
-		Path input = path.isAbsolute() ? path : base.resolve(path);
-		try {
-			if (!input.toFile().exists()) {
-				Enumeration<URL> resources = getClass().getClassLoader().getResources(input.toString());
-				if (!resources.hasMoreElements()) {
-					throw new IllegalArgumentException("Input file does not exist: " + input);
-				}
-				if (input.toString().endsWith(".proto")) {
-					URL url = resources.nextElement();
-					try (InputStream stream = url.openStream()) {
-						FileDescriptorProto proto = parse(path.toString(), stream);
-						return resolve(proto);
-					} catch (IOException e) {
-						throw new IllegalStateException("Failed to read resource: " + input, e);
+		FileDescriptorSet.Builder builder = FileDescriptorSet.newBuilder();
+		Set<String> names = new HashSet<>();
+		for (NamedBytes named : this.locator.find(path.toString())) {
+			String name = named.name();
+			if (named.name().endsWith(".proto")) {
+				FileDescriptorProto proto = parse(name.toString(), named.bytes().get());
+				for (FileDescriptorProto resolved : resolve(proto).getFileList()) {
+					if (!names.contains(resolved.getName())) {
+						// Avoid duplicates
+						builder.addFile(resolved);
+						names.add(resolved.getName());
 					}
 				}
-				if (input.toString().endsWith(".pb")) {
-					URL url = resources.nextElement();
-					try (InputStream stream = url.openStream()) {
-						FileDescriptorSet proto = FileDescriptorSet.parseFrom(stream);
-						return proto;
-					} catch (IOException e) {
-						throw new IllegalStateException("Failed to read resource: " + input, e);
+			}
+			if (named.name().endsWith(".pb")) {
+				try {
+					FileDescriptorSet proto = FileDescriptorSet.parseFrom(named.bytes().get());
+					for (FileDescriptorProto resolved : proto.getFileList()) {
+						builder.addFile(resolved);
 					}
-				}
-				if (this.locator != null) {
-					Path[] urls = this.locator.find(input.toString());
-					Set<Path> bases = resolveBase(this.base);
-					if (!bases.isEmpty()) {
-						for (int i = 0; i < urls.length; i++) {
-							for (Path base : bases) {
-								if (urls[i].startsWith(base)) {
-									urls[i] = base.relativize(urls[i]);
-									break;
-								}
-							}
-						}
-					}
-					return resolve(urls);
+				} catch (IOException e) {
+					throw new IllegalStateException("Failed to read file: " + path, e);
 				}
 			}
-			if (!Files.isDirectory(input) && !input.toString().endsWith(".proto")
-					&& !input.toString().endsWith(".pb")) {
-				throw new IllegalArgumentException("Input file is not .proto or .pb: " + input);
-			}
-			FileDescriptorSet.Builder builder = FileDescriptorSet.newBuilder();
-			Set<String> names = new HashSet<>();
-			if (input.toFile().isDirectory()) {
-				Files.walk(input)
-						.filter(file -> !Files.isDirectory(file) && file.toString().endsWith(".proto"))
-						.forEach(file -> {
-							try {
-								Path name = base.relativize(file.normalize());
-								FileDescriptorProto proto = parse(name.toString(), Files.newInputStream(file));
-								for (FileDescriptorProto resolved : resolve(proto).getFileList()) {
-									if (!names.contains(resolved.getName())) {
-										// Avoid duplicates
-										builder.addFile(resolved);
-										names.add(resolved.getName());
-									}
-								}
-							} catch (IOException e) {
-								throw new IllegalStateException("Failed to read file: " + file, e);
-							}
-						});
-				return builder.build();
-			}
-			if (input.toString().endsWith(".pb")) {
-				return FileDescriptorSet.parseFrom(Files.newInputStream(input));
-			}
-			FileDescriptorProto proto = parse(path.toString(), Files.newInputStream(input));
-			for (FileDescriptorProto resolved : resolve(proto).getFileList()) {
-				builder.addFile(resolved);
-			}
-			return builder.build();
-		} catch (IOException e) {
-			throw new IllegalStateException("Failed to read input file: " + input, e);
 		}
+		return builder.build();
 	}
 
-	private Set<Path> resolveBase(Path base) {
-		Set<Path> bases = new HashSet<>();
-		bases.add(base);
-		if (this.locator != null) {
-			for (Path extra : this.locator.find(base.toString())) {
-				if (extra.getFileName().toString().endsWith(".proto") ||
-						extra.getFileName().toString().endsWith(".pb")) {
-					extra = extra.getParent();
-				}
-				bases.add(extra);
-			}
+	private FileDescriptorProto parse(String name, byte[] bytes) {
+		String content = new String(bytes);
+		if (content.matches("(?s).*syntax\\s*=\\s*\"proto2\".*")) {
+			return v2.parse(name, CharStreams.fromString(content), path -> resolve(path, findImport(path)));
 		}
-		return bases;
-
-	}
-
-	private FileDescriptorProto parse(String name, InputStream stream) {
-		try (stream) {
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			stream.transferTo(out);
-			String content = out.toString();
-			if (content.matches("(?s).*syntax\\s*=\\s*\"proto2\".*")) {
-				return v2.parse(name, CharStreams.fromString(content), path -> resolve(path, findImport(path)));
-			}
-			return v3.parse(name, CharStreams.fromString(content), path -> resolve(path, findImport(path)));
-		} catch (IOException e) {
-			throw new IllegalStateException("Failed to read import: " + name, e);
-		}
+		return v3.parse(name, CharStreams.fromString(content), path -> resolve(path, findImport(path)));
 	}
 
 }

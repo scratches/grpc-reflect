@@ -17,9 +17,11 @@ package org.springframework.grpc.parser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.grpc.parser.PathLocator.NamedBytes;
 
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
@@ -28,7 +30,8 @@ public class BinaryFileDescriptorTests {
 
 	@Test
 	public void testDescriptorWithImportsFromBasepath() {
-		FileDescriptorProtoParser parser = new FileDescriptorProtoParser(Path.of("src/test/proto/binary"));
+		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		parser.setPathLocator(new DefaultPathLocator("src/test/proto/binary"));
 		FileDescriptorSet files = parser.resolve(Path.of("foo.pb"));
 		assertThat(files.getFileCount()).isEqualTo(2);
 		FileDescriptorProto proto = files.getFile(0);
@@ -53,15 +56,25 @@ public class BinaryFileDescriptorTests {
 		assertThat(proto.getMessageTypeList()).hasSize(1);
 	}
 
+		private NamedBytes[] binary(String path) {
+		if (path.equals("binary")) {
+			return new NamedBytes[] { new NamedBytes("multi.pb", () -> single("binary/multi.pb")) };
+		}
+		return new NamedBytes[0];
+	}
+
+	private byte[] single(String path) {
+		try {
+			return getClass().getClassLoader().getResourceAsStream(path).readAllBytes();
+		} catch (IOException e) {
+			throw new IllegalStateException("Failed to read resource: " + path, e);
+		}
+	}
+
 	@Test
 	public void testDescriptorFromClasspathDirectory() {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		parser.setPathLocator(input -> {
-			if (input.equals("binary")) {
-				return new Path[] { Path.of("binary/multi.pb") };
-			}
-			return new Path[0];
-		});
+		parser.setPathLocator(this::binary);
 		// Classpath directory search
 		FileDescriptorSet files = parser.resolve(Path.of("binary"));
 		assertThat(files.getFileCount()).isEqualTo(2);
