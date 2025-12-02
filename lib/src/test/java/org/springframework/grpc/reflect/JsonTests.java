@@ -42,7 +42,7 @@ public class JsonTests {
 				}
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.resolve("test.proto", input).getFile(0);
+		FileDescriptorProto proto = parser.resolve("test.proto", input.getBytes()).getFile(0);
 		FileDescriptor[] files = new FileDescriptorManager().convert(parser.resolve(proto));
 		this.file = files[0];
 		this.type = this.file.findMessageTypeByName("TestMessage");

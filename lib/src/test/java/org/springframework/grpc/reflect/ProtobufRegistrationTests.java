@@ -94,6 +94,24 @@ public class ProtobufRegistrationTests {
 		context.close();
 	}
 
+	@Test
+	public void JarFileImport() {
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(JarFileExample.class);
+		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
+		// TODO: should this be a qualified service name?
+		assertThat(registry.file("ServerReflection").getName()).isEqualTo("grpc/reflection/v1/reflection.proto");
+		context.close();
+	}
+
+	@Test
+	public void ClasspathPrefix() {
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(ClasspathPrefixExample.class);
+		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
+		// TODO: should this be a qualified service name?
+		assertThat(registry.file("ServerReflection").getName()).isEqualTo("grpc/reflection/v1/reflection.proto");
+		context.close();
+	}
+
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf("file:src/test/proto/hello.proto")
 	static class FileSystemExample {
@@ -132,6 +150,16 @@ public class ProtobufRegistrationTests {
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "*.proto", base = "proto")
 	static class BasePatternExample {
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ImportProtobuf(locations = "grpc/reflection/v1/reflection.proto")
+	static class JarFileExample {
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ImportProtobuf(locations = "classpath:/grpc/reflection/v1/reflection.proto")
+	static class ClasspathPrefixExample {
 	}
 
 }

@@ -32,7 +32,7 @@ public class BinaryFileDescriptorTests {
 	public void testDescriptorWithImportsFromBasepath() {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		parser.setPathLocator(new DefaultPathLocator("src/test/proto/binary"));
-		FileDescriptorSet files = parser.resolve(Path.of("foo.pb"));
+		FileDescriptorSet files = parser.resolve("foo.pb");
 		assertThat(files.getFileCount()).isEqualTo(2);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("bar.proto");
@@ -46,7 +46,7 @@ public class BinaryFileDescriptorTests {
 	@Test
 	public void testDescriptorWithImportsFromClasspath() {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorSet files = parser.resolve(Path.of("binary/multi.pb"));
+		FileDescriptorSet files = parser.resolve("binary/multi.pb");
 		assertThat(files.getFileCount()).isEqualTo(2);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("bar.proto");
@@ -76,7 +76,7 @@ public class BinaryFileDescriptorTests {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		parser.setPathLocator(this::binary);
 		// Classpath directory search
-		FileDescriptorSet files = parser.resolve(Path.of("binary"));
+		FileDescriptorSet files = parser.resolve("binary");
 		assertThat(files.getFileCount()).isEqualTo(2);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("bar.proto");

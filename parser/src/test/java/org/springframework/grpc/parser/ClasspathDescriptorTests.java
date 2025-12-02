@@ -18,7 +18,6 @@ package org.springframework.grpc.parser;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
-import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.grpc.parser.PathLocator.NamedBytes;
@@ -44,7 +43,7 @@ public class ClasspathDescriptorTests {
 	public void testDescriptorFromClasspath() {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		// Comes with the protobuf-java library:
-		FileDescriptorProto proto = parser.resolve(Path.of("google/protobuf/empty.proto")).getFile(0);
+		FileDescriptorProto proto = parser.resolve("google/protobuf/empty.proto").getFile(0);
 		assertThat(proto.getName()).isEqualTo("google/protobuf/empty.proto");
 		assertThat(proto.getMessageTypeList()).hasSize(1);
 		assertThat(proto.getMessageType(0).getName()).isEqualTo("Empty");
@@ -55,7 +54,7 @@ public class ClasspathDescriptorTests {
 	public void testDescriptorWithImportsFromClasspath() {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		// Comes with the protobuf-java library:
-		FileDescriptorSet files = parser.resolve(Path.of("google/protobuf/type.proto"));
+		FileDescriptorSet files = parser.resolve("google/protobuf/type.proto");
 		assertThat(files.getFileCount()).isEqualTo(3);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("google/protobuf/any.proto");
@@ -65,7 +64,7 @@ public class ClasspathDescriptorTests {
 	@Test
 	public void testDescriptorFromClasspathFile() {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorSet files = parser.resolve(Path.of("multi/bar.proto"));
+		FileDescriptorSet files = parser.resolve("multi/bar.proto");
 		assertThat(files.getFileCount()).isEqualTo(1);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("multi/bar.proto");
@@ -101,7 +100,7 @@ public class ClasspathDescriptorTests {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		parser.setPathLocator(this::multi);
 		// Classpath directory search
-		FileDescriptorSet files = parser.resolve(Path.of("multi"));
+		FileDescriptorSet files = parser.resolve("multi");
 		assertThat(files.getFileCount()).isEqualTo(2);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("multi/bar.proto");
@@ -113,7 +112,7 @@ public class ClasspathDescriptorTests {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		parser.setPathLocator(this::base);
 		// With a base path:
-		FileDescriptorSet files = parser.resolve(Path.of(""));
+		FileDescriptorSet files = parser.resolve("");
 		assertThat(files.getFileCount()).isEqualTo(2);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("bar.proto");
@@ -123,7 +122,7 @@ public class ClasspathDescriptorTests {
 	@Test
 	public void testDescriptorV2() {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorSet files = parser.resolve(Path.of("protobuf/descriptor.proto"));
+		FileDescriptorSet files = parser.resolve("protobuf/descriptor.proto");
 		assertThat(files.getFileCount()).isEqualTo(1);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("protobuf/descriptor.proto");
@@ -134,7 +133,7 @@ public class ClasspathDescriptorTests {
 	public void testValidatorV2() {
 		// TODO: handle extend keyword instead of ignoring it
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorSet files = parser.resolve(Path.of("protobuf/validate.proto"));
+		FileDescriptorSet files = parser.resolve("protobuf/validate.proto");
 		assertThat(files.getFileCount()).isEqualTo(4);
 		FileDescriptorProto proto = files.getFile(3);
 		assertThat(proto.getName()).isEqualTo("protobuf/validate.proto");

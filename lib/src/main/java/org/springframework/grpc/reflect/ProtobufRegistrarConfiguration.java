@@ -87,7 +87,7 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 			parser.setPathLocator(new DefaultPathLocator(base));
 			FileDescriptorManager manager = new FileDescriptorManager();
 			if (this.locations != null) {
-				List<Path> paths = new ArrayList<>();
+				List<String> paths = new ArrayList<>();
 				for (String location : this.locations) {
 					boolean hasBase = false;
 					if (base.length() > 0) {
@@ -105,18 +105,18 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 								url = url.substring(url.lastIndexOf(rootDir));
 								if (hasBase && url.startsWith(base)) {
 									url = url.substring(base.length());
-									if (url.startsWith("/")) {
-										url = url.substring(1);
-									}
 								}
-								paths.add(Path.of(url));
+								if (url.startsWith("/")) {
+									url = url.substring(1);
+								}
+								paths.add(url);
 							}
 						}
 					} catch (IOException e) {
 						throw new IllegalStateException("Failed to find resources for location: " + location, e);
 					}
 				}
-				for (FileDescriptor proto : manager.convert(parser.resolve(paths.toArray(new Path[0])))) {
+				for (FileDescriptor proto : manager.convert(parser.resolve(paths.toArray(new String[0])))) {
 					registry.register(proto);
 				}
 			}

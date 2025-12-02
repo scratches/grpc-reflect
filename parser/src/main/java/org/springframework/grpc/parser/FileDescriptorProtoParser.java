@@ -195,8 +195,8 @@ public class FileDescriptorProtoParser {
 	 *                                  contains unresolved dependencies
 	 * @throws IllegalStateException    if an error occurs during parsing
 	 */
-	public FileDescriptorSet resolve(String name, String input) {
-		FileDescriptorProto proto = parse(name, input.getBytes());
+	public FileDescriptorSet resolve(String name, byte[] input) {
+		FileDescriptorProto proto = parse(name, input);
 		return resolve(proto);
 	}
 
@@ -219,9 +219,9 @@ public class FileDescriptorProtoParser {
 	 *                                  if
 	 *                                  they contains unresolved dependencies
 	 */
-	public FileDescriptorSet resolve(Path... inputs) {
+	public FileDescriptorSet resolve(String... inputs) {
 		FileDescriptorSet.Builder builder = FileDescriptorSet.newBuilder();
-		for (Path input : inputs) {
+		for (String input : inputs) {
 			parse(input).getFileList().forEach(builder::addFile);
 		}
 		return builder.build();
@@ -263,10 +263,10 @@ public class FileDescriptorProtoParser {
 		throw new IllegalArgumentException("Import not found: " + path);
 	}
 
-	private FileDescriptorSet parse(Path path) {
+	private FileDescriptorSet parse(String path) {
 		FileDescriptorSet.Builder builder = FileDescriptorSet.newBuilder();
 		Set<String> names = new HashSet<>();
-		for (NamedBytes named : this.locator.find(path.toString())) {
+		for (NamedBytes named : this.locator.find(path)) {
 			String name = named.name();
 			if (named.name().endsWith(".proto")) {
 				FileDescriptorProto proto = parse(name.toString(), named.bytes().get());

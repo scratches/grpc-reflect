@@ -55,7 +55,7 @@ public @interface ImportProtobuf {
 	String[] locations() default {};
 
 	/**
-	 * Base location relative to which other non-absolte resource locations are
+	 * Base location relative to which other non-absolute resource locations are
 	 * imported.
 	 * <p>
 	 * Supports resource-loading prefixes such as {@code classpath:},
