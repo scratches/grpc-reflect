@@ -25,9 +25,9 @@ import org.springframework.web.reactive.config.WebFluxConfigurer;
  * Auto-configuration for gRPC integration with Spring WebFlux.
  * <p>
  * This configuration class implements {@link WebFluxConfigurer} to automatically
- * configure the necessary components for gRPC support in Spring WebFlux
- * applications, including codecs, handlers, and other integration components.
- * 
+ * configure the necessary components for gRPC support in Spring WebFlux applications,
+ * including codecs, handlers, and other integration components.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */

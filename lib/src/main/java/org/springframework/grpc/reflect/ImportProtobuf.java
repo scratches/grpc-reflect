@@ -35,7 +35,7 @@ public @interface ImportProtobuf {
 
 	/**
 	 * Alias for {@link #locations}.
-	 * 
+	 *
 	 * @see #locations
 	 * @see #reader
 	 */
@@ -45,9 +45,8 @@ public @interface ImportProtobuf {
 	/**
 	 * Resource locations from which to import.
 	 * <p>
-	 * Supports resource-loading prefixes such as {@code classpath:},
-	 * {@code file:}, etc.
-	 * 
+	 * Supports resource-loading prefixes such as {@code classpath:}, {@code file:}, etc.
+	 *
 	 * @see #value
 	 * @see #reader
 	 */
@@ -55,12 +54,10 @@ public @interface ImportProtobuf {
 	String[] locations() default {};
 
 	/**
-	 * Base location relative to which other non-absolute resource locations are
-	 * imported.
+	 * Base location relative to which other non-absolute resource locations are imported.
 	 * <p>
-	 * Supports resource-loading prefixes such as {@code classpath:},
-	 * {@code file:}, etc.
-	 * 
+	 * Supports resource-loading prefixes such as {@code classpath:}, {@code file:}, etc.
+	 *
 	 * @see #value
 	 * @see #reader
 	 */

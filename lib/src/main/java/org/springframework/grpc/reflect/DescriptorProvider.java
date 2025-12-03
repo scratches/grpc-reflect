@@ -21,9 +21,9 @@ import com.google.protobuf.Descriptors.ServiceDescriptor;
 /**
  * Provider interface for accessing protocol buffer type descriptors.
  * <p>
- * This interface defines the contract for obtaining type descriptor information
- * that describes gRPC message types.
- * 
+ * This interface defines the contract for obtaining type descriptor information that
+ * describes gRPC message types.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */

@@ -28,7 +28,7 @@ import org.springframework.http.ReactiveHttpOutputMessage;
 import org.springframework.http.codec.EncoderHttpMessageWriter;
 import org.springframework.http.server.reactive.AbstractServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.ConcurrentReferenceHashMap;
 
 import com.google.protobuf.Descriptors;
@@ -41,10 +41,10 @@ import reactor.netty.http.server.HttpServerResponse;
 /**
  * HTTP message writer for gRPC protocol buffer messages in WebFlux.
  * <p>
- * This writer extends {@link EncoderHttpMessageWriter} to provide specialized
- * HTTP message writing capabilities for gRPC {@link Message} objects in
- * Spring WebFlux applications, handling the conversion from messages to HTTP responses.
- * 
+ * This writer extends {@link EncoderHttpMessageWriter} to provide specialized HTTP
+ * message writing capabilities for gRPC {@link Message} objects in Spring WebFlux
+ * applications, handling the conversion from messages to HTTP responses.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */

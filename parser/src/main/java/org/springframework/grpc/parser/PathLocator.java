@@ -18,8 +18,10 @@ package org.springframework.grpc.parser;
 import java.util.function.Supplier;
 
 public interface PathLocator {
+
 	NamedBytes[] find(String path);
 
 	record NamedBytes(String name, Supplier<byte[]> bytes) {
 	}
+
 }

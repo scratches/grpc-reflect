@@ -129,17 +129,19 @@ public class DescriptorRegistryTests {
 				}
 				reflection.bidi(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
 						outputType);
-			} else {
+			}
+			else {
 				reflection.stream(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
 						outputType);
 			}
-		} else {
+		}
+		else {
 			reflection.unary(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
 					outputType);
 		}
 		registry.register(
 				reflection.service(method.getDeclaringClass().getSimpleName())
-						.findMethodByName(StringUtils.capitalize(method.getName())),
+					.findMethodByName(StringUtils.capitalize(method.getName())),
 				method.getParameterTypes()[0], method.getReturnType());
 	}
 

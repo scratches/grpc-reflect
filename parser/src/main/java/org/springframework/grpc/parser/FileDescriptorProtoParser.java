@@ -34,17 +34,13 @@ import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
 
 /**
- * A parser for Protocol Buffers (.proto) files that can parse, resolve
- * dependencies, and
- * A parser for Protocol Buffers (.proto) files that can parse, resolve
- * dependencies, and
+ * A parser for Protocol Buffers (.proto) files that can parse, resolve dependencies, and
+ * A parser for Protocol Buffers (.proto) files that can parse, resolve dependencies, and
  * build {@link FileDescriptorProto} and {@link FileDescriptorSet} objects.
  *
  * <p>
- * This provides methods to parse Protocol Buffers definitions from strings,
- * input
- * streams, and file paths. It also resolves dependencies between .proto files
- * and builds
+ * This provides methods to parse Protocol Buffers definitions from strings, input
+ * streams, and file paths. It also resolves dependencies between .proto files and builds
  * a complete {@link FileDescriptorSet} that includes all required files.
  *
  * <p>
@@ -68,17 +64,14 @@ import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
  * </pre>
  *
  * <p>
- * Note: This parser assumes the use of the "proto3" syntax and does not support
- * "proto2".
+ * Note: This parser assumes the use of the "proto3" syntax and does not support "proto2".
  *
  * <p>
- * Thread Safety: This class is not thread-safe. If multiple threads need to use
- * the
+ * Thread Safety: This class is not thread-safe. If multiple threads need to use the
  * parser, external synchronization is required.
  *
  * <p>
- * Limitations: Assumes all imports are either available in the classpath or in
- * the
+ * Limitations: Assumes all imports are either available in the classpath or in the
  * specified base path.
  *
  * <p>
@@ -105,25 +98,20 @@ public class FileDescriptorProtoParser {
 	private PathLocator locator = new DefaultPathLocator();
 
 	/**
-	 * Constructs a new {@code FileDescriptorProtoParser} with the specified base
-	 * path.
-	 * Imports in .proto files will be resolved relative to this base path and paths
-	 * to
+	 * Constructs a new {@code FileDescriptorProtoParser} with the specified base path.
+	 * Imports in .proto files will be resolved relative to this base path and paths to
 	 * .proto files will be resolved relative to this base path as well.
-	 * 
 	 * @param base the base path to be used by the parser
-	*/
+	 */
 	public FileDescriptorProtoParser() {
 		this.v3 = new ProtoParserV3();
 		this.v2 = new ProtoParserV2();
 	}
 
 	/**
-	 * Sets a custom {@link PathLocator} to resolve import paths. If not set, the
-	 * parser only resolve from the filesystem or individual resources (not
-	 * directories)
-	 * in the classpath.
-	 * 
+	 * Sets a custom {@link PathLocator} to resolve import paths. If not set, the parser
+	 * only resolve from the filesystem or individual resources (not directories) in the
+	 * classpath.
 	 * @param locator the {@link PathLocator} to use for resolving import paths
 	 */
 	public void setPathLocator(PathLocator locator) {
@@ -132,11 +120,8 @@ public class FileDescriptorProtoParser {
 
 	/**
 	 * Resolves a set of {@link FileDescriptorProto} inputs into a
-	 * {@link FileDescriptorSet}. This method processes each input, ensuring that
-	 * all
-	 * dependencies are resolved and added to the resulting
-	 * {@link FileDescriptorSet}.
-	 * 
+	 * {@link FileDescriptorSet}. This method processes each input, ensuring that all
+	 * dependencies are resolved and added to the resulting {@link FileDescriptorSet}.
 	 * @param inputs an array of {@link FileDescriptorProto} objects to be resolved
 	 * @return a {@link FileDescriptorSet} containing the resolved descriptors
 	 * @throws IllegalArgumentException if the there are unresolved dependencies
@@ -151,49 +136,40 @@ public class FileDescriptorProtoParser {
 	}
 
 	/**
-	 * Resolves a {@link FileDescriptorSet} from the given input stream.
-	 * Dependencies are
+	 * Resolves a {@link FileDescriptorSet} from the given input stream. Dependencies are
 	 * resolved from the classpath or relative to the base path.
-	 * 
-	 * @param name  the name associated with the input stream, used for parsing.
+	 * @param name the name associated with the input stream, used for parsing.
 	 * @param input the input stream containing the data to be parsed.
 	 * @return a {@link FileDescriptorSet} resolved from the parsed
-	 *         {@link FileDescriptorProto}.
-	 * @throws IllegalArgumentException if the input is not a valid .proto file or
-	 *                                  if it
-	 *                                  contains unresolved dependencies
-	 * @throws IllegalStateException    if an I/O error occurs while reading the
-	 *                                  input
-	 *                                  stream.
+	 * {@link FileDescriptorProto}.
+	 * @throws IllegalArgumentException if the input is not a valid .proto file or if it
+	 * contains unresolved dependencies
+	 * @throws IllegalStateException if an I/O error occurs while reading the input
+	 * stream.
 	 */
 	public FileDescriptorSet resolve(String name, InputStream input) {
 		FileDescriptorProto proto;
 		try {
 			proto = parse(name, input.readAllBytes());
 			return resolve(proto);
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			throw new IllegalStateException("Failed to read input stream for: " + name, e);
 		}
 	}
 
 	/**
-	 * Resolves a {@link FileDescriptorSet} from the given input string. The input
-	 * is a
-	 * single .proto files in "proto3" syntax, but if it contains imports, those
-	 * will be
-	 * resolved. Dependencies are resolved from the classpath or relative to the
-	 * base
+	 * Resolves a {@link FileDescriptorSet} from the given input string. The input is a
+	 * single .proto files in "proto3" syntax, but if it contains imports, those will be
+	 * resolved. Dependencies are resolved from the classpath or relative to the base
 	 * path.
-	 * 
-	 * @param name  the name associated with the input, typically used for error
-	 *              reporting
+	 * @param name the name associated with the input, typically used for error reporting
 	 * @param input the input string containing the protocol buffer definition
 	 * @return a {@link FileDescriptorSet} representing the resolved protocol buffer
-	 *         definitions
-	 * @throws IllegalArgumentException if the input is not a valid .proto file or
-	 *                                  if it
-	 *                                  contains unresolved dependencies
-	 * @throws IllegalStateException    if an error occurs during parsing
+	 * definitions
+	 * @throws IllegalArgumentException if the input is not a valid .proto file or if it
+	 * contains unresolved dependencies
+	 * @throws IllegalStateException if an error occurs during parsing
 	 */
 	public FileDescriptorSet resolve(String name, byte[] input) {
 		FileDescriptorProto proto = parse(name, input);
@@ -201,23 +177,17 @@ public class FileDescriptorProtoParser {
 	}
 
 	/**
-	 * Resolves the provided input paths into a {@link FileDescriptorSet}. This
-	 * method
-	 * parses each input path, relative to the base path, extracts the file
-	 * descriptors,
+	 * Resolves the provided input paths into a {@link FileDescriptorSet}. This method
+	 * parses each input path, relative to the base path, extracts the file descriptors,
 	 * and aggregates them into a single {@link FileDescriptorSet}.
 	 *
 	 * Dependencies are resolved from the classpath or relative to the base path.
-	 * 
-	 * @param inputs an array of {@link Path} objects representing the input files
-	 *               to
-	 *               parse
-	 * @return a {@link FileDescriptorSet} containing all the file descriptors from
-	 *         the
-	 *         provided inputs
-	 * @throws IllegalArgumentException if the inputs are not valid .proto files or
-	 *                                  if
-	 *                                  they contains unresolved dependencies
+	 * @param inputs an array of {@link Path} objects representing the input files to
+	 * parse
+	 * @return a {@link FileDescriptorSet} containing all the file descriptors from the
+	 * provided inputs
+	 * @throws IllegalArgumentException if the inputs are not valid .proto files or if
+	 * they contains unresolved dependencies
 	 */
 	public FileDescriptorSet resolve(String... inputs) {
 		FileDescriptorSet.Builder builder = FileDescriptorSet.newBuilder();
@@ -238,10 +208,12 @@ public class FileDescriptorProtoParser {
 			FileDescriptorProto dependency;
 			if (cache.containsKey(name)) {
 				dependency = cache.get(name);
-			} else {
+			}
+			else {
 				try (InputStream stream = findImport(name)) {
 					dependency = parse(name, stream.readAllBytes());
-				} catch (IOException e) {
+				}
+				catch (IOException e) {
 					throw new IllegalStateException("Failed to read import: " + name, e);
 				}
 			}
@@ -284,7 +256,8 @@ public class FileDescriptorProtoParser {
 					for (FileDescriptorProto resolved : proto.getFileList()) {
 						builder.addFile(resolved);
 					}
-				} catch (IOException e) {
+				}
+				catch (IOException e) {
 					throw new IllegalStateException("Failed to read file: " + path, e);
 				}
 			}

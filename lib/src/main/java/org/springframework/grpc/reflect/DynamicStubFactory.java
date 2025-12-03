@@ -34,9 +34,9 @@ import reactor.core.publisher.Flux;
  * Factory for creating dynamic gRPC client stubs.
  * <p>
  * This factory implements {@link StubFactory} to provide dynamic stub creation
- * capabilities, allowing clients to interact with gRPC services without
- * requiring compile-time generated stub classes.
- * 
+ * capabilities, allowing clients to interact with gRPC services without requiring
+ * compile-time generated stub classes.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */
@@ -84,8 +84,8 @@ public class DynamicStubFactory implements StubFactory<Object> {
 					+ method(mapping, invocation.getMethod());
 			Object[] arguments = invocation.getArguments();
 			if (Publisher.class.isAssignableFrom(invocation.getMethod().getReturnType())) {
-				Class<?> responseType = (Class<?>) ((ParameterizedType) (invocation.getMethod()
-					.getGenericReturnType())).getActualTypeArguments()[0];
+				Class<?> responseType = (Class<?>) ((ParameterizedType) (invocation.getMethod().getGenericReturnType()))
+					.getActualTypeArguments()[0];
 				if (Publisher.class.isAssignableFrom(invocation.getMethod().getParameterTypes()[0])) {
 					@SuppressWarnings({ "rawtypes", "unchecked" })
 					Flux<?> result = this.stub.bidi(methodName, (Publisher) arguments[0], responseType);

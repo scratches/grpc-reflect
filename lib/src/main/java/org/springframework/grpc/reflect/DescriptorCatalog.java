@@ -23,12 +23,11 @@ import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.Descriptors.ServiceDescriptor;
 
 /**
- * A catalog that manages and provides access to protocol buffer file
- * descriptors.
+ * A catalog that manages and provides access to protocol buffer file descriptors.
  * <p>
- * This class serves as a central repository for storing and retrieving gRPC
- * descriptors used in reflection.
- * 
+ * This class serves as a central repository for storing and retrieving gRPC descriptors
+ * used in reflection.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */
@@ -51,7 +50,8 @@ public class DescriptorCatalog implements DescriptorProvider {
 		String pkg = file.getPackage();
 		if (pkg == null || pkg.isEmpty() || pkg.equals(".")) {
 			pkg = "";
-		} else {
+		}
+		else {
 			pkg = pkg + ".";
 		}
 		return pkg;
@@ -64,7 +64,8 @@ public class DescriptorCatalog implements DescriptorProvider {
 			if (!pkg.isEmpty()) {
 				if (name.startsWith(pkg)) {
 					name = name.substring(pkg.length());
-				} else {
+				}
+				else {
 					continue;
 				}
 			}
@@ -83,7 +84,8 @@ public class DescriptorCatalog implements DescriptorProvider {
 			if (!pkg.isEmpty()) {
 				if (name.startsWith(pkg)) {
 					name = name.substring(pkg.length());
-				} else {
+				}
+				else {
 					continue;
 				}
 			}
@@ -94,4 +96,5 @@ public class DescriptorCatalog implements DescriptorProvider {
 		}
 		return null;
 	}
+
 }

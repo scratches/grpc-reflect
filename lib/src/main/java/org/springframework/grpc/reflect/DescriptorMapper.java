@@ -32,9 +32,9 @@ import com.google.protobuf.Descriptors.FileDescriptor;
 /**
  * Provider interface for obtaining protocol buffer descriptors.
  * <p>
- * This interface defines the contract for classes that can supply descriptor
- * information used in gRPC reflection and service discovery mechanisms.
- * 
+ * This interface defines the contract for classes that can supply descriptor information
+ * used in gRPC reflection and service discovery mechanisms.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */

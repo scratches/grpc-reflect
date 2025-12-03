@@ -48,14 +48,15 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 		if (!registry.containsBeanDefinition(BEAN_NAME)) {
 			if (!registry.containsBeanDefinition("grpcDescriptorRegistry")) {
 				registry.registerBeanDefinition("grpcDescriptorRegistry",
-						BeanDefinitionBuilder.genericBeanDefinition(DefaultDescriptorRegistry.class).getBeanDefinition());
+						BeanDefinitionBuilder.genericBeanDefinition(DefaultDescriptorRegistry.class)
+							.getBeanDefinition());
 			}
 			registry.registerBeanDefinition(BEAN_NAME,
 					BeanDefinitionBuilder.genericBeanDefinition(ProtobufRegistrarPostProcessor.class)
-							.getBeanDefinition());
+						.getBeanDefinition());
 		}
 		ImportProtobuf annotation = ImportProtobuf.class
-				.cast(meta.getAnnotations().get(ImportProtobuf.class.getName()).synthesize());
+			.cast(meta.getAnnotations().get(ImportProtobuf.class.getName()).synthesize());
 		String[] locations = annotation.locations();
 		if (locations.length == 0) {
 			locations = annotation.value();
@@ -111,7 +112,8 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 								paths.add(url);
 							}
 						}
-					} catch (IOException e) {
+					}
+					catch (IOException e) {
 						throw new IllegalStateException("Failed to find resources for location: " + location, e);
 					}
 				}
@@ -163,6 +165,7 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 			}
 			return bean;
 		}
+
 	}
 
 }

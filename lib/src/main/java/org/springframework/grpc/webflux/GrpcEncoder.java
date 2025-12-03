@@ -26,7 +26,7 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.codec.Encoder;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.FastByteArrayOutputStream;
 import org.springframework.util.MimeType;
 
@@ -37,10 +37,10 @@ import reactor.core.publisher.Flux;
 /**
  * WebFlux encoder for gRPC protocol buffer messages.
  * <p>
- * This encoder extends {@link GrpcCodecSupport} and implements {@link Encoder}
- * to provide encoding capabilities for protocol buffer {@link Message} objects
- * in Spring WebFlux reactive streams, converting messages to byte streams.
- * 
+ * This encoder extends {@link GrpcCodecSupport} and implements {@link Encoder} to provide
+ * encoding capabilities for protocol buffer {@link Message} objects in Spring WebFlux
+ * reactive streams, converting messages to byte streams.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */

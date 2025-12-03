@@ -32,10 +32,10 @@ import io.grpc.BindableService;
 /**
  * Bean definition registrar for gRPC mapping functionality.
  * <p>
- * This registrar implements {@link ImportBeanDefinitionRegistrar} to
- * programmatically register beans required for gRPC method mapping
- * and reflection capabilities in the Spring application context.
- * 
+ * This registrar implements {@link ImportBeanDefinitionRegistrar} to programmatically
+ * register beans required for gRPC method mapping and reflection capabilities in the
+ * Spring application context.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */

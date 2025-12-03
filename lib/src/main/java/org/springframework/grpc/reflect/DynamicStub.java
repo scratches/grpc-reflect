@@ -32,13 +32,12 @@ import reactor.core.publisher.Sinks;
 import reactor.core.publisher.Sinks.Many;
 
 /**
- * A dynamic gRPC stub that can invoke methods without compile-time generated
- * code.
+ * A dynamic gRPC stub that can invoke methods without compile-time generated code.
  * <p>
- * This stub extends {@link AbstractStub} and provides the ability to make gRPC
- * calls using reflection and dynamic method resolution, enabling flexible
- * client interactions with gRPC services.
- * 
+ * This stub extends {@link AbstractStub} and provides the ability to make gRPC calls
+ * using reflection and dynamic method resolution, enabling flexible client interactions
+ * with gRPC services.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */
@@ -92,12 +91,11 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 
 				});
 		Flux.from(request)
-				.doOnComplete(() -> requests.onCompleted())
-				.doOnError(error -> requests.onError(error))
-				.doOnNext(msg -> requests
-						.onNext((DynamicMessage) converter.convert(msg,
-								this.registry.output(fullMethodName).descriptor())))
-				.subscribe();
+			.doOnComplete(() -> requests.onCompleted())
+			.doOnError(error -> requests.onError(error))
+			.doOnNext(msg -> requests
+				.onNext((DynamicMessage) converter.convert(msg, this.registry.output(fullMethodName).descriptor())))
+			.subscribe();
 		return sink.asFlux();
 	}
 
@@ -151,16 +149,16 @@ public class DynamicStub extends AbstractStub<DynamicStub> {
 			throw new IllegalArgumentException("No descriptor found for output of method: " + fullMethodName);
 		}
 		Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
-				.marshaller(DynamicMessage.newBuilder(registry.input(fullMethodName).descriptor()).build());
+			.marshaller(DynamicMessage.newBuilder(registry.input(fullMethodName).descriptor()).build());
 		Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
-				.marshaller(DynamicMessage.newBuilder(registry.output(fullMethodName).descriptor()).build());
+			.marshaller(DynamicMessage.newBuilder(registry.output(fullMethodName).descriptor()).build());
 		MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
-				.<DynamicMessage, DynamicMessage>newBuilder()
-				.setType(methodType)
-				.setFullMethodName(fullMethodName)
-				.setRequestMarshaller(requestMarshaller)
-				.setResponseMarshaller(responseMarshaller)
-				.build();
+			.<DynamicMessage, DynamicMessage>newBuilder()
+			.setType(methodType)
+			.setFullMethodName(fullMethodName)
+			.setRequestMarshaller(requestMarshaller)
+			.setResponseMarshaller(responseMarshaller)
+			.build();
 		return methodDescriptor;
 	}
 

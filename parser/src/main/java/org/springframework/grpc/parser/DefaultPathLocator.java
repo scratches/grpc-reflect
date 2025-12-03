@@ -49,21 +49,22 @@ public class DefaultPathLocator implements PathLocator {
 		Path input = path.isAbsolute() ? path : base.resolve(path);
 		if (!input.toFile().exists()) {
 			try {
-				Enumeration<URL> resources = getClass().getClassLoader().getResources(input.toString().replace("\\", "/"));
+				Enumeration<URL> resources = getClass().getClassLoader()
+					.getResources(input.toString().replace("\\", "/"));
 				if (!resources.hasMoreElements()) {
 					throw new IllegalArgumentException("Input file does not exist: " + input);
 				}
 				URL url = resources.nextElement();
-				return new NamedBytes[] {
-						new NamedBytes(pattern, () -> {
-							try (InputStream stream = url.openStream()) {
-								return stream.readAllBytes();
-							} catch (IOException e) {
-								throw new IllegalStateException("Failed to read resource: " + input, e);
-							}
-						})
-				};
-			} catch (IOException e) {
+				return new NamedBytes[] { new NamedBytes(pattern, () -> {
+					try (InputStream stream = url.openStream()) {
+						return stream.readAllBytes();
+					}
+					catch (IOException e) {
+						throw new IllegalStateException("Failed to read resource: " + input, e);
+					}
+				}) };
+			}
+			catch (IOException e) {
 				throw new IllegalStateException("Failed to read input file: " + input, e);
 			}
 		}
@@ -74,35 +75,35 @@ public class DefaultPathLocator implements PathLocator {
 		Set<NamedBytes> result = new HashSet<>();
 		if (input.toFile().isDirectory()) {
 			try {
-				Files.walk(input)
-						.filter(file -> !Files.isDirectory(file))
-						.forEach(file -> {
-							String name = base.relativize(file.normalize()).toString();
-							if (!names.contains(name)) {
-								result.add(new NamedBytes(name, () -> {
-									try {
-										return Files.readAllBytes(file);
-									} catch (IOException e) {
-										throw new IllegalStateException("Failed to read file: " + file, e);
-									}
-								}));
-								// Avoid duplicates
-								names.add(name);
+				Files.walk(input).filter(file -> !Files.isDirectory(file)).forEach(file -> {
+					String name = base.relativize(file.normalize()).toString();
+					if (!names.contains(name)) {
+						result.add(new NamedBytes(name, () -> {
+							try {
+								return Files.readAllBytes(file);
 							}
-						});
+							catch (IOException e) {
+								throw new IllegalStateException("Failed to read file: " + file, e);
+							}
+						}));
+						// Avoid duplicates
+						names.add(name);
+					}
+				});
 				return result.toArray(new NamedBytes[0]);
-			} catch (IOException e) {
+			}
+			catch (IOException e) {
 				throw new IllegalStateException("Failed to read input directory: " + input, e);
 			}
 		}
-		return new NamedBytes[] {
-				new NamedBytes(base.relativize(input).toString(), () -> {
-					try {
-						return Files.readAllBytes(input);
-					} catch (IOException e) {
-						throw new IllegalStateException("Failed to read file: " + input, e);
-					}
-				})
-		};
+		return new NamedBytes[] { new NamedBytes(base.relativize(input).toString(), () -> {
+			try {
+				return Files.readAllBytes(input);
+			}
+			catch (IOException e) {
+				throw new IllegalStateException("Failed to read file: " + input, e);
+			}
+		}) };
 	}
+
 }

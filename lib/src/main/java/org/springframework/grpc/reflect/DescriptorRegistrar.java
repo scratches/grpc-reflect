@@ -21,5 +21,7 @@ package org.springframework.grpc.reflect;
  * descriptors to the registry during the registration process.
  */
 public interface DescriptorRegistrar {
+
 	void register(DescriptorRegistry registry);
+
 }

@@ -32,7 +32,7 @@ import org.springframework.core.codec.DecodingException;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ConcurrentReferenceHashMap;
 import org.springframework.util.MimeType;
@@ -47,10 +47,10 @@ import reactor.core.publisher.Mono;
 /**
  * WebFlux decoder for gRPC protocol buffer messages.
  * <p>
- * This decoder extends {@link GrpcCodecSupport} and implements {@link Decoder}
- * to provide decoding capabilities for gRPC messages in Spring WebFlux
- * reactive streams, converting byte streams to protocol buffer {@link Message} objects.
- * 
+ * This decoder extends {@link GrpcCodecSupport} and implements {@link Decoder} to provide
+ * decoding capabilities for gRPC messages in Spring WebFlux reactive streams, converting
+ * byte streams to protocol buffer {@link Message} objects.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */
@@ -175,8 +175,7 @@ public class GrpcDecoder extends GrpcCodecSupport implements Decoder<Message> {
 
 		private final int maxMessageSize;
 
-		@Nullable
-		private DataBuffer output;
+		@Nullable private DataBuffer output;
 
 		private int messageBytesToRead;
 

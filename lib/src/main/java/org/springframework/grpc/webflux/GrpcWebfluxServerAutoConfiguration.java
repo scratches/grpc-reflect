@@ -31,10 +31,10 @@ import io.grpc.BindableService;
 /**
  * Auto-configuration for gRPC server functionality in Spring WebFlux.
  * <p>
- * This configuration class provides automatic setup of server-side gRPC
- * components for Spring WebFlux applications, including server beans,
- * handlers, and other infrastructure required for serving gRPC requests.
- * 
+ * This configuration class provides automatic setup of server-side gRPC components for
+ * Spring WebFlux applications, including server beans, handlers, and other infrastructure
+ * required for serving gRPC requests.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */

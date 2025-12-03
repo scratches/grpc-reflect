@@ -17,8 +17,6 @@ package org.springframework.grpc.parser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.nio.file.Path;
-
 import org.junit.jupiter.api.Test;
 
 import com.google.protobuf.DescriptorProtos.DescriptorProto;

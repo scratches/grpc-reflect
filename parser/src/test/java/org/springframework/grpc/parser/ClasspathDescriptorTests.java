@@ -31,8 +31,9 @@ public class ClasspathDescriptorTests {
 	public void testClasspathDescriptor() {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		// Comes with the protobuf-java library:
-		FileDescriptorProto proto = parser.resolve("descriptor.proto",
-				getClass().getResourceAsStream("/google/protobuf/empty.proto")).getFile(0);
+		FileDescriptorProto proto = parser
+			.resolve("descriptor.proto", getClass().getResourceAsStream("/google/protobuf/empty.proto"))
+			.getFile(0);
 		assertThat(proto.getName()).isEqualTo("descriptor.proto");
 		assertThat(proto.getMessageTypeList()).hasSize(1);
 		assertThat(proto.getMessageType(0).getName()).isEqualTo("Empty");
@@ -90,7 +91,8 @@ public class ClasspathDescriptorTests {
 	private byte[] single(String path) {
 		try {
 			return getClass().getClassLoader().getResourceAsStream(path).readAllBytes();
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			throw new IllegalStateException("Failed to read resource: " + path, e);
 		}
 	}

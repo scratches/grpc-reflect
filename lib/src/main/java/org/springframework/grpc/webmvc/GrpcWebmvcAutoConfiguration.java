@@ -36,10 +36,10 @@ import io.grpc.BindableService;
 /**
  * Auto-configuration for gRPC integration with Spring WebMVC.
  * <p>
- * This configuration class implements {@link WebMvcConfigurer} to automatically
- * configure the necessary components for gRPC support in Spring WebMVC
- * applications, including message converters, handlers, and other integration components.
- * 
+ * This configuration class implements {@link WebMvcConfigurer} to automatically configure
+ * the necessary components for gRPC support in Spring WebMVC applications, including
+ * message converters, handlers, and other integration components.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */

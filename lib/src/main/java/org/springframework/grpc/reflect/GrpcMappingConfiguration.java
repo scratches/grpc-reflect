@@ -22,9 +22,9 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Configuration class for gRPC method mapping functionality.
  * <p>
- * This configuration provides the necessary beans and setup for enabling
- * gRPC method mapping through annotations in Spring applications.
- * 
+ * This configuration provides the necessary beans and setup for enabling gRPC method
+ * mapping through annotations in Spring applications.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package org.springframework.grpc.reflect;
 
 import java.lang.annotation.Documented;

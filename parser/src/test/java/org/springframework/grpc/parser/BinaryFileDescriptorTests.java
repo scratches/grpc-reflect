@@ -18,7 +18,6 @@ package org.springframework.grpc.parser;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
-import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.grpc.parser.PathLocator.NamedBytes;
@@ -56,7 +55,7 @@ public class BinaryFileDescriptorTests {
 		assertThat(proto.getMessageTypeList()).hasSize(1);
 	}
 
-		private NamedBytes[] binary(String path) {
+	private NamedBytes[] binary(String path) {
 		if (path.equals("binary")) {
 			return new NamedBytes[] { new NamedBytes("multi.pb", () -> single("binary/multi.pb")) };
 		}
@@ -66,7 +65,8 @@ public class BinaryFileDescriptorTests {
 	private byte[] single(String path) {
 		try {
 			return getClass().getClassLoader().getResourceAsStream(path).readAllBytes();
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			throw new IllegalStateException("Failed to read resource: " + path, e);
 		}
 	}

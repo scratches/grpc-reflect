@@ -29,13 +29,11 @@ import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.google.protobuf.Descriptors.ServiceDescriptor;
 
 /**
- * Registrar for managing protocol buffer file descriptors in the application
- * context.
+ * Registrar for managing protocol buffer file descriptors in the application context.
  * <p>
- * This class handles the registration and management of gRPC service
- * descriptors to supply descriptor information for reflection and dynamic
- * service operations.
- * 
+ * This class handles the registration and management of gRPC service descriptors to
+ * supply descriptor information for reflection and dynamic service operations.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */
@@ -159,7 +157,8 @@ public class DefaultDescriptorRegistry implements DescriptorProvider, Descriptor
 				validateMessage(fullMethodName, requestType, inputType.getFields());
 				validateMessage(fullMethodName, responseType, outputType.getFields());
 			}
-		} else {
+		}
+		else {
 			throw new IllegalStateException("Service not registered: " + fullMethodName);
 		}
 	}
@@ -178,7 +177,8 @@ public class DefaultDescriptorRegistry implements DescriptorProvider, Descriptor
 							"Field " + field.getName() + " is a map in the schema, but is not a map in class "
 									+ responseType.getName() + " for method " + fullMethodName);
 				}
-			} else if (field.isRepeated() && !descriptor.getPropertyType().isArray()
+			}
+			else if (field.isRepeated() && !descriptor.getPropertyType().isArray()
 					&& !Iterable.class.isAssignableFrom(descriptor.getPropertyType())) {
 				throw new IllegalArgumentException(
 						"Field " + field.getName() + " is repeated in the schema, but is not a collection in class "

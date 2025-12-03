@@ -291,7 +291,6 @@ public class DescriptorParserV2Tests {
 		// assertThat(field.getOptions().getAllFields().size()).isEqualTo(1);
 	}
 
-
 	@Test
 	public void testParseExtension() {
 		String input = """

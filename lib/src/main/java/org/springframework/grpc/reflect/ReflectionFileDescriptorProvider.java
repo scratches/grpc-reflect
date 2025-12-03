@@ -36,10 +36,10 @@ import io.grpc.MethodDescriptor.MethodType;
 /**
  * File descriptor provider that uses reflection to obtain descriptor information.
  * <p>
- * This implementation of {@link DescriptorProvider} leverages Java reflection
- * to extract protocol buffer descriptors from compiled classes, enabling
- * dynamic access to gRPC service definitions.
- * 
+ * This implementation of {@link DescriptorProvider} leverages Java reflection to extract
+ * protocol buffer descriptors from compiled classes, enabling dynamic access to gRPC
+ * service definitions.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */

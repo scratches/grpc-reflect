@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package org.springframework.grpc.webmvc;
 
 import java.io.IOException;
@@ -36,7 +35,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.http.server.DelegatingServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpResponse;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ConcurrentReferenceHashMap;
 import org.springframework.util.StreamUtils;
@@ -50,10 +49,10 @@ import jakarta.servlet.http.HttpServletResponse;
 /**
  * HTTP message converter for gRPC protocol buffer messages in Spring WebMVC.
  * <p>
- * This converter extends {@link AbstractHttpMessageConverter} to provide
- * conversion capabilities between HTTP requests/responses and gRPC {@link Message}
- * objects in traditional servlet-based Spring applications.
- * 
+ * This converter extends {@link AbstractHttpMessageConverter} to provide conversion
+ * capabilities between HTTP requests/responses and gRPC {@link Message} objects in
+ * traditional servlet-based Spring applications.
+ *
  * @author Dave Syer
  * @since 1.0.0
  */

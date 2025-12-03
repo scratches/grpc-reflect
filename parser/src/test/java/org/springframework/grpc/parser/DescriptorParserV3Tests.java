@@ -263,8 +263,11 @@ public class DescriptorParserV3Tests {
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		FileDescriptorProto proto = parser.resolve("test.proto", input.getBytes()).getFile(6);
-		DescriptorProto type = proto.getMessageTypeList().stream().filter(msg -> msg.getName().equals("HelloReply"))
-				.findAny().get();
+		DescriptorProto type = proto.getMessageTypeList()
+			.stream()
+			.filter(msg -> msg.getName().equals("HelloReply"))
+			.findAny()
+			.get();
 		assertThat(type.getFieldList()).hasSize(2);
 		assertThat(type.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_MESSAGE);
 		assertThat(type.getField(1).getTypeName()).isEqualTo("google.rpc.Status");
@@ -341,7 +344,7 @@ public class DescriptorParserV3Tests {
 		assertThat(type.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_MESSAGE);
 	}
 
-		@Test
+	@Test
 	public void testParseHexLiteral() {
 		String input = """
 				syntax = "proto3";
@@ -362,6 +365,5 @@ public class DescriptorParserV3Tests {
 		assertThat(type.getField(1).getNumber()).isEqualTo(2);
 		assertThat(type.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_INT32);
 	}
-
 
 }
