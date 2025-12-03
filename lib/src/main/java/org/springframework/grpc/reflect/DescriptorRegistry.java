@@ -16,7 +16,6 @@
 package org.springframework.grpc.reflect;
 
 import com.google.protobuf.Descriptors.FileDescriptor;
-import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.google.protobuf.Descriptors.ServiceDescriptor;
 
 public interface DescriptorRegistry {
@@ -24,7 +23,5 @@ public interface DescriptorRegistry {
 	void register(FileDescriptor file);
 
 	void register(ServiceDescriptor service);
-
-	void register(MethodDescriptor method, Class<?> input, Class<?> output);
 
 }

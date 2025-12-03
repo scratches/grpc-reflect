@@ -107,18 +107,15 @@ public class DefaultDescriptorRegistry implements DescriptorProvider, Descriptor
 
 	@Override
 	public void register(FileDescriptor file) {
-		for (ServiceDescriptor service : file.getServices()) {
-			register(service);
-		}
+		this.catalog.register(file);
 	}
 
 	@Override
 	public void register(ServiceDescriptor service) {
-		this.catalog.register(service.getFile());
+		this.catalog.register(service);
 	}
 
-	@Override
-	public void register(MethodDescriptor method, Class<?> input, Class<?> output) {
+	private void register(MethodDescriptor method, Class<?> input, Class<?> output) {
 		this.catalog.register(method.getFile());
 		String name = method.getFullName();
 		name = name.substring(0, name.lastIndexOf(method.getName()) - 1) + "/" + method.getName();

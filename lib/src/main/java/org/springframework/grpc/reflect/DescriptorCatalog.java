@@ -31,16 +31,18 @@ import com.google.protobuf.Descriptors.ServiceDescriptor;
  * @author Dave Syer
  * @since 1.0.0
  */
-public class DescriptorCatalog implements DescriptorProvider {
+public class DescriptorCatalog implements DescriptorProvider, DescriptorRegistry {
 
 	private Map<String, FileDescriptor> fileDescriptors = new HashMap<>();
 
+	@Override
 	public void register(FileDescriptor file) {
 		for (ServiceDescriptor service : file.getServices()) {
 			register(service);
 		}
 	}
 
+	@Override
 	public void register(ServiceDescriptor service) {
 		String pkg = pkg(service.getFile());
 		this.fileDescriptors.put(pkg + service.getName(), service.getFile());
