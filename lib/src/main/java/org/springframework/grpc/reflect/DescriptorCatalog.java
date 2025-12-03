@@ -43,7 +43,18 @@ public class DescriptorCatalog implements FileDescriptorProvider, DescriptorProv
 	}
 
 	public void register(ServiceDescriptor service) {
-		this.fileDescriptors.put(service.getName(), service.getFile());
+		String pkg = pkg(service.getFile());
+		this.fileDescriptors.put(pkg + service.getName(), service.getFile());
+	}
+
+	private String pkg(FileDescriptor file) {
+		String pkg = file.getPackage();
+		if (pkg == null || pkg.isEmpty() || pkg.equals(".")) {
+			pkg = "";
+		} else {
+			pkg = pkg + ".";
+		}
+		return pkg;
 	}
 
 	@Override
@@ -54,6 +65,14 @@ public class DescriptorCatalog implements FileDescriptorProvider, DescriptorProv
 	@Override
 	public Descriptor type(String name) {
 		for (FileDescriptor file : this.fileDescriptors.values()) {
+			String pkg = pkg(file);
+			if (!pkg.isEmpty()) {
+				if (name.startsWith(pkg)) {
+					name = name.substring(pkg.length());
+				} else {
+					continue;
+				}
+			}
 			Descriptor descriptor = file.findMessageTypeByName(name);
 			if (descriptor != null) {
 				return descriptor;
@@ -65,6 +84,14 @@ public class DescriptorCatalog implements FileDescriptorProvider, DescriptorProv
 	@Override
 	public ServiceDescriptor service(String name) {
 		for (FileDescriptor file : this.fileDescriptors.values()) {
+			String pkg = pkg(file);
+			if (!pkg.isEmpty()) {
+				if (name.startsWith(pkg)) {
+					name = name.substring(pkg.length());
+				} else {
+					continue;
+				}
+			}
 			ServiceDescriptor descriptor = file.findServiceByName(name);
 			if (descriptor != null) {
 				return descriptor;
