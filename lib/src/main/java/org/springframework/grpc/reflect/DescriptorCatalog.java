@@ -34,18 +34,25 @@ import com.google.protobuf.Descriptors.ServiceDescriptor;
 public class DescriptorCatalog implements DescriptorProvider, DescriptorRegistry {
 
 	private Map<String, FileDescriptor> fileDescriptors = new HashMap<>();
+	private Map<String, Descriptor> descriptors = new HashMap<>();
 
 	@Override
 	public void register(FileDescriptor file) {
 		for (ServiceDescriptor service : file.getServices()) {
 			register(service);
 		}
+		for (Descriptor type : file.getMessageTypes()) {
+			register(type);
+		}
 	}
-
+	
 	@Override
 	public void register(ServiceDescriptor service) {
-		String pkg = pkg(service.getFile());
-		this.fileDescriptors.put(pkg + service.getName(), service.getFile());
+		this.fileDescriptors.put(service.getFullName(), service.getFile());
+	}
+	
+	private void register(Descriptor type) {
+		this.descriptors.put(type.getFullName(), type);
 	}
 
 	private String pkg(FileDescriptor file) {
@@ -61,6 +68,9 @@ public class DescriptorCatalog implements DescriptorProvider, DescriptorRegistry
 
 	@Override
 	public Descriptor type(String name) {
+		if (this.descriptors.containsKey(name)) {
+			return this.descriptors.get(name);
+		}
 		for (FileDescriptor file : this.fileDescriptors.values()) {
 			String pkg = pkg(file);
 			if (!pkg.isEmpty()) {
