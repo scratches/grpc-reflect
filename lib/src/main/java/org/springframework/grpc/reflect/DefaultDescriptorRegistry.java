@@ -143,7 +143,8 @@ public class DefaultDescriptorRegistry implements FileDescriptorProvider, Descri
 
 	@Override
 	public FileDescriptor file(String serviceName) {
-		return this.catalog.file(serviceName);
+		ServiceDescriptor service = this.catalog.service(serviceName);
+		return service == null ? null : service.getFile();
 	}
 
 	@Override

@@ -30,7 +30,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @SpringBootTest(
-		properties = { "debug=true", "spring.grpc.server.port=0",
+		properties = { "spring.grpc.server.port=0",
 				"spring.grpc.client.default-channel.address=0.0.0.0:${local.grpc.port}" },
 		useMainMethod = UseMainMethod.ALWAYS)
 @DirtiesContext

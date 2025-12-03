@@ -19,7 +19,7 @@ import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
-		properties = { "debug=true", "spring.grpc.client.default-channel.address=0.0.0.0:${local.server.port}" })
+		properties = { "spring.grpc.client.default-channel.address=0.0.0.0:${local.server.port}" })
 @DirtiesContext
 public class GrpcServerApplicationTests {
 
