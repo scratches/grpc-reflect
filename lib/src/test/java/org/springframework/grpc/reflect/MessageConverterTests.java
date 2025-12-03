@@ -32,7 +32,7 @@ import com.google.protobuf.DynamicMessage;
 
 public class MessageConverterTests {
 
-	private DescriptorProvider registry = DescriptorProvider.DEFAULT_INSTANCE;
+	private DescriptorMapper registry = DescriptorMapper.DEFAULT_INSTANCE;
 
 	@Test
 	public void testConvertGeneratedTypeToPojo() {

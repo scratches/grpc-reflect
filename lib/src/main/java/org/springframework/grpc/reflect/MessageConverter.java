@@ -109,7 +109,7 @@ public class MessageConverter {
 
 	public <T> AbstractMessage convert(T value, Descriptor descriptor) {
 		if (value == null) {
-			return DynamicMessage.newBuilder(DescriptorProvider.DEFAULT_INSTANCE.descriptor(Void.class)).build();
+			return DynamicMessage.newBuilder(DescriptorMapper.DEFAULT_INSTANCE.descriptor(Void.class)).build();
 		}
 		if (value instanceof AbstractMessage) {
 			return (AbstractMessage) value;

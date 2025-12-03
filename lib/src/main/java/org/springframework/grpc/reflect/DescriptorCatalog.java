@@ -18,19 +18,21 @@ package org.springframework.grpc.reflect;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.Descriptors.ServiceDescriptor;
 
 /**
- * A catalog that manages and provides access to protocol buffer file descriptors.
+ * A catalog that manages and provides access to protocol buffer file
+ * descriptors.
  * <p>
- * This class implements {@link FileDescriptorProvider} and serves as a central
- * repository for storing and retrieving gRPC service descriptors used in reflection.
+ * This class serves as a central repository for storing and retrieving gRPC
+ * descriptors used in reflection.
  * 
  * @author Dave Syer
  * @since 1.0.0
  */
-public class DescriptorCatalog implements FileDescriptorProvider {
+public class DescriptorCatalog implements FileDescriptorProvider, DescriptorProvider {
 
 	private Map<String, FileDescriptor> fileDescriptors = new HashMap<>();
 
@@ -49,4 +51,25 @@ public class DescriptorCatalog implements FileDescriptorProvider {
 		return this.fileDescriptors.get(serviceName);
 	}
 
+	@Override
+	public Descriptor type(String name) {
+		for (FileDescriptor file : this.fileDescriptors.values()) {
+			Descriptor descriptor = file.findMessageTypeByName(name);
+			if (descriptor != null) {
+				return descriptor;
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public ServiceDescriptor service(String name) {
+		for (FileDescriptor file : this.fileDescriptors.values()) {
+			ServiceDescriptor descriptor = file.findServiceByName(name);
+			if (descriptor != null) {
+				return descriptor;
+			}
+		}
+		return null;
+	}
 }

@@ -23,14 +23,14 @@ public class DescriptorProviderTests {
 
 	@Test
 	public void testRegisterType() throws Exception {
-		DescriptorProvider registry = DescriptorProvider.DEFAULT_INSTANCE;
+		DescriptorMapper registry = DescriptorMapper.DEFAULT_INSTANCE;
 		assertThat(registry.descriptor(Foo.class).getFullName()).isEqualTo("Foo");
 		assertThat(registry.descriptor(Bar.class)).isNotNull();
 	}
 
 	@Test
 	public void testRegisterEmptyType() throws Exception {
-		DescriptorProvider registry = DescriptorProvider.DEFAULT_INSTANCE;
+		DescriptorMapper registry = DescriptorMapper.DEFAULT_INSTANCE;
 		assertThat(registry.descriptor(Void.class).getFullName()).isEqualTo("Void");
 	}
 

@@ -38,7 +38,7 @@ import com.google.protobuf.Descriptors.ServiceDescriptor;
  * @author Dave Syer
  * @since 1.0.0
  */
-public class DefaultDescriptorRegistry implements FileDescriptorProvider, DescriptorRegistry {
+public class DefaultDescriptorRegistry implements FileDescriptorProvider, DescriptorProvider, DescriptorRegistry {
 
 	private final DescriptorCatalog catalog;
 
@@ -144,6 +144,16 @@ public class DefaultDescriptorRegistry implements FileDescriptorProvider, Descri
 	@Override
 	public FileDescriptor file(String serviceName) {
 		return this.catalog.file(serviceName);
+	}
+
+	@Override
+	public Descriptor type(String name) {
+		return this.catalog.type(name);
+	}
+
+	@Override
+	public ServiceDescriptor service(String name) {
+		return this.catalog.service(name);
 	}
 
 	public void validate(String fullMethodName, Class<?> requestType, Class<?> responseType) {

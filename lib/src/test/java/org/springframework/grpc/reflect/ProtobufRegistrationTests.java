@@ -38,6 +38,7 @@ public class ProtobufRegistrationTests {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(FileSystemExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(registry.file("Simple")).isNotNull();
+		assertThat(registry.type("HelloRequest")).isNotNull();
 		context.close();
 	}
 
@@ -46,6 +47,7 @@ public class ProtobufRegistrationTests {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(ClasspathExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(registry.file("Simple")).isNotNull();
+		assertThat(registry.type("HelloRequest")).isNotNull();
 		context.close();
 	}
 
@@ -98,8 +100,11 @@ public class ProtobufRegistrationTests {
 	public void JarFileImport() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(JarFileExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
-		// TODO: should this be a qualified service name?
+		// should this be a qualified service name?
 		assertThat(registry.file("ServerReflection").getName()).isEqualTo("grpc/reflection/v1/reflection.proto");
+		// ... maybe not, because this works
+		assertThat(registry.service("ServerReflection").getFile().getName()).isNotNull();
+		// TODO: but then again, maybe the registry should rememnnber the package name?
 		context.close();
 	}
 
@@ -107,7 +112,6 @@ public class ProtobufRegistrationTests {
 	public void ClasspathPrefix() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(ClasspathPrefixExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
-		// TODO: should this be a qualified service name?
 		assertThat(registry.file("ServerReflection").getName()).isEqualTo("grpc/reflection/v1/reflection.proto");
 		context.close();
 	}
