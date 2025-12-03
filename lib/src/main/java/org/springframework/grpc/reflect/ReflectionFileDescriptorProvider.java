@@ -26,22 +26,24 @@ import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto.Builder;
 import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
 import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
+import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.FileDescriptor;
+import com.google.protobuf.Descriptors.ServiceDescriptor;
 
 import io.grpc.MethodDescriptor.MethodType;
 
 /**
  * File descriptor provider that uses reflection to obtain descriptor information.
  * <p>
- * This implementation of {@link FileDescriptorProvider} leverages Java reflection
- * to extract protocol buffer file descriptors from compiled classes, enabling
+ * This implementation of {@link DescriptorProvider} leverages Java reflection
+ * to extract protocol buffer descriptors from compiled classes, enabling
  * dynamic access to gRPC service definitions.
  * 
  * @author Dave Syer
  * @since 1.0.0
  */
-public class ReflectionFileDescriptorProvider implements FileDescriptorProvider {
+public class ReflectionFileDescriptorProvider implements DescriptorProvider {
 
 	private final DescriptorProtoExtractor protos;
 
@@ -62,8 +64,23 @@ public class ReflectionFileDescriptorProvider implements FileDescriptorProvider 
 	}
 
 	@Override
-	public FileDescriptor file(String serviceName) {
-		return this.catalog.get(serviceName);
+	public Descriptor type(String name) {
+		for (FileDescriptor file : this.catalog.values()) {
+			Descriptor descriptor = file.findMessageTypeByName(name);
+			if (descriptor != null) {
+				return descriptor;
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public ServiceDescriptor service(String name) {
+		FileDescriptor file = this.catalog.get(name);
+		if (file != null) {
+			return file.findServiceByName(name);
+		}
+		return null;
 	}
 
 	public <I, O> void unary(String fullMethodName, Class<I> input, Class<O> output) {

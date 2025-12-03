@@ -22,8 +22,8 @@ import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;
 import org.springframework.util.StringUtils;
 
-import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.Descriptors.MethodDescriptor;
+import com.google.protobuf.Descriptors.ServiceDescriptor;
 
 public class ReflectionFileDescriptorProviderTests {
 
@@ -56,11 +56,11 @@ public class ReflectionFileDescriptorProviderTests {
 	private MethodDescriptor method(ReflectionFileDescriptorProvider registry, String fullMethodName) {
 		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
 		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
-		FileDescriptor file = registry.file(serviceName);
-		if (file == null) {
+		ServiceDescriptor service = registry.service(serviceName);
+		if (service == null) {
 			return null;
 		}
-		for (MethodDescriptor method : file.findServiceByName(serviceName).getMethods()) {
+		for (MethodDescriptor method : service.getMethods()) {
 			if (method.getName().equals(methodName)) {
 				return method;
 			}

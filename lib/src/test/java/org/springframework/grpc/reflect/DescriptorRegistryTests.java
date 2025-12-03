@@ -129,27 +129,24 @@ public class DescriptorRegistryTests {
 				}
 				reflection.bidi(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
 						outputType);
-			}
-			else {
+			} else {
 				reflection.stream(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
 						outputType);
 			}
-		}
-		else {
+		} else {
 			reflection.unary(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
 					outputType);
 		}
 		registry.register(
-				reflection.file(method.getDeclaringClass().getSimpleName())
-					.findServiceByName(method.getDeclaringClass().getSimpleName())
-					.findMethodByName(StringUtils.capitalize(method.getName())),
+				reflection.service(method.getDeclaringClass().getSimpleName())
+						.findMethodByName(StringUtils.capitalize(method.getName())),
 				method.getParameterTypes()[0], method.getReturnType());
 	}
 
-	private MethodDescriptor method(FileDescriptorProvider registry, String fullMethodName) {
+	private MethodDescriptor method(DescriptorProvider registry, String fullMethodName) {
 		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
 		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
-		FileDescriptor file = registry.file(serviceName);
+		FileDescriptor file = registry.service(serviceName).getFile();
 		if (file == null) {
 			return null;
 		}

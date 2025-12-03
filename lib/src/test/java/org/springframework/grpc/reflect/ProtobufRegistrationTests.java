@@ -22,14 +22,19 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 
+import com.google.protobuf.Descriptors.FileDescriptor;
+import com.google.protobuf.Descriptors.ServiceDescriptor;
+
 public class ProtobufRegistrationTests {
+
+	private ServiceDescriptor service;
 
 	@Test
 	public void testFileSystemNoScheme() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(
 				FileSystemExampleNoScheme.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
-		assertThat(registry.file("Simple")).isNull();
+		assertThat(file(registry, "Simple")).isNull();
 		context.close();
 	}
 
@@ -37,7 +42,7 @@ public class ProtobufRegistrationTests {
 	public void testFileSystem() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(FileSystemExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
-		assertThat(registry.file("Simple")).isNotNull();
+		assertThat(file(registry, "Simple")).isNotNull();
 		assertThat(registry.type("HelloRequest")).isNotNull();
 		context.close();
 	}
@@ -46,7 +51,7 @@ public class ProtobufRegistrationTests {
 	public void testClasspath() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(ClasspathExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
-		assertThat(registry.file("Simple")).isNotNull();
+		assertThat(file(registry, "Simple")).isNotNull();
 		assertThat(registry.type("HelloRequest")).isNotNull();
 		context.close();
 	}
@@ -55,7 +60,7 @@ public class ProtobufRegistrationTests {
 	public void testBase() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(BaseExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
-		assertThat(registry.file("Simple").getName()).isEqualTo("simple.proto");
+		assertThat(file(registry, "Simple").getName()).isEqualTo("simple.proto");
 		context.close();
 	}
 
@@ -63,8 +68,8 @@ public class ProtobufRegistrationTests {
 	public void testMultiple() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(MultipleExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
-		assertThat(registry.file("Simple")).isNotNull();
-		assertThat(registry.file("Foo")).isNotNull();
+		assertThat(file(registry, "Simple")).isNotNull();
+		assertThat(file(registry, "Foo")).isNotNull();
 		context.close();
 	}
 
@@ -73,8 +78,8 @@ public class ProtobufRegistrationTests {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(OtherExample.class,
 				FileSystemExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
-		assertThat(registry.file("Simple")).isNotNull();
-		assertThat(registry.file("Foo")).isNotNull();
+		assertThat(file(registry, "Simple")).isNotNull();
+		assertThat(file(registry, "Foo")).isNotNull();
 		context.close();
 	}
 
@@ -82,8 +87,8 @@ public class ProtobufRegistrationTests {
 	public void testPatternImports() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(PatternExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
-		assertThat(registry.file("Simple").getName()).isEqualTo("proto/simple.proto");
-		assertThat(registry.file("Foo").getName()).isEqualTo("proto/bar.proto");
+		assertThat(file(registry, "Simple").getName()).isEqualTo("proto/simple.proto");
+		assertThat(file(registry, "Foo").getName()).isEqualTo("proto/bar.proto");
 		context.close();
 	}
 
@@ -91,8 +96,8 @@ public class ProtobufRegistrationTests {
 	public void testBasePatternImports() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(BasePatternExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
-		assertThat(registry.file("Simple").getName()).isEqualTo("simple.proto");
-		assertThat(registry.file("Foo").getName()).isEqualTo("bar.proto");
+		assertThat(file(registry, "Simple").getName()).isEqualTo("simple.proto");
+		assertThat(file(registry, "Foo").getName()).isEqualTo("bar.proto");
 		context.close();
 	}
 
@@ -100,7 +105,7 @@ public class ProtobufRegistrationTests {
 	public void JarFileImport() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(JarFileExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
-		assertThat(registry.file("grpc.reflection.v1.ServerReflection").getName()).isEqualTo("grpc/reflection/v1/reflection.proto");
+		assertThat(file(registry, "grpc.reflection.v1.ServerReflection").getName()).isEqualTo("grpc/reflection/v1/reflection.proto");
 		assertThat(registry.service("grpc.reflection.v1.ServerReflection").getFile().getName()).isNotNull();
 		assertThat(registry.type("grpc.reflection.v1.ServerReflectionRequest")).isNotNull();
 		context.close();
@@ -110,8 +115,13 @@ public class ProtobufRegistrationTests {
 	public void ClasspathPrefix() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(ClasspathPrefixExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
-		assertThat(registry.file("grpc.reflection.v1.ServerReflection").getName()).isEqualTo("grpc/reflection/v1/reflection.proto");
+		assertThat(file(registry, "grpc.reflection.v1.ServerReflection").getName()).isEqualTo("grpc/reflection/v1/reflection.proto");
 		context.close();
+	}
+
+	private FileDescriptor file(DefaultDescriptorRegistry registry, String serviceName) {
+		ServiceDescriptor service = registry.service(serviceName);
+		return service == null ? null : service.getFile();
 	}
 
 	@Configuration(proxyBeanMethods = false)

@@ -51,7 +51,8 @@ import reactor.core.publisher.Sinks.Many;
 /**
  * Factory for creating dynamic gRPC services at runtime.
  * <p>
- * This factory enables the creation of gRPC services without static compilation,
+ * This factory enables the creation of gRPC services without static
+ * compilation,
  * using reflection and descriptor information to dynamically construct service
  * implementations based on protocol buffer definitions.
  * 
@@ -158,20 +159,17 @@ public class DynamicServiceFactory {
 			if (requestType.equals(genericRequestType) && responseType.equals(genericResponseType)) {
 				this.builder.unary(methodName, requestType, responseType,
 						request -> invoker(instance, method, request));
-			}
-			else if (Publisher.class.isAssignableFrom(responseType)) {
+			} else if (Publisher.class.isAssignableFrom(responseType)) {
 				responseType = (Class<?>) ((ParameterizedType) genericResponseType).getActualTypeArguments()[0];
 				if (Publisher.class.isAssignableFrom(requestType)) {
 					requestType = (Class<?>) ((ParameterizedType) genericRequestType).getActualTypeArguments()[0];
 					this.builder.bidi(methodName, requestType, responseType,
 							request -> invoker(instance, method, request));
-				}
-				else {
+				} else {
 					this.builder.stream(methodName, requestType, responseType,
 							request -> invoker(instance, method, request));
 				}
-			}
-			else {
+			} else {
 				throw new IllegalStateException(
 						"Unsupported request and response types [" + requestType + ", " + responseType + "]");
 			}
@@ -194,7 +192,7 @@ public class DynamicServiceFactory {
 
 		private String serviceName;
 
-		private FileDescriptorProvider fileDescriptors;
+		private DescriptorProvider fileDescriptors;
 
 		private DefaultDescriptorRegistry registry;
 
@@ -204,7 +202,8 @@ public class DynamicServiceFactory {
 
 		private Map<String, MethodDescriptor<DynamicMessage, DynamicMessage>> descriptors = new HashMap<>();
 
-		private BindableServiceBuilder(String serviceName, DefaultDescriptorRegistry registry, MessageConverter converter) {
+		private BindableServiceBuilder(String serviceName, DefaultDescriptorRegistry registry,
+				MessageConverter converter) {
 			this.serviceName = serviceName;
 			this.fileDescriptors = registry;
 			this.registry = registry;
@@ -245,30 +244,30 @@ public class DynamicServiceFactory {
 					default:
 						throw new UnsupportedOperationException();
 				}
-			}
-			else {
+			} else {
 				registry.validate(fullMethodName, requestType, responseType);
 			}
-			Descriptor inputType = fileDescriptors.file(serviceName)
-				.findServiceByName(serviceName)
-				.findMethodByName(methodName)
-				.getInputType();
-			Descriptor outputType = fileDescriptors.file(serviceName)
-				.findServiceByName(serviceName)
-				.findMethodByName(methodName)
-				.getOutputType();
+			Descriptor inputType = file(serviceName)
+					.findServiceByName(serviceName)
+					.findMethodByName(methodName)
+					.getInputType();
+			Descriptor outputType = file(serviceName)
+					.findServiceByName(serviceName)
+					.findMethodByName(methodName)
+					.getOutputType();
 			Marshaller<DynamicMessage> responseMarshaller = ProtoUtils
-				.marshaller(DynamicMessage.newBuilder(outputType).build());
+					.marshaller(DynamicMessage.newBuilder(outputType).build());
 			Marshaller<DynamicMessage> requestMarshaller = ProtoUtils
-				.marshaller(DynamicMessage.newBuilder(inputType).build());
+					.marshaller(DynamicMessage.newBuilder(inputType).build());
 			MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = MethodDescriptor
-				.<DynamicMessage, DynamicMessage>newBuilder()
-				.setType(methodType)
-				.setFullMethodName(fullMethodName)
-				.setRequestMarshaller(requestMarshaller)
-				.setResponseMarshaller(responseMarshaller)
-				.setSchemaDescriptor(new SimpleMethodDescriptor(fileDescriptors.file(serviceName), serviceName, methodName))
-				.build();
+					.<DynamicMessage, DynamicMessage>newBuilder()
+					.setType(methodType)
+					.setFullMethodName(fullMethodName)
+					.setRequestMarshaller(requestMarshaller)
+					.setResponseMarshaller(responseMarshaller)
+					.setSchemaDescriptor(
+							new SimpleMethodDescriptor(file(serviceName), serviceName, methodName))
+					.build();
 			ServerCallHandler<DynamicMessage, DynamicMessage> handler = handler(requestType, outputType, function,
 					methodType);
 			this.handlers.put(methodName, handler);
@@ -278,7 +277,8 @@ public class DynamicServiceFactory {
 
 		public BindableService build() {
 			Builder descriptor = ServiceDescriptor.newBuilder(serviceName);
-			descriptor.setSchemaDescriptor(new SimpleBaseDescriptorSupplier(fileDescriptors.file(serviceName), serviceName));
+			descriptor.setSchemaDescriptor(
+					new SimpleBaseDescriptorSupplier(file(serviceName), serviceName));
 			for (Map.Entry<String, ServerCallHandler<DynamicMessage, DynamicMessage>> entry : handlers.entrySet()) {
 				String methodName = entry.getKey();
 				MethodDescriptor<DynamicMessage, DynamicMessage> methodDescriptor = descriptors.get(methodName);
@@ -320,6 +320,11 @@ public class DynamicServiceFactory {
 				default:
 					throw new UnsupportedOperationException("Unsupported method type: " + methodType);
 			}
+		}
+
+		private FileDescriptor file(String serviceName) {
+			com.google.protobuf.Descriptors.ServiceDescriptor service = fileDescriptors.service(serviceName);
+			return service == null ? null : service.getFile();
 		}
 
 		private class BidiStreamObserver<I, O> implements StreamObserver<DynamicMessage> {

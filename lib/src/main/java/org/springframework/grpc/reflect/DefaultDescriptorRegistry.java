@@ -29,16 +29,17 @@ import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.google.protobuf.Descriptors.ServiceDescriptor;
 
 /**
- * Registrar for managing protocol buffer file descriptors in the application context.
+ * Registrar for managing protocol buffer file descriptors in the application
+ * context.
  * <p>
- * This class handles the registration and management of gRPC service descriptors,
- * implementing {@link FileDescriptorProvider} to supply descriptor information
- * for reflection and dynamic service operations.
+ * This class handles the registration and management of gRPC service
+ * descriptors to supply descriptor information for reflection and dynamic
+ * service operations.
  * 
  * @author Dave Syer
  * @since 1.0.0
  */
-public class DefaultDescriptorRegistry implements FileDescriptorProvider, DescriptorProvider, DescriptorRegistry {
+public class DefaultDescriptorRegistry implements DescriptorProvider, DescriptorRegistry {
 
 	private final DescriptorCatalog catalog;
 
@@ -127,24 +128,11 @@ public class DefaultDescriptorRegistry implements FileDescriptorProvider, Descri
 		this.output(name, output, method.getOutputType());
 	}
 
-	private MethodDescriptor findMethod(FileDescriptorProvider provider, String fullMethodName) {
+	private MethodDescriptor findMethod(DescriptorProvider provider, String fullMethodName) {
 		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
 		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
-		FileDescriptor file = provider.file(serviceName);
-		if (file == null) {
-			return null;
-		}
-		ServiceDescriptor service = file.findServiceByName(serviceName);
-		if (service == null) {
-			return null;
-		}
-		return service.findMethodByName(methodName);
-	}
-
-	@Override
-	public FileDescriptor file(String serviceName) {
-		ServiceDescriptor service = this.catalog.service(serviceName);
-		return service == null ? null : service.getFile();
+		ServiceDescriptor service = provider.service(serviceName);
+		return service == null ? null : service.findMethodByName(methodName);
 	}
 
 	@Override
@@ -160,9 +148,8 @@ public class DefaultDescriptorRegistry implements FileDescriptorProvider, Descri
 	public void validate(String fullMethodName, Class<?> requestType, Class<?> responseType) {
 		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
 		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
-		if (this.catalog.file(serviceName) != null) {
-			FileDescriptor file = this.catalog.file(serviceName);
-			ServiceDescriptor service = file.findServiceByName(serviceName);
+		if (this.catalog.service(serviceName) != null) {
+			ServiceDescriptor service = this.catalog.service(serviceName);
 			if (service == null || service.findMethodByName(methodName) == null) {
 				throw new IllegalStateException("Service or method not found: " + fullMethodName);
 			}
@@ -172,8 +159,7 @@ public class DefaultDescriptorRegistry implements FileDescriptorProvider, Descri
 				validateMessage(fullMethodName, requestType, inputType.getFields());
 				validateMessage(fullMethodName, responseType, outputType.getFields());
 			}
-		}
-		else {
+		} else {
 			throw new IllegalStateException("Service not registered: " + fullMethodName);
 		}
 	}
@@ -192,8 +178,7 @@ public class DefaultDescriptorRegistry implements FileDescriptorProvider, Descri
 							"Field " + field.getName() + " is a map in the schema, but is not a map in class "
 									+ responseType.getName() + " for method " + fullMethodName);
 				}
-			}
-			else if (field.isRepeated() && !descriptor.getPropertyType().isArray()
+			} else if (field.isRepeated() && !descriptor.getPropertyType().isArray()
 					&& !Iterable.class.isAssignableFrom(descriptor.getPropertyType())) {
 				throw new IllegalArgumentException(
 						"Field " + field.getName() + " is repeated in the schema, but is not a collection in class "

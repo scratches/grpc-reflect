@@ -32,7 +32,7 @@ import com.google.protobuf.Descriptors.ServiceDescriptor;
  * @author Dave Syer
  * @since 1.0.0
  */
-public class DescriptorCatalog implements FileDescriptorProvider, DescriptorProvider {
+public class DescriptorCatalog implements DescriptorProvider {
 
 	private Map<String, FileDescriptor> fileDescriptors = new HashMap<>();
 
@@ -55,11 +55,6 @@ public class DescriptorCatalog implements FileDescriptorProvider, DescriptorProv
 			pkg = pkg + ".";
 		}
 		return pkg;
-	}
-
-	@Override
-	public FileDescriptor file(String serviceName) {
-		return this.fileDescriptors.get(serviceName);
 	}
 
 	@Override
