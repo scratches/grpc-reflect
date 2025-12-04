@@ -23,7 +23,6 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.boot.grpc.server.autoconfigure.GrpcServerFactoryAutoConfiguration.GrpcServletConfiguration;
 import org.springframework.boot.tomcat.TomcatConnectorCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,9 +31,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import io.grpc.BindableService;
 
-@Configuration
-@ConditionalOnMissingBean(BindableService.class)
-@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 /**
  * Auto-configuration for gRPC integration with Spring WebMVC.
  * <p>
@@ -45,6 +41,9 @@ import io.grpc.BindableService;
  * @author Dave Syer
  * @since 1.0.0
  */
+@Configuration
+@ConditionalOnMissingBean(BindableService.class)
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @AutoConfiguration(afterName = "org.springframework.boot.grpc.server.autoconfigure.GrpcServerFactoryAutoConfiguration")
 public class GrpcWebmvcAutoConfiguration implements WebMvcConfigurer {
 
@@ -60,13 +59,11 @@ public class GrpcWebmvcAutoConfiguration implements WebMvcConfigurer {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	// TODO: change package when we upgrade to Spring Boot 4.0
-	@ConditionalOnClass(name = "org.springframework.boot.web.embedded.tomcat.TomcatConnectorCustomizer")
+	@ConditionalOnClass(TomcatConnectorCustomizer.class)
 	static class NestedTomcatConfiguration {
 
 		@Bean
 		@ConditionalOnClass(UpgradeProtocol.class)
-		@ConditionalOnMissingBean(GrpcServletConfiguration.class)
 		public TomcatConnectorCustomizer customizer() {
 			return (connector) -> {
 				for (UpgradeProtocol protocol : connector.findUpgradeProtocols()) {
