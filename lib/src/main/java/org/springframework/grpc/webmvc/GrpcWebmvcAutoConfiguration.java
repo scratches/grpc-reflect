@@ -19,9 +19,12 @@ import java.util.List;
 
 import org.apache.coyote.UpgradeProtocol;
 import org.apache.coyote.http2.Http2Protocol;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.grpc.server.autoconfigure.GrpcServerFactoryAutoConfiguration;
+import org.springframework.boot.grpc.server.autoconfigure.GrpcServerFactoryAutoConfiguration.GrpcServletConfiguration;
 import org.springframework.boot.tomcat.TomcatConnectorCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,6 +46,7 @@ import io.grpc.BindableService;
  * @author Dave Syer
  * @since 1.0.0
  */
+@AutoConfiguration(afterName = "org.springframework.boot.grpc.server.autoconfigure.GrpcServerFactoryAutoConfiguration")
 public class GrpcWebmvcAutoConfiguration implements WebMvcConfigurer {
 
 	@Override
@@ -58,6 +62,7 @@ public class GrpcWebmvcAutoConfiguration implements WebMvcConfigurer {
 
 	@Bean
 	@ConditionalOnClass(UpgradeProtocol.class)
+	@ConditionalOnMissingBean(GrpcServletConfiguration.class)
 	public TomcatConnectorCustomizer customizer() {
 		return (connector) -> {
 			for (UpgradeProtocol protocol : connector.findUpgradeProtocols()) {

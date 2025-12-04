@@ -15,9 +15,9 @@
  */
 package org.springframework.grpc.webflux;
 
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 
@@ -31,7 +31,7 @@ import org.springframework.web.reactive.config.WebFluxConfigurer;
  * @author Dave Syer
  * @since 1.0.0
  */
-@Configuration
+@AutoConfiguration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 public class GrpcWebfluxAutoConfiguration implements WebFluxConfigurer {
 
