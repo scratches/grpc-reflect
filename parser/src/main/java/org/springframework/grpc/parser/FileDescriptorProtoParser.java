@@ -16,7 +16,6 @@
 
 package org.springframework.grpc.parser;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -210,12 +209,7 @@ public class FileDescriptorProtoParser {
 				dependency = cache.get(name);
 			}
 			else {
-				try (InputStream stream = findImport(name)) {
-					dependency = parse(name, stream.readAllBytes());
-				}
-				catch (IOException e) {
-					throw new IllegalStateException("Failed to read import: " + name, e);
-				}
+				dependency = parse(name, findImport(name));
 			}
 			resolve(builder, dependency, names);
 		}
@@ -223,14 +217,13 @@ public class FileDescriptorProtoParser {
 		names.add(proto.getName());
 	}
 
-	// TODO: return bytes directly?
-	private InputStream findImport(String path) {
+	private byte[] findImport(String path) {
 		if (path.startsWith("/")) {
 			path = path.substring(1);
 		}
 		NamedBytes[] named = this.locator.find(path);
 		if (named.length > 0) {
-			return new ByteArrayInputStream(named[0].bytes().get());
+			return named[0].bytes().get();
 		}
 		throw new IllegalArgumentException("Import not found: " + path);
 	}
