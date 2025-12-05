@@ -112,6 +112,7 @@ public class DescriptorMapperTests {
 		assertThat(nestedDescriptor.getFields().size()).isEqualTo(1);
 		Descriptor other = mapper.descriptor(Nested.class);
 		assertThat(nestedDescriptor).isEqualTo(other);
+		assertThat(descriptor.getFile()).isEqualTo(nestedDescriptor.getFile());
 	}
 
 	static class TestNested {

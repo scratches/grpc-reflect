@@ -63,13 +63,16 @@ public interface DescriptorMapper {
 				return this.cache.get(clazz);
 			}
 			Set<Class<?>> current = new HashSet<>();
-			return descriptor(clazz, current);
+			FileDescriptorProto.Builder builder = FileDescriptorProto.newBuilder();
+			return descriptor(clazz, current, builder);
 		}
 
-		private Descriptor descriptor(Class<?> clazz, Set<Class<?>> current) {
+		private Descriptor descriptor(Class<?> clazz, Set<Class<?>> current, FileDescriptorProto.Builder builder) {
 			current.add(clazz);
+			if (this.cache.containsKey(clazz)) {
+				return this.cache.get(clazz);
+			}
 			DescriptorProto message = proto(clazz);
-			FileDescriptorProto.Builder builder = FileDescriptorProto.newBuilder();
 			builder.addMessageType(message);
 			try {
 				Set<FileDescriptor> dependencies = new HashSet<>();
@@ -105,9 +108,12 @@ public interface DescriptorMapper {
 						}
 						if (fieldType != null && fieldType != clazz) {
 							if (current.contains(fieldType)) {
-								builder.addMessageType(proto(fieldType));
+								DescriptorProto proto = proto(fieldType);
+								if (!builder.getMessageTypeList().contains(proto)) {
+									builder.addMessageType(proto);
+								}
 							} else {
-								Descriptor descriptor = descriptor(fieldType, current);
+								Descriptor descriptor = descriptor(fieldType, current, builder);
 								this.cache.put(fieldType, descriptor);
 								dependencies.add(descriptor.getFile());
 							}
@@ -115,13 +121,18 @@ public interface DescriptorMapper {
 					}
 				}
 				if (this.cache.containsKey(clazz)) {
+					current.remove(clazz);
 					return this.cache.get(clazz);
 				}
 				FileDescriptor proto = FileDescriptor.buildFrom(builder.build(),
 						dependencies.toArray(new FileDescriptor[0]));
-				Descriptor result = proto.findMessageTypeByName(message.getName());
-				this.cache.put(clazz, result);
-				return result;
+				for (Class<?> other : new HashSet<>(current)) {
+					Descriptor maybe = proto.findMessageTypeByName(other.getSimpleName());
+					if (maybe != null) {
+						this.cache.put(other, maybe);
+					}
+				}
+				return proto.findMessageTypeByName(message.getName());
 			} catch (DescriptorValidationException e) {
 				throw new IllegalStateException(e);
 			}
