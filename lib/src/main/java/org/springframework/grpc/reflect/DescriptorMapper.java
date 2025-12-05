@@ -62,6 +62,12 @@ public interface DescriptorMapper {
 			if (this.cache.containsKey(clazz)) {
 				return this.cache.get(clazz);
 			}
+			Set<Class<?>> current = new HashSet<>();
+			return descriptor(clazz, current);
+		}
+
+		private Descriptor descriptor(Class<?> clazz, Set<Class<?>> current) {
+			current.add(clazz);
 			DescriptorProto message = proto(clazz);
 			FileDescriptorProto.Builder builder = FileDescriptorProto.newBuilder();
 			builder.addMessageType(message);
@@ -72,30 +78,44 @@ public interface DescriptorMapper {
 						@Nullable
 						Field property = ReflectionUtils.findField(clazz, field.getName());
 						Class<?> fieldType = property.getType();
-						if (fieldType != null && fieldType != clazz) {
-							if (Map.class.isAssignableFrom(fieldType)) {
-								Class<?> valueType = findGenericType(property.getGenericType(), 1);
-								Type type = findType(valueType, null);
-								if (type == Type.TYPE_MESSAGE || type == Type.TYPE_ENUM) {
-									dependencies.add(descriptor(valueType).getFile());
-								}
-							} else if (Iterable.class.isAssignableFrom(fieldType)) {
-								Class<?> valueType = findGenericType(property.getGenericType(), 0);
-								Type type = findType(valueType, null);
-								if (type == Type.TYPE_MESSAGE || type == Type.TYPE_ENUM) {
-									dependencies.add(descriptor(valueType).getFile());
-								}
-							} else if (fieldType.isArray()) {
-								Class<?> valueType = fieldType.arrayType();
-								Type type = findType(valueType, null);
-								if (type == Type.TYPE_MESSAGE || type == Type.TYPE_ENUM) {
-									dependencies.add(descriptor(valueType).getFile());
-								}
+						if (Map.class.isAssignableFrom(fieldType)) {
+							Class<?> valueType = findGenericType(property.getGenericType(), 1);
+							Type type = findType(valueType, null);
+							if (type == Type.TYPE_MESSAGE || type == Type.TYPE_ENUM) {
+								fieldType = valueType;
 							} else {
-								dependencies.add(descriptor(fieldType).getFile());
+								continue;
+							}
+						} else if (Iterable.class.isAssignableFrom(fieldType)) {
+							Class<?> valueType = findGenericType(property.getGenericType(), 0);
+							Type type = findType(valueType, null);
+							if (type == Type.TYPE_MESSAGE || type == Type.TYPE_ENUM) {
+								fieldType = valueType;
+							} else {
+								continue;
+							}
+						} else if (fieldType.isArray()) {
+							Class<?> valueType = fieldType.arrayType();
+							Type type = findType(valueType, null);
+							if (type == Type.TYPE_MESSAGE || type == Type.TYPE_ENUM) {
+								fieldType = valueType;
+							} else {
+								continue;
+							}
+						}
+						if (fieldType != null && fieldType != clazz) {
+							if (current.contains(fieldType)) {
+								builder.addMessageType(proto(fieldType));
+							} else {
+								Descriptor descriptor = descriptor(fieldType, current);
+								this.cache.put(fieldType, descriptor);
+								dependencies.add(descriptor.getFile());
 							}
 						}
 					}
+				}
+				if (this.cache.containsKey(clazz)) {
+					return this.cache.get(clazz);
 				}
 				FileDescriptor proto = FileDescriptor.buildFrom(builder.build(),
 						dependencies.toArray(new FileDescriptor[0]));

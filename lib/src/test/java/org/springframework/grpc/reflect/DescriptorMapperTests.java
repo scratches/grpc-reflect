@@ -17,6 +17,7 @@ package org.springframework.grpc.reflect;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +85,35 @@ public class DescriptorMapperTests {
 		assertThat(nestedDescriptor.getFields().size()).isEqualTo(1);
 	}
 
+	@Test
+	public void testRegisterTree() throws Exception {
+		Descriptor descriptor = mapper.descriptor(Tree.class);
+		assertThat(descriptor.getFullName()).isEqualTo("Tree");
+		assertThat(descriptor.getFields().size()).isEqualTo(1);
+		FieldDescriptor field = descriptor.getFields().get(0);
+		assertThat(field.getName()).isEqualTo("children");
+		assertThat(field.getType()).isEqualTo(FieldDescriptor.Type.MESSAGE);
+		assertThat(field.isRepeated()).isTrue();
+		Descriptor nestedDescriptor = descriptor.getFields().get(0).getMessageType();
+		assertThat(nestedDescriptor.getFullName()).isEqualTo("Tree");
+		assertThat(nestedDescriptor.getFields().size()).isEqualTo(1);
+	}
+
+	@Test
+	public void testRegisterCycle() throws Exception {
+		Descriptor descriptor = mapper.descriptor(Cycle.class);
+		assertThat(descriptor.getFullName()).isEqualTo("Cycle");
+		assertThat(descriptor.getFields().size()).isEqualTo(1);
+		FieldDescriptor field = descriptor.getFields().get(0);
+		assertThat(field.getName()).isEqualTo("nested");
+		assertThat(field.getType()).isEqualTo(FieldDescriptor.Type.MESSAGE);
+		Descriptor nestedDescriptor = field.getMessageType();
+		assertThat(nestedDescriptor.getFullName()).isEqualTo("Nested");
+		assertThat(nestedDescriptor.getFields().size()).isEqualTo(1);
+		Descriptor other = mapper.descriptor(Nested.class);
+		assertThat(nestedDescriptor).isEqualTo(other);
+	}
+
 	static class TestNested {
 
 		private TestBean bean;
@@ -149,4 +179,40 @@ public class DescriptorMapperTests {
 		}
 
 	}
+
+	static class Tree {
+
+		private List<Tree> children = new ArrayList<>();
+
+		public List<Tree> getChildren() {
+			return children;
+		}
+
+	}
+
+	static class Nested {
+		private Cycle cycle;
+
+		public Cycle getCycle() {
+			return cycle;
+		}
+
+		public void setCycle(Cycle cycle) {
+			this.cycle = cycle;
+		}
+	}
+
+	static class Cycle {
+
+		private Nested nested;
+
+		public Nested getNested() {
+			return nested;
+		}
+
+		public void setNested(Nested nested) {
+			this.nested = nested;
+		}
+	}
+
 }
