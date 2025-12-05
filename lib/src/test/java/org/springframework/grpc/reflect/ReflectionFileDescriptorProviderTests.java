@@ -18,18 +18,21 @@ package org.springframework.grpc.reflect;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.util.StringUtils;
 
+import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.google.protobuf.Descriptors.ServiceDescriptor;
 
 public class ReflectionFileDescriptorProviderTests {
 
-	private DescriptorProtoExtractor extractor = DescriptorProtoExtractor.DEFAULT_INSTANCE;
-
-	private ReflectionFileDescriptorProvider registry = new ReflectionFileDescriptorProvider(extractor);
+	private ReflectionFileDescriptorProvider registry = new ReflectionFileDescriptorProvider();
 
 	@Test
 	public void testRegisterMethod() throws Exception {
@@ -44,6 +47,18 @@ public class ReflectionFileDescriptorProviderTests {
 		register(registry, ReflectionFileDescriptorProviderTests.class.getMethod("translate", Foo.class));
 		assertThat(method(registry, "ReflectionFileDescriptorProviderTests/Echo")).isNotNull();
 		assertThat(method(registry, "ReflectionFileDescriptorProviderTests/Translate")).isNotNull();
+	}
+
+	@Test
+	@Disabled
+	public void testRegisterMethodRegistersType() throws Exception {
+		register(registry, ReflectionFileDescriptorProviderTests.class.getMethod("spam", Foo.class));
+		assertThat(method(registry, "ReflectionFileDescriptorProviderTests/Spam")).isNotNull();
+		Descriptor type = registry.type("Spam");
+		assertThat(type).isNotNull();
+		FieldDescriptor field = type.getField(0);
+		assertThat(field.getName()).isEqualTo("items");
+		assertThat(field.isMapField()).isTrue();
 	}
 
 	private void register(ReflectionFileDescriptorProvider registry, Method method) {
@@ -72,6 +87,20 @@ public class ReflectionFileDescriptorProviderTests {
 
 	}
 
+	public static class Spam {
+
+		private Map<String, Object> items = new HashMap<>();
+
+		public Map<String, Object> getItems() {
+			return items;
+		}
+
+	}
+
+	public Spam spam(Foo foo) {
+		return new Spam();
+	}
+	
 	public Bar translate(Foo foo) {
 		return new Bar();
 	}

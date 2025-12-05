@@ -19,7 +19,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.grpc.sample.proto.HelloWorldProto;
 import org.springframework.util.StringUtils;
@@ -38,6 +41,14 @@ public class DescriptorRegistryValidationTests {
 		DefaultDescriptorRegistry registry = new DefaultDescriptorRegistry();
 		register(registry, DescriptorRegistryValidationTests.class.getMethod("echo", Foo.class));
 		registry.validate("DescriptorRegistryValidationTests/Echo", Foo.class, Foo.class);
+	}
+
+	@Test
+	@Disabled
+	public void testValidateMapTypes() throws Exception {
+		DefaultDescriptorRegistry registry = new DefaultDescriptorRegistry();
+		register(registry, DescriptorRegistryValidationTests.class.getMethod("spam", Foo.class));
+		registry.validate("DescriptorRegistryValidationTests/Spam", Foo.class, Spam.class);
 	}
 
 	@Test
@@ -69,7 +80,7 @@ public class DescriptorRegistryValidationTests {
 		registry.validate("Simple/SayHello", Foo.class, Response.class);
 		String message = assertThrows(IllegalArgumentException.class,
 				() -> registry.validate("Simple/SayHello", Wrong.class, Response.class))
-			.getMessage();
+				.getMessage();
 		assertThat(message).contains("Field 'name'");
 	}
 
@@ -116,6 +127,20 @@ public class DescriptorRegistryValidationTests {
 			this.name = name;
 		}
 
+	}
+
+	public static class Spam {
+
+		private Map<String, Object> items = new HashMap<>();
+
+		public Map<String, Object> getItems() {
+			return items;
+		}
+
+	}
+
+	public Spam spam(Foo foo) {
+		return new Spam();
 	}
 
 	public Foo echo(Foo foo) {

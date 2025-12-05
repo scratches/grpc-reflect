@@ -41,8 +41,7 @@ public class DefaultDescriptorRegistry implements DescriptorProvider, Descriptor
 
 	private final DescriptorCatalog catalog;
 
-	private final ReflectionFileDescriptorProvider reflection = new ReflectionFileDescriptorProvider(
-			DescriptorProtoExtractor.DEFAULT_INSTANCE);
+	private final ReflectionFileDescriptorProvider reflection = new ReflectionFileDescriptorProvider();
 
 	private Map<String, DescriptorMapping> inputs = new HashMap<>();
 
