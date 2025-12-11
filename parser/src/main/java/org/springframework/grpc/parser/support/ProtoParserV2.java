@@ -119,6 +119,8 @@ public class ProtoParserV2 {
 
 		private Stack<DescriptorProto.Builder> type = new Stack<>();
 
+		private String extend;
+
 		private Stack<EnumDescriptorProto.Builder> enumType = new Stack<>();
 
 		private Stack<FieldDescriptorProto.Builder> field = new Stack<>();
@@ -174,9 +176,13 @@ public class ProtoParserV2 {
 		@Override
 		public FileDescriptorProto.Builder visitField(FieldContext ctx) {
 			// TODO: handle field options if needed
+			boolean isExtension = this.extend != null;
 			if (this.type.isEmpty()) {
 				// Field outside message (e.g. extension)
-				return super.visitField(ctx);
+				if (!isExtension) {
+					// Field outside message (and not extension)
+					return super.visitField(ctx);
+				}
 			}
 			FieldDescriptorProto.Type fieldType = findType(ctx.type());
 			FieldDescriptorProto.Builder field = FieldDescriptorProto.newBuilder()
@@ -190,7 +196,14 @@ public class ProtoParserV2 {
 			}
 			FileDescriptorProto.Builder result = super.visitField(ctx);
 			// System.err.println("Field: " + ctx.getText());
-			this.type.peek().addField(field.build());
+			if (!isExtension) {
+				this.type.peek().addField(field.build());
+			}
+			else {
+				// Extension field
+				field.setExtendee(this.extend);
+				builder.addExtension(field.build());
+			}
 			this.field.pop();
 			return result;
 		}
@@ -369,6 +382,17 @@ public class ProtoParserV2 {
 				return Integer.parseInt(text.substring(1), 8);
 			}
 			return Integer.parseInt(text, 10);
+		}
+
+		@Override
+		public Builder visitExtendDef(ProtobufParser.ExtendDefContext ctx) {
+			DescriptorProto.Builder type = DescriptorProto.newBuilder().setName(ctx.messageType().getText());
+			this.type.push(type);
+			this.extend = "." + ctx.messageType().getText();
+			FileDescriptorProto.Builder result = super.visitExtendDef(ctx);
+			this.extend = null;
+			this.type.pop();
+			return result;
 		}
 
 		@Override
