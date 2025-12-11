@@ -161,6 +161,7 @@ public class DefaultDescriptorRegistry implements DescriptorProvider, Descriptor
 
 	private void validateMessage(String fullMethodName, Class<?> responseType, List<FieldDescriptor> fields) {
 		for (FieldDescriptor field : fields) {
+			// TODO: just compare with the result from the DescriptorMapper instead of using BeanUtils
 			PropertyDescriptor descriptor = BeanUtils.getPropertyDescriptor(responseType, field.getName());
 			if (descriptor == null) {
 				throw new IllegalArgumentException("Field " + field.getName() + " not found in class "

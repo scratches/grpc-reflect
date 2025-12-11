@@ -78,6 +78,7 @@ public interface DescriptorMapper {
 				Set<FileDescriptor> dependencies = new HashSet<>();
 				for (var field : message.getFieldList()) {
 					if (field.getType() == FieldDescriptorProto.Type.TYPE_MESSAGE) {
+						// TODO: use bean properties instead?
 						@Nullable
 						Field property = ReflectionUtils.findField(clazz, field.getName());
 						Class<?> fieldType = property.getType();
@@ -149,6 +150,7 @@ public interface DescriptorMapper {
 				return builder.build();
 			}
 			int count = 1;
+			// TODO: use bean properties instead?
 			for (var field : clazz.getDeclaredFields()) {
 				Type type = findType(field.getType(), field.getGenericType());
 				DescriptorProtos.FieldDescriptorProto.Builder fb = DescriptorProtos.FieldDescriptorProto.newBuilder()
