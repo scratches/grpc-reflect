@@ -15,14 +15,21 @@
  */
 package org.springframework.grpc.reflect;
 
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.RecordComponent;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
-import org.jspecify.annotations.Nullable;
+import org.springframework.beans.BeanUtils;
+import org.springframework.core.annotation.OrderUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -78,12 +85,10 @@ public interface DescriptorMapper {
 				Set<FileDescriptor> dependencies = new HashSet<>();
 				for (var field : message.getFieldList()) {
 					if (field.getType() == FieldDescriptorProto.Type.TYPE_MESSAGE) {
-						// TODO: use bean properties instead?
-						@Nullable
-						Field property = ReflectionUtils.findField(clazz, field.getName());
-						Class<?> fieldType = property.getType();
+						PropertyDescriptor property = BeanUtils.getPropertyDescriptor(clazz, field.getName());
+						Class<?> fieldType = property.getReadMethod().getReturnType();
 						if (Map.class.isAssignableFrom(fieldType)) {
-							Class<?> valueType = findGenericType(property.getGenericType(), 1);
+							Class<?> valueType = findGenericType(property.getReadMethod().getGenericReturnType(), 1);
 							Type type = findType(valueType, null);
 							if (type == Type.TYPE_MESSAGE || type == Type.TYPE_ENUM) {
 								fieldType = valueType;
@@ -91,7 +96,7 @@ public interface DescriptorMapper {
 								continue;
 							}
 						} else if (Iterable.class.isAssignableFrom(fieldType)) {
-							Class<?> valueType = findGenericType(property.getGenericType(), 0);
+							Class<?> valueType = findGenericType(property.getReadMethod().getGenericReturnType(), 0);
 							Type type = findType(valueType, null);
 							if (type == Type.TYPE_MESSAGE || type == Type.TYPE_ENUM) {
 								fieldType = valueType;
@@ -149,27 +154,28 @@ public interface DescriptorMapper {
 			if (clazz == Void.class || clazz == Void.TYPE) {
 				return builder.build();
 			}
-			int count = 1;
-			// TODO: use bean properties instead?
-			for (var field : clazz.getDeclaredFields()) {
-				Type type = findType(field.getType(), field.getGenericType());
+			Map<Integer, PropertyDescriptor> properties = orderedProperties(clazz);
+			for (Integer count : properties.keySet()) {
+				PropertyDescriptor property = properties.get(count);
+				Class<?> fieldType = property.getReadMethod().getReturnType();
+				Type type = findType(fieldType, property.getReadMethod().getGenericReturnType());
 				DescriptorProtos.FieldDescriptorProto.Builder fb = DescriptorProtos.FieldDescriptorProto.newBuilder()
-						.setName(field.getName())
+						.setName(property.getName())
 						.setNumber(count)
 						.setType(type);
 				if (type == Type.TYPE_MESSAGE) {
-					if (Map.class.isAssignableFrom(field.getType())) {
-						String mapTypeName = StringUtils.capitalize(field.getName()) + "Entry";
+					if (Map.class.isAssignableFrom(fieldType)) {
+						String mapTypeName = StringUtils.capitalize(property.getName()) + "Entry";
 						fb.setTypeName(mapTypeName);
-						builder.addNestedType(mapType(mapTypeName, field));
-					} else if (Iterable.class.isAssignableFrom(field.getType()) || field.getType().isArray()) {
-						fb.setTypeName(findGenericTypeName(field.getGenericType(), 0));
+						builder.addNestedType(mapType(mapTypeName, property));
+					} else if (Iterable.class.isAssignableFrom(fieldType) || fieldType.isArray()) {
+						fb.setTypeName(findGenericTypeName(property.getReadMethod().getGenericReturnType(), 0));
 					} else {
-						fb.setTypeName(field.getType().getSimpleName());
+						fb.setTypeName(fieldType.getSimpleName());
 					}
 				}
-				if (field.getType().isArray() || Iterable.class.isAssignableFrom(field.getType())
-						|| Map.class.isAssignableFrom(field.getType())) {
+				if (fieldType.isArray() || Iterable.class.isAssignableFrom(fieldType)
+						|| Map.class.isAssignableFrom(fieldType)) {
 					fb.setLabel(DescriptorProtos.FieldDescriptorProto.Label.LABEL_REPEATED);
 				}
 				builder.addField(fb.build());
@@ -179,6 +185,80 @@ public interface DescriptorMapper {
 			this.protos.put(clazz, result);
 			return result;
 		};
+
+		private Map<Integer, PropertyDescriptor> orderedProperties(Class<?> clazz) {
+			Map<Integer, PropertyDescriptor> orders = new TreeMap<>();
+			Map<Integer, PropertyDescriptor> declarations = declarationOrder(clazz);
+			for (Integer order : declarations.keySet()) {
+				PropertyDescriptor property = declarations.get(order);
+				Field field = ReflectionUtils.findField(clazz, property.getName());
+				if (field == null) {
+					continue;
+				}
+				ReflectionUtils.makeAccessible(field);
+				Integer maybe = OrderUtils.getOrder(field);
+				if (maybe != null) {
+					orders.put(maybe, property);
+				} else {
+					orders.put(order, property);
+				}
+			}
+			// Not an error if the explicit orders leave gaps
+			if (orders.size() != declarations.size()) {
+				// Some properties were not assigned an order
+				throw new IllegalStateException(
+						"Some properties were assigned a duplicate order in " + clazz);
+			}
+			return orders;
+		}
+
+		private Map<Integer, PropertyDescriptor> declarationOrder(Class<?> clazz) {
+			PropertyDescriptor[] properties = BeanUtils.getPropertyDescriptors(clazz);
+			Map<String, PropertyDescriptor> map = new HashMap<>();
+			for (PropertyDescriptor property : properties) {
+				Class<?> fieldType = property.getReadMethod() != null ? property.getReadMethod().getReturnType() : null;
+				if (fieldType == null || fieldType == Class.class) {
+					continue;
+				}
+				map.put(property.getName(), property);
+			}
+
+			Map<Integer, PropertyDescriptor> orders = new HashMap<>();
+			if (clazz.isRecord()) {
+				int i = 1;
+				for (RecordComponent component : clazz.getRecordComponents()) {
+					if (map.containsKey(component.getName())) {
+						orders.put(i++, map.get(component.getName()));
+					}
+				}
+				return orders;
+			}
+			Map<String, Class<?>> owners = new HashMap<>();
+			for (PropertyDescriptor property : map.values()) {
+				Field field = ReflectionUtils.findField(clazz, property.getName());
+				owners.put(property.getName(), field.getDeclaringClass());
+			}
+			Class<?> current = clazz;
+			List<Class<?>> classes = new ArrayList<>();
+			while (current != null && current != Object.class) {
+				classes.add(current);
+				current = current.getSuperclass();
+			}
+			// Sort fields by declaration order with superclasses first
+			int count = 1;
+			Collections.reverse(classes);
+			for (Class<?> owner : classes) {
+				// Order of declaration is not defined in Java reflection, but it 
+				// usually works the way you expect anyway, at least for openjdk.
+				for (Field field : owner.getDeclaredFields()) {
+					if (owners.containsKey(field.getName())) {
+						orders.put(count, map.get(field.getName()));
+						count++;
+					}
+				}
+			}
+			return orders;
+		}
 
 		private static DescriptorProtos.FieldDescriptorProto.Type findType(Class<?> type,
 				java.lang.reflect.Type genericType) {
@@ -219,19 +299,19 @@ public interface DescriptorMapper {
 			return DescriptorProtos.FieldDescriptorProto.Type.TYPE_MESSAGE;
 		}
 
-		static DescriptorProto mapType(String name, Field field) {
+		static DescriptorProto mapType(String name, PropertyDescriptor field) {
 			DescriptorProto.Builder type = DescriptorProto.newBuilder().setName(name);
 			FieldDescriptorProto.Builder key = FieldDescriptorProto.newBuilder()
 					.setName("key")
 					.setNumber(1)
-					.setType(findKeyType(field.getGenericType()));
+					.setType(findKeyType(field.getReadMethod().getGenericReturnType()));
 			FieldDescriptorProto.Builder value = FieldDescriptorProto.newBuilder()
 					.setName("value")
 					.setNumber(2)
-					.setType(findValueType(field.getGenericType()));
+					.setType(findValueType(field.getReadMethod().getGenericReturnType()));
 			if (value.getType() == FieldDescriptorProto.Type.TYPE_MESSAGE
 					|| value.getType() == FieldDescriptorProto.Type.TYPE_ENUM) {
-				value.setTypeName(findGenericTypeName(field.getGenericType(), 1));
+				value.setTypeName(findGenericTypeName(field.getReadMethod().getGenericReturnType(), 1));
 			}
 			type.setOptions(type.getOptionsBuilder().setMapEntry(true));
 			type.addField(key.build());

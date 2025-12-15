@@ -16,6 +16,7 @@
 package org.springframework.grpc.reflect;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +27,8 @@ import org.junit.jupiter.api.Test;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Label;
+
+import jakarta.annotation.Priority;
 
 public class DescriptorProtoExtractorTests {
 
@@ -40,6 +43,57 @@ public class DescriptorProtoExtractorTests {
 		assertThat(proto.getField(0).getNumber()).isEqualTo(1);
 		assertThat(proto.getField(0).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_STRING);
 		assertThat(proto.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_INT32);
+	}
+
+	@Test
+	public void testExtendedInstance() throws Exception {
+		DescriptorProto proto = provider.descriptor(ExtendedFoo.class).toProto();
+		assertThat(proto.getName()).isEqualTo("ExtendedFoo");
+		assertThat(proto.getFieldCount()).isEqualTo(3);
+		assertThat(proto.getField(0).getName()).isEqualTo("name");
+		assertThat(proto.getField(0).getNumber()).isEqualTo(1);
+		assertThat(proto.getField(0).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_STRING);
+		assertThat(proto.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_INT32);
+	}
+
+	@Test
+	public void testExtendedAnnotatedInstance() throws Exception {
+		DescriptorProto proto = provider.descriptor(ExtendedAnnotatedFoo.class).toProto();
+		assertThat(proto.getName()).isEqualTo("ExtendedAnnotatedFoo");
+		assertThat(proto.getFieldCount()).isEqualTo(3);
+		assertThat(proto.getField(0).getName()).isEqualTo("name");
+		assertThat(proto.getField(0).getNumber()).isEqualTo(1);
+		assertThat(proto.getField(0).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_STRING);
+		assertThat(proto.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_INT32);
+	}
+
+	@Test
+	public void testRecordInstance() throws Exception {
+		DescriptorProto proto = provider.descriptor(RecordFoo.class).toProto();
+		assertThat(proto.getName()).isEqualTo("RecordFoo");
+		assertThat(proto.getFieldCount()).isEqualTo(2);
+		assertThat(proto.getField(0).getName()).isEqualTo("name");
+		assertThat(proto.getField(0).getNumber()).isEqualTo(1);
+		assertThat(proto.getField(0).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_STRING);
+		assertThat(proto.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_INT32);
+	}
+
+	@Test
+	public void testOrderedInstance() throws Exception {
+		DescriptorProto proto = provider.descriptor(OrderedFoo.class).toProto();
+		assertThat(proto.getName()).isEqualTo("OrderedFoo");
+		assertThat(proto.getFieldCount()).isEqualTo(2);
+		assertThat(proto.getField(0).getName()).isEqualTo("age");
+		assertThat(proto.getField(0).getNumber()).isEqualTo(1);
+		assertThat(proto.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_STRING);
+		assertThat(proto.getField(0).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_INT32);
+	}
+
+	@Test
+	public void testBadlyOrderedInstance() throws Exception {
+		assertThrows(IllegalStateException.class, () -> {
+			provider.descriptor(BadlyOrderedFoo.class).toProto();
+		});
 	}
 
 	@Test
@@ -102,6 +156,90 @@ public class DescriptorProtoExtractorTests {
 		assertThat(field.getLabel()).isEqualTo(Label.LABEL_REPEATED);
 		assertThat(field.getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_MESSAGE);
 		assertThat(field.getTypeName()).isEqualTo("TestBean");
+	}
+
+	record RecordFoo(String name, int age) {
+	}
+
+	static class ExtendedFoo extends Foo {
+
+		private String extra;
+
+		public String getExtra() {
+			return extra;
+		}
+
+		public void setExtra(String extra) {
+			this.extra = extra;
+		}
+
+	}
+
+	static class ExtendedAnnotatedFoo extends Foo {
+
+		@Priority(10)
+		private String extra;
+
+		public String getExtra() {
+			return extra;
+		}
+
+		public void setExtra(String extra) {
+			this.extra = extra;
+		}
+
+	}
+
+	static class OrderedFoo {
+
+		@Priority(2)
+		private String name;
+
+		@Priority(1)
+		private int age;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		public int getAge() {
+			return age;
+		}
+
+		public void setAge(int age) {
+			this.age = age;
+		}
+
+	}
+
+	static class BadlyOrderedFoo {
+
+		private String name;
+
+		// Overwites priority of name (error)
+		@Priority(1)
+		private int age;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		public int getAge() {
+			return age;
+		}
+
+		public void setAge(int age) {
+			this.age = age;
+		}
+
 	}
 
 	static class TestNested {
