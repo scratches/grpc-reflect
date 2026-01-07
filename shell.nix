@@ -6,6 +6,7 @@ mkShell {
   buildInputs = [
     grpcurl
     protobuf
+    ghz
     python3Packages.python
     python3Packages.ipykernel
     python3Packages.venvShellHook

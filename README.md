@@ -36,3 +36,11 @@ $ grpcurl -d '{"name":"Hi"}' -plaintext localhost:9090 Simple.SayHello
   "message": "Hello ==\u003e Hi"
 }
 ```
+
+## Performance Tests
+
+```
+$ ghz --insecure --duration-stop=close -z 6s -d '{"name":"Foo"}' --proto=samples/web/src/main/proto/hello.proto localhost:8080 --call Simple.SayHello
+```
+
+The MVC sample is pretty quick, but affected by [gh-35427](https://github.com/spring-projects/spring-framework/issues/35427).
