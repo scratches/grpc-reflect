@@ -39,7 +39,7 @@ import reactor.core.publisher.Flux;
 
 @SpringBootTest(
 		properties = { "spring.grpc.server.port=0",
-				"spring.grpc.client.default-channel.address=0.0.0.0:${local.grpc.port}" },
+				"spring.grpc.client.channel.default.target=0.0.0.0:${local.grpc.server.port}" },
 		useMainMethod = UseMainMethod.ALWAYS)
 @DirtiesContext
 public class GrpcServerApplicationTests {

@@ -18,7 +18,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
-		properties = { "spring.grpc.client.default-channel.address=0.0.0.0:${local.server.port}" })
+		properties = { "spring.grpc.client.channel.default.target=0.0.0.0:${local.server.port}" })
 @DirtiesContext
 public class GrpcReactorServerApplicationTests {
 

@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.1</version>
+		<version>4.1.0-SNAPSHOT</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>org.springframework.grpc</groupId>
@@ -30,19 +30,8 @@
 	<properties>
 		<java.version>17</java.version>
 		<protobuf-java.version>4.33.1</protobuf-java.version>
-		<grpc.version>1.77.0</grpc.version>
+		<grpc.version>1.81.0</grpc.version>
 	</properties>
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.grpc</groupId>
-				<artifactId>spring-grpc-dependencies</artifactId>
-				<version>1.0.0-SNAPSHOT</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.grpc</groupId>
@@ -64,6 +53,7 @@
 		<dependency>
 			<groupId>com.salesforce.servicelibs</groupId>
 			<artifactId>reactor-grpc-stub</artifactId>
+			<version>1.2.4</version>
 		</dependency>
 		<dependency>
 			<!-- the reactive plugin always generates javax annotations-->
@@ -79,8 +69,8 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.grpc</groupId>
-			<artifactId>spring-grpc-client-spring-boot-starter</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-grpc-client</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -110,32 +100,21 @@
 			<plugin>
 				<groupId>io.github.ascopes</groupId>
 				<artifactId>protobuf-maven-plugin</artifactId>
-				<version>4.0.3</version>
 				<configuration>
-					<protocVersion>${protobuf-java.version}</protocVersion>
-					<binaryMavenPlugins>
-						<binaryMavenPlugin>
+					<plugins>
+						<plugin kind="binary-maven">
 							<groupId>io.grpc</groupId>
 							<artifactId>protoc-gen-grpc-java</artifactId>
-							<version>${grpc.version}</version>
-							<options>jakarta_omit,@generated=omit</options>
-						</binaryMavenPlugin>
-					</binaryMavenPlugins>
-					<jvmMavenPlugins>
-						<jvmMavenPlugin>
+							<version>${grpc-java.version}</version>
+							<options>@generated=omit</options>
+						</plugin>
+						<plugin kind="jvm-maven">
 							<groupId>com.salesforce.servicelibs</groupId>
 							<artifactId>reactor-grpc</artifactId>
 							<version>1.2.4</version>
-						</jvmMavenPlugin>
-					</jvmMavenPlugins>
+						</plugin>
+					</plugins>
 				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>generate</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 	</build>

@@ -287,7 +287,7 @@ intLit
     ;
 
 strLit
-    : STR_LIT
+    : STR_LIT*
     | PROTO3_LIT_SINGLE
     | PROTO3_LIT_DOUBLE
     ;

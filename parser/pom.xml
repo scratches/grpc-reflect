@@ -5,8 +5,8 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.1</version>
+		<artifactId>spring-boot-dependencies</artifactId>
+		<version>4.1.0-SNAPSHOT</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>org.springframework.grpc</groupId>
@@ -28,10 +28,11 @@
 		<url />
 	</scm>
 	<properties>
+		<maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
 		<java.version>17</java.version>
 		<spring-javaformat-maven-plugin.version>0.0.47</spring-javaformat-maven-plugin.version>
 		<protobuf-java.version>4.33.1</protobuf-java.version>
-		<grpc.version>1.77.0</grpc.version>
+		<grpc.version>1.81.0</grpc.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -101,19 +102,29 @@
 				</executions>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler-plugin.version}</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+					<compilerArgument>-parameters</compilerArgument>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>io.github.ascopes</groupId>
 				<artifactId>protobuf-maven-plugin</artifactId>
-				<version>4.0.3</version>
+				<version>5.1.4</version>
 				<configuration>
-					<protocVersion>${protobuf-java.version}</protocVersion>
-					<binaryMavenPlugins>
-						<binaryMavenPlugin>
+					<protoc>${protobuf-java.version}</protoc>
+					<plugins>
+						<plugin kind="binary-maven">
 							<groupId>io.grpc</groupId>
 							<artifactId>protoc-gen-grpc-java</artifactId>
 							<version>${grpc.version}</version>
-							<options>jakarta_omit,@generated=omit</options>
-						</binaryMavenPlugin>
-					</binaryMavenPlugins>
+							<options>@generated=omit</options>
+						</plugin>
+					</plugins>
 				</configuration>
 				<executions>
 					<execution>

@@ -5,8 +5,8 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.1</version>
+		<artifactId>spring-boot-dependencies</artifactId>
+		<version>4.1.0-SNAPSHOT</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>org.springframework.grpc</groupId>
@@ -28,30 +28,20 @@
 		<url />
 	</scm>
 	<properties>
+		<maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
 		<java.version>17</java.version>
 		<spring-javaformat-maven-plugin.version>0.0.47</spring-javaformat-maven-plugin.version>
 		<protobuf-java.version>4.33.1</protobuf-java.version>
-		<grpc.version>1.77.0</grpc.version>
+		<grpc.version>1.81.0</grpc.version>
 	</properties>
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.grpc</groupId>
-				<artifactId>spring-grpc-dependencies</artifactId>
-				<version>1.0.0-SNAPSHOT</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.grpc</groupId>
 			<artifactId>spring-grpc-core</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.grpc</groupId>
-			<artifactId>spring-grpc-server-spring-boot-autoconfigure</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-grpc-server</artifactId>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
@@ -111,13 +101,18 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.grpc</groupId>
-			<artifactId>spring-grpc-test</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.grpc</groupId>
-			<artifactId>spring-grpc-client-spring-boot-starter</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-grpc-server-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-grpc-client</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -126,28 +121,41 @@
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler-plugin.version}</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+					<compilerArgument>-parameters</compilerArgument>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>io.github.ascopes</groupId>
 				<artifactId>protobuf-maven-plugin</artifactId>
-				<version>4.0.3</version>
+				<version>5.1.4</version>
 				<configuration>
-					<protocVersion>${protobuf-java.version}</protocVersion>
-					<sourceDirectories>
-						<sourceDirectory>src/test/proto</sourceDirectory>
-					</sourceDirectories>
-					<binaryMavenPlugins>
-						<binaryMavenPlugin>
+					<protoc>${protobuf-java.version}</protoc>
+					<plugins>
+						<plugin kind="binary-maven">
 							<groupId>io.grpc</groupId>
 							<artifactId>protoc-gen-grpc-java</artifactId>
 							<version>${grpc.version}</version>
-							<options>jakarta_omit,@generated=omit</options>
-						</binaryMavenPlugin>
-					</binaryMavenPlugins>
+							<options>@generated=omit</options>
+						</plugin>
+					</plugins>
 				</configuration>
 				<executions>
 					<execution>
+						<id>deps</id>
 						<goals>
 							<goal>generate-test</goal>
 						</goals>
+						<configuration>
+							<sourceDirectories>
+								<sourceDirectory>src/test/proto</sourceDirectory>
+							</sourceDirectories>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>

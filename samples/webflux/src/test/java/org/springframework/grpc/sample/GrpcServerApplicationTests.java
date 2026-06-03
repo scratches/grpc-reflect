@@ -9,7 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.grpc.client.GrpcChannelFactory;
+import org.springframework.grpc.client.ImportGrpcClients;
 import org.springframework.grpc.sample.proto.HelloReply;
 import org.springframework.grpc.sample.proto.HelloRequest;
 import org.springframework.grpc.sample.proto.SimpleGrpc;
@@ -18,9 +20,9 @@ import org.springframework.test.annotation.DirtiesContext;
 import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
-		properties = { "spring.grpc.client.default-channel.address=0.0.0.0:${local.server.port}",
-				"spring.grpc.server.enabled=false" })
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
+		"spring.grpc.client.channel.default.target=0.0.0.0:${local.server.port}",
+		"spring.grpc.server.enabled=false" })
 @DirtiesContext
 public class GrpcServerApplicationTests {
 
@@ -45,8 +47,13 @@ public class GrpcServerApplicationTests {
 	void defaultErrorResponseIsUnknown(@Autowired GrpcChannelFactory channels) {
 		assertThat(assertThrows(StatusRuntimeException.class,
 				() -> stub.sayHello(HelloRequest.newBuilder().setName("internal").build()))
-			.getStatus()
-			.getCode()).isEqualTo(Code.INTERNAL);
+				.getStatus()
+				.getCode()).isEqualTo(Code.INTERNAL);
+	}
+
+	@TestConfiguration
+	@ImportGrpcClients(types = SimpleGrpc.SimpleBlockingStub.class)
+	static class ExtraConfiguration {
 	}
 
 }
