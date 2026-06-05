@@ -119,6 +119,17 @@ public class ProtobufRegistrationTests {
 	}
 
 	@Test
+	public void testJarFileBaseImport() {
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(JarFileBaseExample.class);
+		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
+		assertThat(file(registry, "grpc.reflection.v1.ServerReflection").getName())
+				.isEqualTo("grpc/reflection/v1/reflection.proto");
+		assertThat(registry.service("grpc.reflection.v1.ServerReflection").getFile().getName()).isNotNull();
+		assertThat(registry.type("grpc.reflection.v1.ServerReflectionRequest")).isNotNull();
+		context.close();
+	}
+
+	@Test
 	public void testClasspathPrefix() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(ClasspathPrefixExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
@@ -179,6 +190,10 @@ public class ProtobufRegistrationTests {
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "grpc/reflection/v1/reflection.proto")
 	static class JarFileExample {}
+
+	@Configuration(proxyBeanMethods = false)
+	@ImportProtobuf(base = "classpath:/", locations = "grpc/reflection/v1/reflection.proto")
+	static class JarFileBaseExample {}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "classpath:/grpc/reflection/v1/reflection.proto")

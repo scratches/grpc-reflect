@@ -86,6 +86,9 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 			FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 			String base = this.base;
 			if (base.contains(":")) {
+				while (base.endsWith("/")) {
+					base = base.substring(0, base.length()-1);
+				}
 				base = base.substring(base.indexOf(':') + 1);
 			}
 			parser.setPathLocator(new DefaultPathLocator(base));
@@ -144,7 +147,7 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 					&& this.resourceLoader.getPathMatcher().isPattern(location.substring(0, rootDirEnd))) {
 				rootDirEnd = location.lastIndexOf('/', rootDirEnd - 2) + 1;
 			}
-			if (rootDirEnd == 0) {
+			if (rootDirEnd < 0) {
 				rootDirEnd = 0;
 			}
 			return location.substring(0, rootDirEnd);
