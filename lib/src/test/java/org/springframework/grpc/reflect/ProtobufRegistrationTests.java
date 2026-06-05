@@ -108,22 +108,30 @@ public class ProtobufRegistrationTests {
 	}
 
 	@Test
-	public void JarFileImport() {
+	public void testJarFileImport() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(JarFileExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "grpc.reflection.v1.ServerReflection").getName())
-			.isEqualTo("grpc/reflection/v1/reflection.proto");
+				.isEqualTo("grpc/reflection/v1/reflection.proto");
 		assertThat(registry.service("grpc.reflection.v1.ServerReflection").getFile().getName()).isNotNull();
 		assertThat(registry.type("grpc.reflection.v1.ServerReflectionRequest")).isNotNull();
 		context.close();
 	}
 
 	@Test
-	public void ClasspathPrefix() {
+	public void testClasspathPrefix() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(ClasspathPrefixExample.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "grpc.reflection.v1.ServerReflection").getName())
-			.isEqualTo("grpc/reflection/v1/reflection.proto");
+				.isEqualTo("grpc/reflection/v1/reflection.proto");
+		context.close();
+	}
+
+	@Test
+	public void testBinary() {
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(BinaryExample.class);
+		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
+		assertThat(registry.type("EchoRequest").getFile().getName()).isEqualTo("foo.proto");
 		context.close();
 	}
 
@@ -195,6 +203,12 @@ public class ProtobufRegistrationTests {
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "classpath:/grpc/reflection/v1/reflection.proto")
 	static class ClasspathPrefixExample {
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ImportProtobuf(locations = "classpath:/binary/multi.pb")
+	static class BinaryExample {
 
 	}
 
