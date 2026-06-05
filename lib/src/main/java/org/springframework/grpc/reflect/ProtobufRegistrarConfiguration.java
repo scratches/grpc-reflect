@@ -28,6 +28,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -95,6 +96,7 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 			FileDescriptorManager manager = new FileDescriptorManager();
 			if (this.locations != null) {
 				List<String> paths = new ArrayList<>();
+				List<Resource> binaries = new ArrayList<>();
 				for (String location : this.locations) {
 					boolean hasBase = false;
 					if (this.base.length() > 0) {
@@ -109,11 +111,15 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 						for (Resource resource : resources) {
 							if (resource.exists()) {
 								String url = resource.getURL().getPath();
+								if (url.endsWith(".pb")) {
+									binaries.add(resource);
+									continue;
+								}
 								url = url.substring(url.lastIndexOf(rootDir));
 								if (hasBase && url.startsWith(base)) {
 									url = url.substring(base.length());
 								}
-								if (url.startsWith("/")) {
+								if (url.startsWith("/") && (resource instanceof ClassPathResource || base.length() > 0)) {
 									url = url.substring(1);
 								}
 								paths.add(url);
@@ -123,6 +129,10 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 					catch (IOException e) {
 						throw new IllegalStateException("Failed to find resources for location: " + location, e);
 					}
+				}
+				BinaryDescriptorParser binary = new BinaryDescriptorParser();
+				for (FileDescriptor proto : manager.convert(binary.resolve(binaries.toArray(new Resource[0])))) {
+					registry.register(proto);
 				}
 				for (FileDescriptor proto : manager.convert(parser.resolve(paths.toArray(new String[0])))) {
 					registry.register(proto);

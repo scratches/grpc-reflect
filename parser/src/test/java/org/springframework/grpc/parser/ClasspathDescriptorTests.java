@@ -17,10 +17,8 @@ package org.springframework.grpc.parser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.File;
 import java.io.IOException;
 
-import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.springframework.grpc.parser.PathLocator.NamedBytes;
 
@@ -141,20 +139,6 @@ public class ClasspathDescriptorTests {
 		assertThat(files.getFileCount()).isEqualTo(4);
 		FileDescriptorProto proto = files.getFile(3);
 		assertThat(proto.getName()).isEqualTo("protobuf/validate.proto");
-		assertThat(proto.getMessageTypeList()).hasSize(23);
-		FieldDescriptorProto field = field(proto, ".google.protobuf.MessageOptions", "disabled");
-		assertThat(field.getNumber()).isEqualTo(1071);
-	}
-
-	@Test
-	public void testBinary() {
-		Assumptions.assumeThat(new File("target/validate.pb"))
-			.as("Test resource 'target/validate.pb' not found, skipping").exists();
-		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorSet files = parser.resolve("target/validate.pb");
-		assertThat(files.getFileCount()).isEqualTo(1);
-		FileDescriptorProto proto = files.getFile(0);
-		assertThat(proto.getName()).endsWith("protobuf/validate.proto");
 		assertThat(proto.getMessageTypeList()).hasSize(23);
 		FieldDescriptorProto field = field(proto, ".google.protobuf.MessageOptions", "disabled");
 		assertThat(field.getNumber()).isEqualTo(1071);

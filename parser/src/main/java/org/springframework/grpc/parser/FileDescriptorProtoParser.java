@@ -243,17 +243,6 @@ public class FileDescriptorProtoParser {
 					}
 				}
 			}
-			if (named.name().endsWith(".pb")) {
-				try {
-					FileDescriptorSet proto = FileDescriptorSet.parseFrom(named.bytes().get());
-					for (FileDescriptorProto resolved : proto.getFileList()) {
-						builder.addFile(resolved);
-					}
-				}
-				catch (IOException e) {
-					throw new IllegalStateException("Failed to read file: " + path, e);
-				}
-			}
 		}
 		return builder.build();
 	}
