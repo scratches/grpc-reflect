@@ -15,8 +15,10 @@
  */
 package org.springframework.grpc.reflect;
 
+import org.springframework.core.io.Resource;
+
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
 
 public interface DescriptorParser {
-	FileDescriptorSet resolve(String... inputs);
+	FileDescriptorSet resolve(Resource... resources);
 }
