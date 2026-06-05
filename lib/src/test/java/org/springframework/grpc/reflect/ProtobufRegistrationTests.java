@@ -142,74 +142,50 @@ public class ProtobufRegistrationTests {
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf("file:src/test/proto/hello.proto")
-	static class FileSystemExample {
-
-	}
+	static class FileSystemExample {}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf("src/test/proto/hello.proto")
-	static class FileSystemExampleNoScheme {
-
-	}
+	static class FileSystemExampleNoScheme {}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf("proto/simple.proto")
-	static class ClasspathExample {
-
-	}
+	static class ClasspathExample {}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf("proto/bar.proto")
-	static class OtherExample {
-
-	}
+	static class OtherExample {}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf("proto/*.proto")
-	static class PatternExample {
-
-	}
+	static class PatternExample {}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf({ "proto/bar.proto", "file:src/test/proto/hello.proto" })
-	static class MultipleExample {
-
-	}
+	static class MultipleExample {}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "simple.proto", base = "proto")
-	static class BaseExample {
-
-	}
+	static class BaseExample {}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "simple.proto", base = "classpath:proto")
-	static class BaseUrlExample {
-
-	}
+	static class BaseUrlExample {}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "*.proto", base = "proto")
-	static class BasePatternExample {
-
-	}
+	static class BasePatternExample {}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "grpc/reflection/v1/reflection.proto")
-	static class JarFileExample {
-
-	}
+	static class JarFileExample {}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "classpath:/grpc/reflection/v1/reflection.proto")
-	static class ClasspathPrefixExample {
-
-	}
+	static class ClasspathPrefixExample {}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "classpath:/binary/multi.pb")
-	static class BinaryExample {
-
-	}
+	static class BinaryExample {}
 
 }
