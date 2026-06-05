@@ -84,15 +84,19 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 		@Override
 		public void register(DescriptorRegistry registry) {
 			FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+			String base = this.base;
+			if (base.contains(":")) {
+				base = base.substring(base.indexOf(':') + 1);
+			}
 			parser.setPathLocator(new DefaultPathLocator(base));
 			FileDescriptorManager manager = new FileDescriptorManager();
 			if (this.locations != null) {
 				List<String> paths = new ArrayList<>();
 				for (String location : this.locations) {
 					boolean hasBase = false;
-					if (base.length() > 0) {
+					if (this.base.length() > 0) {
 						if (!location.contains(":") && !location.startsWith("/")) {
-							location = base + (base.endsWith("/") ? "" : "/") + location;
+							location = this.base + (this.base.endsWith("/") ? "" : "/") + location;
 							hasBase = true;
 						}
 					}
