@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
@@ -58,7 +57,7 @@ public class BinaryDescriptorParserTests {
 	@Test
 	public void testDescriptorFileUrl() {
 		BinaryDescriptorParser parser = new BinaryDescriptorParser();
-		FileDescriptorSet files = parser.resolve(resources("file:src/test/resources/binary/multi.pb"));
+		FileDescriptorSet files = parser.resolve(resources("file:target/multi.pb"));
 		assertThat(files.getFileCount()).isEqualTo(2);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("bar.proto");
@@ -88,10 +87,6 @@ public class BinaryDescriptorParserTests {
 
 	@Test
 	public void testValidateExample() {
-		// protoc -o lib/target/validate.pb \
-		// parser/src/test/resources/protobuf/validate.proto
-		Assumptions.assumeThat(new File("target/validate.pb"))
-				.as("Test resource 'target/validate.pb' not found, skipping").exists();
 		BinaryDescriptorParser parser = new BinaryDescriptorParser();
 		FileDescriptorSet files = parser.resolve(resources("file:target/validate.pb"));
 		assertThat(files.getFileCount()).isEqualTo(1);

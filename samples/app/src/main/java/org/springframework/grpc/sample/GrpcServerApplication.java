@@ -27,7 +27,7 @@ import reactor.core.publisher.Flux;
 
 @SpringBootApplication
 @EnableGrpcMapping
-@ImportProtobuf({ "proto/foo.proto", "proto/simple.proto" })
+@ImportProtobuf("proto/descriptor.pb")
 public class GrpcServerApplication {
 
 	public static void main(String[] args) {

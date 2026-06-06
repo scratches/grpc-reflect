@@ -123,6 +123,8 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 									url = url.substring(1);
 								}
 								paths.add(url);
+							} else {
+								throw new IllegalArgumentException("Resource does not exist: " + resource);
 							}
 						}
 					}

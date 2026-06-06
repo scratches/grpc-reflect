@@ -105,6 +105,42 @@
 		</plugins>
 	</build>
 
+	<profiles>
+		<profile>
+			<id>proto</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>io.github.ascopes</groupId>
+						<artifactId>protobuf-maven-plugin</artifactId>
+						<configuration>
+							<!-- Spring Boot parent will generate java sources that we don't need -->
+							<sourceDirectories>
+								<sourceDirectory>src/main/resources/proto</sourceDirectory>
+							</sourceDirectories>
+							<outputDescriptorIncludeImports>true</outputDescriptorIncludeImports>
+							<outputDescriptorFile>src/main/resources/proto/descriptor.pb</outputDescriptorFile>
+						</configuration>
+						<executions>
+							<execution>
+								<id>test</id>
+								<goals>
+									<goal>generate-test</goal>
+								</goals>
+								<configuration>
+									<sourceDirectories>
+										<sourceDirectory>src/test/resources/proto</sourceDirectory>
+									</sourceDirectories>
+									<outputDescriptorFile>src/test/resources/proto/echo.pb</outputDescriptorFile>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
 	<repositories>
 		<repository>
 			<id>spring-milestones</id>

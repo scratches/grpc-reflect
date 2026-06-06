@@ -168,7 +168,7 @@ public class GrpcServerApplicationTests {
 
 	@TestConfiguration(proxyBeanMethods = false)
 	@ImportGrpcClients(factory = DynamicStubFactory.class, types = FooClient.class)
-	@ImportProtobuf("proto/echo.proto")
+	@ImportProtobuf("proto/echo.pb")
 	static class ExtraConfiguration {
 
 		@Bean

@@ -16,8 +16,10 @@
 package org.springframework.grpc.reflect;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
@@ -29,11 +31,14 @@ public class ProtobufRegistrationTests {
 
 	@Test
 	public void testFileSystemNoScheme() {
-		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(
-				FileSystemExampleNoScheme.class);
-		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
-		assertThat(file(registry, "Simple")).isNull();
-		context.close();
+		// The file is not on the classpath, so it should fail to load without the "file:" scheme prefix
+		assertThrows(BeanCreationException.class, () -> {
+			ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(
+					FileSystemExampleNoScheme.class);
+			DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
+			assertThat(file(registry, "Simple")).isNull();
+			context.close();
+		});
 	}
 
 	@Test
@@ -153,54 +158,67 @@ public class ProtobufRegistrationTests {
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf("file:src/test/proto/hello.proto")
-	static class FileSystemExample {}
+	static class FileSystemExample {
+	}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf("src/test/proto/hello.proto")
-	static class FileSystemExampleNoScheme {}
+	static class FileSystemExampleNoScheme {
+	}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf("proto/simple.proto")
-	static class ClasspathExample {}
+	static class ClasspathExample {
+	}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf("proto/bar.proto")
-	static class OtherExample {}
+	static class OtherExample {
+	}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf("proto/*.proto")
-	static class PatternExample {}
+	static class PatternExample {
+	}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf({ "proto/bar.proto", "file:src/test/proto/hello.proto" })
-	static class MultipleExample {}
+	static class MultipleExample {
+	}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "simple.proto", base = "proto")
-	static class BaseExample {}
+	static class BaseExample {
+	}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "simple.proto", base = "classpath:proto")
-	static class BaseUrlExample {}
+	static class BaseUrlExample {
+	}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "*.proto", base = "proto")
-	static class BasePatternExample {}
+	static class BasePatternExample {
+	}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "grpc/reflection/v1/reflection.proto")
-	static class JarFileExample {}
+	static class JarFileExample {
+	}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(base = "classpath:/", locations = "grpc/reflection/v1/reflection.proto")
-	static class JarFileBaseExample {}
+	static class JarFileBaseExample {
+	}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "classpath:/grpc/reflection/v1/reflection.proto")
-	static class ClasspathPrefixExample {}
+	static class ClasspathPrefixExample {
+	}
 
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "classpath:/binary/multi.pb")
-	static class BinaryExample {}
+	static class BinaryExample {
+	}
 
 }

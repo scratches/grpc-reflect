@@ -136,22 +136,50 @@
 				<version>5.1.4</version>
 				<configuration>
 					<protoc>${protobuf-java.version}</protoc>
-					<plugins>
-						<plugin kind="binary-maven">
-							<groupId>io.grpc</groupId>
-							<artifactId>protoc-gen-grpc-java</artifactId>
-							<version>${grpc.version}</version>
-							<options>@generated=omit</options>
-						</plugin>
-					</plugins>
 				</configuration>
 				<executions>
+					<execution>
+						<id>multi</id>
+						<goals>
+							<goal>generate-test</goal>
+						</goals>
+						<configuration>
+							<sourceDirectories>
+								<sourceDirectory>src/test/resources/proto</sourceDirectory>
+							</sourceDirectories>
+							<outputDescriptorFile>target/multi.pb</outputDescriptorFile>
+							<outputDescriptorIncludeImports>true</outputDescriptorIncludeImports>
+						</configuration>
+					</execution>
+					<execution>
+						<id>validate</id>
+						<goals>
+							<goal>generate-test</goal>
+						</goals>
+						<configuration>
+							<sourceDirectories>
+								<sourceDirectory>src/test/resources</sourceDirectory>
+							</sourceDirectories>
+							<includes>
+								<include>**/validate.proto</include>
+							</includes>
+							<outputDescriptorFile>target/validate.pb</outputDescriptorFile>
+						</configuration>
+					</execution>
 					<execution>
 						<id>deps</id>
 						<goals>
 							<goal>generate-test</goal>
 						</goals>
 						<configuration>
+							<plugins>
+								<plugin kind="binary-maven">
+									<groupId>io.grpc</groupId>
+									<artifactId>protoc-gen-grpc-java</artifactId>
+									<version>${grpc.version}</version>
+									<options>@generated=omit</options>
+								</plugin>
+							</plugins>
 							<sourceDirectories>
 								<sourceDirectory>src/test/proto</sourceDirectory>
 							</sourceDirectories>
