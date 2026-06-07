@@ -35,6 +35,7 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.grpc.parser.DefaultPathLocator;
 import org.springframework.grpc.parser.FileDescriptorProtoParser;
+import org.springframework.util.ClassUtils;
 
 import com.google.protobuf.Descriptors.FileDescriptor;
 
@@ -50,14 +51,14 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 			if (!registry.containsBeanDefinition("grpcDescriptorRegistry")) {
 				registry.registerBeanDefinition("grpcDescriptorRegistry",
 						BeanDefinitionBuilder.genericBeanDefinition(DefaultDescriptorRegistry.class)
-							.getBeanDefinition());
+								.getBeanDefinition());
 			}
 			registry.registerBeanDefinition(BEAN_NAME,
 					BeanDefinitionBuilder.genericBeanDefinition(ProtobufRegistrarPostProcessor.class)
-						.getBeanDefinition());
+							.getBeanDefinition());
 		}
 		ImportProtobuf annotation = ImportProtobuf.class
-			.cast(meta.getAnnotations().get(ImportProtobuf.class.getName()).synthesize());
+				.cast(meta.getAnnotations().get(ImportProtobuf.class.getName()).synthesize());
 		String[] locations = annotation.locations();
 		if (locations.length == 0) {
 			locations = annotation.value();
@@ -84,15 +85,13 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 
 		@Override
 		public void register(DescriptorRegistry registry) {
-			FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 			String base = this.base;
 			if (base.contains(":")) {
 				while (base.endsWith("/")) {
-					base = base.substring(0, base.length()-1);
+					base = base.substring(0, base.length() - 1);
 				}
 				base = base.substring(base.indexOf(':') + 1);
 			}
-			parser.setPathLocator(new DefaultPathLocator(base));
 			FileDescriptorManager manager = new FileDescriptorManager();
 			if (this.locations != null) {
 				List<String> paths = new ArrayList<>();
@@ -119,7 +118,8 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 								if (hasBase && url.startsWith(base)) {
 									url = url.substring(base.length());
 								}
-								if (url.startsWith("/") && (resource instanceof ClassPathResource || base.length() > 0)) {
+								if (url.startsWith("/")
+										&& (resource instanceof ClassPathResource || base.length() > 0)) {
 									url = url.substring(1);
 								}
 								paths.add(url);
@@ -127,8 +127,7 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 								throw new IllegalArgumentException("Resource does not exist: " + resource);
 							}
 						}
-					}
-					catch (IOException e) {
+					} catch (IOException e) {
 						throw new IllegalStateException("Failed to find resources for location: " + location, e);
 					}
 				}
@@ -136,8 +135,13 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 				for (FileDescriptor proto : manager.convert(binary.resolve(binaries.toArray(new Resource[0])))) {
 					registry.register(proto);
 				}
-				for (FileDescriptor proto : manager.convert(parser.resolve(paths.toArray(new String[0])))) {
-					registry.register(proto);
+				DescriptorParser parser = PARSER_PRESENT
+						? ParserProvider.findReflectiveParser(base, paths.toArray(new String[0]))
+						: null;
+				if (parser != null) {
+					for (FileDescriptor proto : manager.convert(parser.resolve())) {
+						registry.register(proto);
+					}
 				}
 			}
 		}
@@ -163,6 +167,24 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 				rootDirEnd = 0;
 			}
 			return location.substring(0, rootDirEnd);
+		}
+
+		private static final boolean PARSER_PRESENT = ClassUtils
+				.isPresent("org.springframework.grpc.parser.FileDescriptorProtoParser", null);
+
+		static class ParserProvider {
+
+			private static DescriptorParser findReflectiveParser(String base, String[] paths) {
+				if (PARSER_PRESENT) {
+					FileDescriptorProtoParser fds = new FileDescriptorProtoParser();
+					fds.setPathLocator(new DefaultPathLocator(base));
+					return resources -> {
+						return fds.resolve(paths);
+					};
+				}
+				return null;
+			}
+
 		}
 
 	}
