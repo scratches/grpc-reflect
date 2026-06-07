@@ -93,9 +93,8 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 				base = base.substring(base.indexOf(':') + 1);
 			}
 			FileDescriptorManager manager = new FileDescriptorManager();
+			BinaryDescriptorParser binary = new BinaryDescriptorParser();
 			if (this.locations != null) {
-				List<String> paths = new ArrayList<>();
-				List<Resource> binaries = new ArrayList<>();
 				for (String location : this.locations) {
 					boolean hasBase = false;
 					if (this.base.length() > 0) {
@@ -105,42 +104,20 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 						}
 					}
 					String rootDir = determineRootDir(location);
+					Resource[] resources;
 					try {
-						Resource[] resources = resourceLoader.getResources(location);
-						for (Resource resource : resources) {
-							if (resource.exists()) {
-								String url = resource.getURL().getPath();
-								if (url.endsWith(".pb")) {
-									binaries.add(resource);
-									continue;
-								}
-								url = url.substring(url.lastIndexOf(rootDir));
-								if (hasBase && url.startsWith(base)) {
-									url = url.substring(base.length());
-								}
-								if (url.startsWith("/")
-										&& (resource instanceof ClassPathResource || base.length() > 0)) {
-									url = url.substring(1);
-								}
-								paths.add(url);
-							} else {
-								throw new IllegalArgumentException("Resource does not exist: " + resource);
-							}
-						}
+						resources = resourceLoader.getResources(location);
 					} catch (IOException e) {
 						throw new IllegalStateException("Failed to find resources for location: " + location, e);
 					}
-				}
-				BinaryDescriptorParser binary = new BinaryDescriptorParser();
-				for (FileDescriptor proto : manager.convert(binary.resolve(binaries.toArray(new Resource[0])))) {
-					registry.register(proto);
-				}
-				DescriptorParser parser = PARSER_PRESENT
-						? ParserProvider.findReflectiveParser(base, paths.toArray(new String[0]))
-						: null;
-				if (parser != null) {
-					for (FileDescriptor proto : manager.convert(parser.resolve())) {
+					for (FileDescriptor proto : manager.convert(binary.resolve(resources))) {
 						registry.register(proto);
+					}
+					if (PARSER_PRESENT) {
+						DescriptorParser parser = ParserProvider.findReflectiveParser(base, hasBase, rootDir);
+						for (FileDescriptor proto : manager.convert(parser.resolve(resources))) {
+							registry.register(proto);
+						}
 					}
 				}
 			}
@@ -174,12 +151,34 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 
 		static class ParserProvider {
 
-			private static DescriptorParser findReflectiveParser(String base, String[] paths) {
+			private static DescriptorParser findReflectiveParser(String base, boolean hasBase, String rootDir) {
 				if (PARSER_PRESENT) {
 					FileDescriptorProtoParser fds = new FileDescriptorProtoParser();
 					fds.setPathLocator(new DefaultPathLocator(base));
 					return resources -> {
-						return fds.resolve(paths);
+						List<String> paths = new ArrayList<>();
+						for (Resource resource : resources) {
+							if (resource.exists()) {
+								String url;
+								try {
+									url = resource.getURL().getPath();
+								} catch (IOException e) {
+									throw new IllegalStateException("Failed to get URL for resource: " + resource, e);
+								}
+								url = url.substring(url.lastIndexOf(rootDir));
+								if (hasBase && url.startsWith(base)) {
+									url = url.substring(base.length());
+								}
+								if (url.startsWith("/")
+										&& (resource instanceof ClassPathResource || base.length() > 0)) {
+									url = url.substring(1);
+								}
+								paths.add(url);
+							} else {
+								throw new IllegalArgumentException("Resource does not exist: " + resource);
+							}
+						}
+						return fds.resolve(paths.toArray(new String[0]));
 					};
 				}
 				return null;
