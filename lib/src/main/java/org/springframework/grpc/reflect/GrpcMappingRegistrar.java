@@ -17,12 +17,10 @@ package org.springframework.grpc.reflect;
 
 import java.lang.reflect.Method;
 
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.grpc.reflect.DynamicServiceFactory.BindableServiceInstanceBuilder;
@@ -32,53 +30,62 @@ import io.grpc.BindableService;
 /**
  * Bean definition registrar for gRPC mapping functionality.
  * <p>
- * This registrar implements {@link ImportBeanDefinitionRegistrar} to programmatically
- * register beans required for gRPC method mapping and reflection capabilities in the
- * Spring application context.
+ * This registrar implements {@link ImportBeanDefinitionRegistrar} to
+ * programmatically register beans required for gRPC method mapping and 
+ * reflection capabilities in the Spring application context.
  *
  * @author Dave Syer
  * @since 1.0.0
  */
 public class GrpcMappingRegistrar implements ImportBeanDefinitionRegistrar {
 
+	static String BINDABLE_SERVICE_FACTORY = "grpcBindableServiceFactory";
+
 	@Override
 	public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
-		if (!registry.containsBeanDefinition(GrpcMappingPostProcessor.GRPC_MAPPING_BEAN_NAME)) {
-			registry.registerBeanDefinition(GrpcMappingPostProcessor.GRPC_MAPPING_BEAN_NAME,
-					BeanDefinitionBuilder.genericBeanDefinition(GrpcMappingPostProcessor.class).getBeanDefinition());
+		if (!registry.containsBeanDefinition(BINDABLE_SERVICE_FACTORY)) {
+			registry.registerBeanDefinition(BINDABLE_SERVICE_FACTORY,
+					BeanDefinitionBuilder.genericBeanDefinition(BindableServiceFactory.class).getBeanDefinition());
+			for (String name : registry.getBeanDefinitionNames()) {
+				BeanDefinition definition = registry.getBeanDefinition(name);
+				if (definition.getBeanClassName() != null) {
+					try {
+						Class<?> clazz = Class.forName(definition.getBeanClassName());
+						if (clazz.isAnnotationPresent(GrpcController.class)) {
+							BeanDefinitionBuilder builder = BeanDefinitionBuilder
+									.genericBeanDefinition(BindableService.class);
+							builder.addConstructorArgReference(name);
+							builder.setFactoryMethodOnBean("create", BINDABLE_SERVICE_FACTORY);
+							registry.registerBeanDefinition(name + "_service", builder.getBeanDefinition());
+						}
+					} catch (ClassNotFoundException e) {
+						// Ignore
+					}
+				}
+			}
 		}
 	}
 
-	static class GrpcMappingPostProcessor implements BeanFactoryPostProcessor {
+	static class BindableServiceFactory {
 
-		static String GRPC_MAPPING_BEAN_NAME = "grpcMappingPostProcessor";
+		private ObjectProvider<DynamicServiceFactory> factory;
 
-		@Override
-		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-			String factoryName = beanFactory.getBeanNamesForType(DynamicServiceFactory.class)[0];
-			for (String name : beanFactory.getBeanNamesForAnnotation(GrpcController.class)) {
-				BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(BindableService.class);
-				builder.addConstructorArgReference(factoryName);
-				builder.addConstructorArgReference(name);
-				builder.setFactoryMethodOnBean("create", GRPC_MAPPING_BEAN_NAME);
-				((DefaultListableBeanFactory) beanFactory).registerBeanDefinition(name + "_service",
-						builder.getBeanDefinition());
-			}
+		BindableServiceFactory(ObjectProvider<DynamicServiceFactory> factory) {
+			this.factory = factory;
 		}
 
-		public BindableService create(DynamicServiceFactory dynamic, Object instance) {
+		public BindableService create(Object instance) {
 			String serviceName = instance.getClass().getAnnotation(GrpcController.class).value();
 			if (serviceName.isEmpty()) {
 				serviceName = instance.getClass().getSimpleName();
 			}
-			BindableServiceInstanceBuilder service = dynamic.service(serviceName, instance);
+			BindableServiceInstanceBuilder service = factory.getObject().service(serviceName, instance);
 			for (Method method : instance.getClass().getDeclaredMethods()) {
 				if (method.isAnnotationPresent(GrpcMapping.class)) {
 					GrpcMapping mapping = method.getAnnotation(GrpcMapping.class);
 					if (mapping.value().isEmpty()) {
 						service.method(method);
-					}
-					else {
+					} else {
 						service.method(method, mapping.value());
 					}
 				}
