@@ -82,4 +82,5 @@ public class ProtoDescriptorParserTests {
 		}
 		throw new IllegalStateException("Extension not found: " + name + "." + field);
 	}
+
 }

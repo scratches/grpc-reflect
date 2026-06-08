@@ -30,9 +30,9 @@ import io.grpc.BindableService;
 /**
  * Bean definition registrar for gRPC mapping functionality.
  * <p>
- * This registrar implements {@link ImportBeanDefinitionRegistrar} to
- * programmatically register beans required for gRPC method mapping and 
- * reflection capabilities in the Spring application context.
+ * This registrar implements {@link ImportBeanDefinitionRegistrar} to programmatically
+ * register beans required for gRPC method mapping and reflection capabilities in the
+ * Spring application context.
  *
  * @author Dave Syer
  * @since 1.0.0
@@ -53,12 +53,13 @@ public class GrpcMappingRegistrar implements ImportBeanDefinitionRegistrar {
 						Class<?> clazz = Class.forName(definition.getBeanClassName());
 						if (clazz.isAnnotationPresent(GrpcController.class)) {
 							BeanDefinitionBuilder builder = BeanDefinitionBuilder
-									.genericBeanDefinition(BindableService.class);
+								.genericBeanDefinition(BindableService.class);
 							builder.addConstructorArgReference(name);
 							builder.setFactoryMethodOnBean("create", BINDABLE_SERVICE_FACTORY);
 							registry.registerBeanDefinition(name + "_service", builder.getBeanDefinition());
 						}
-					} catch (ClassNotFoundException e) {
+					}
+					catch (ClassNotFoundException e) {
 						// Ignore
 					}
 				}
@@ -85,7 +86,8 @@ public class GrpcMappingRegistrar implements ImportBeanDefinitionRegistrar {
 					GrpcMapping mapping = method.getAnnotation(GrpcMapping.class);
 					if (mapping.value().isEmpty()) {
 						service.method(method);
-					} else {
+					}
+					else {
 						service.method(method, mapping.value());
 					}
 				}

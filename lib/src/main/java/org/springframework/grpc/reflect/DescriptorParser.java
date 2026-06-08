@@ -17,6 +17,27 @@ package org.springframework.grpc.reflect;
 
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
 
+/**
+ * Strategy for resolving a set of Protobuf file descriptors from one or more resource
+ * locations. Implementations may differ in the format they accept (e.g. pre-compiled
+ * {@code .pb} binary files vs. raw {@code .proto} source files).
+ *
+ * @see BinaryDescriptorParser
+ * @see ProtoDescriptorParser
+ */
 public interface DescriptorParser {
+
+	/**
+	 * Resolve all Protobuf file descriptors from the given locations. Implementations
+	 * should skip any duplicate descriptors (e.g. if the same file is found in multiple
+	 * locations) and should ignore any resources that cannot be resolved or parsed (e.g.
+	 * by using a file name extension convention).
+	 * @param base a base path or resource prefix prepended to relative locations; may be
+	 * {@code null} or empty to use locations as-is
+	 * @param resources one or more resource location patterns pointing to descriptor
+	 * files or directories containing them
+	 * @return a {@link FileDescriptorSet} containing all resolved descriptors
+	 */
 	FileDescriptorSet resolve(String base, String... resources);
+
 }

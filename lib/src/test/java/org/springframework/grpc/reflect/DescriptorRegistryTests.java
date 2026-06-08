@@ -117,11 +117,13 @@ public class DescriptorRegistryTests {
 				}
 				registry.bidi(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
 						outputType);
-			} else {
+			}
+			else {
 				registry.stream(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
 						outputType);
 			}
-		} else {
+		}
+		else {
 			registry.unary(owner.getSimpleName() + "/" + StringUtils.capitalize(method.getName()), inputType,
 					outputType);
 		}

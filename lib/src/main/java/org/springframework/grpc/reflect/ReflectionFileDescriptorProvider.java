@@ -33,13 +33,10 @@ import com.google.protobuf.Descriptors.ServiceDescriptor;
 import io.grpc.MethodDescriptor.MethodType;
 
 /**
- * File descriptor provider that uses reflection to obtain descriptor
- * information.
+ * File descriptor provider that uses reflection to obtain descriptor information.
  * <p>
- * This implementation of {@link DescriptorProvider} leverages Java reflection
- * to extract
- * protocol buffer descriptors from compiled classes, enabling dynamic access to
- * gRPC
+ * This implementation of {@link DescriptorProvider} leverages Java reflection to extract
+ * protocol buffer descriptors from compiled classes, enabling dynamic access to gRPC
  * service definitions.
  *
  * @author Dave Syer
@@ -107,9 +104,9 @@ public class ReflectionFileDescriptorProvider implements DescriptorProvider {
 		String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
 		String serviceName = fullMethodName.substring(0, fullMethodName.lastIndexOf('/'));
 		MethodDescriptorProto.Builder builder = MethodDescriptorProto.newBuilder()
-				.setName(methodName)
-				.setInputType(input.getSimpleName())
-				.setOutputType(output.getSimpleName());
+			.setName(methodName)
+			.setInputType(input.getSimpleName())
+			.setOutputType(output.getSimpleName());
 		switch (methodType) {
 			case SERVER_STREAMING:
 				builder.setServerStreaming(true);
@@ -165,7 +162,8 @@ public class ReflectionFileDescriptorProvider implements DescriptorProvider {
 		FileDescriptorProto.Builder builder = FileDescriptorProto.newBuilder();
 		if (this.catalog.get(owner) != null) {
 			builder = this.catalog.get(owner).toProto().toBuilder();
-		} else {
+		}
+		else {
 			builder.setName(owner + ".proto");
 			builder.setSyntax("proto3");
 		}
@@ -187,7 +185,8 @@ public class ReflectionFileDescriptorProvider implements DescriptorProvider {
 			FileDescriptor proto = FileDescriptor.buildFrom(builder.build(),
 					dependencies.toArray(new FileDescriptor[0]));
 			this.catalog.put(service.getName(), proto);
-		} catch (DescriptorValidationException e) {
+		}
+		catch (DescriptorValidationException e) {
 			throw new IllegalStateException(e);
 		}
 	}

@@ -40,8 +40,7 @@ public class BinaryDescriptorParserTests {
 	@Test
 	public void testDescriptorDuplicateFile() {
 		BinaryDescriptorParser parser = new BinaryDescriptorParser();
-		FileDescriptorSet files = parser
-				.resolve("", "binary/multi.pb", "file:src/test/resources/binary/multi.pb");
+		FileDescriptorSet files = parser.resolve("", "binary/multi.pb", "file:src/test/resources/binary/multi.pb");
 		assertThat(files.getFileCount()).isEqualTo(2);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("bar.proto");
@@ -107,4 +106,5 @@ public class BinaryDescriptorParserTests {
 		}
 		throw new IllegalStateException("Extension not found: " + name + "." + field);
 	}
+
 }

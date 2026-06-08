@@ -32,6 +32,15 @@ import org.springframework.util.StringUtils;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
 
+/**
+ * {@link DescriptorParser} implementation that reads pre-compiled Protobuf binary
+ * descriptor files ({@code .pb} files produced by {@code protoc --descriptor_set_out}).
+ * <p>
+ * If a location does not already end in {@code .pb} it is treated as a directory and
+ * {@code /**&#47;*.pb} is appended automatically. Files are deduplicated by their
+ * {@link com.google.protobuf.DescriptorProtos.FileDescriptorProto#getName() name} so that
+ * the same descriptor is never added twice.
+ */
 public class BinaryDescriptorParser implements DescriptorParser, ResourceLoaderAware {
 
 	private ResourceLoader resourceLoader = new DefaultResourceLoader();
@@ -65,14 +74,16 @@ public class BinaryDescriptorParser implements DescriptorParser, ResourceLoaderA
 				}
 				if (!location.contains("*")) {
 					location = location + "/**/*.pb";
-				} else {
+				}
+				else {
 					location = location + "/*.pb";
 				}
 			}
 			Resource[] resources;
 			try {
 				resources = resolver.getResources(location);
-			} catch (IOException e) {
+			}
+			catch (IOException e) {
 				throw new IllegalStateException("Failed to find resources for location: " + location, e);
 			}
 			for (Resource resource : resources) {
@@ -92,7 +103,8 @@ public class BinaryDescriptorParser implements DescriptorParser, ResourceLoaderA
 						files.add(resolved.getName());
 						builder.addFile(resolved);
 					}
-				} catch (IOException e) {
+				}
+				catch (IOException e) {
 					throw new IllegalStateException("Failed to read file: " + resource, e);
 				}
 			}

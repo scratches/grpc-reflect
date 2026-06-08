@@ -45,8 +45,8 @@ import com.google.protobuf.Descriptors.FileDescriptor;
 /**
  * Provider interface for obtaining protocol buffer descriptors.
  * <p>
- * This interface defines the contract for classes that can supply descriptor
- * information used in gRPC reflection and service discovery mechanisms.
+ * This interface defines the contract for classes that can supply descriptor information
+ * used in gRPC reflection and service discovery mechanisms.
  *
  * @author Dave Syer
  * @since 1.0.0
@@ -92,23 +92,28 @@ public interface DescriptorMapper {
 							Type type = findType(valueType, null);
 							if (type == Type.TYPE_MESSAGE || type == Type.TYPE_ENUM) {
 								fieldType = valueType;
-							} else {
+							}
+							else {
 								continue;
 							}
-						} else if (Iterable.class.isAssignableFrom(fieldType)) {
+						}
+						else if (Iterable.class.isAssignableFrom(fieldType)) {
 							Class<?> valueType = findGenericType(property.getReadMethod().getGenericReturnType(), 0);
 							Type type = findType(valueType, null);
 							if (type == Type.TYPE_MESSAGE || type == Type.TYPE_ENUM) {
 								fieldType = valueType;
-							} else {
+							}
+							else {
 								continue;
 							}
-						} else if (fieldType.isArray()) {
+						}
+						else if (fieldType.isArray()) {
 							Class<?> valueType = fieldType.arrayType();
 							Type type = findType(valueType, null);
 							if (type == Type.TYPE_MESSAGE || type == Type.TYPE_ENUM) {
 								fieldType = valueType;
-							} else {
+							}
+							else {
 								continue;
 							}
 						}
@@ -118,7 +123,8 @@ public interface DescriptorMapper {
 								if (!builder.getMessageTypeList().contains(proto)) {
 									builder.addMessageType(proto);
 								}
-							} else {
+							}
+							else {
 								Descriptor descriptor = descriptor(fieldType, current, builder);
 								this.cache.put(fieldType, descriptor);
 								dependencies.add(descriptor.getFile());
@@ -139,7 +145,8 @@ public interface DescriptorMapper {
 					}
 				}
 				return proto.findMessageTypeByName(message.getName());
-			} catch (DescriptorValidationException e) {
+			}
+			catch (DescriptorValidationException e) {
 				throw new IllegalStateException(e);
 			}
 
@@ -160,17 +167,19 @@ public interface DescriptorMapper {
 				Class<?> fieldType = property.getReadMethod().getReturnType();
 				Type type = findType(fieldType, property.getReadMethod().getGenericReturnType());
 				DescriptorProtos.FieldDescriptorProto.Builder fb = DescriptorProtos.FieldDescriptorProto.newBuilder()
-						.setName(property.getName())
-						.setNumber(count)
-						.setType(type);
+					.setName(property.getName())
+					.setNumber(count)
+					.setType(type);
 				if (type == Type.TYPE_MESSAGE) {
 					if (Map.class.isAssignableFrom(fieldType)) {
 						String mapTypeName = StringUtils.capitalize(property.getName()) + "Entry";
 						fb.setTypeName(mapTypeName);
 						builder.addNestedType(mapType(mapTypeName, property));
-					} else if (Iterable.class.isAssignableFrom(fieldType) || fieldType.isArray()) {
+					}
+					else if (Iterable.class.isAssignableFrom(fieldType) || fieldType.isArray()) {
 						fb.setTypeName(findGenericTypeName(property.getReadMethod().getGenericReturnType(), 0));
-					} else {
+					}
+					else {
 						fb.setTypeName(fieldType.getSimpleName());
 					}
 				}
@@ -199,15 +208,15 @@ public interface DescriptorMapper {
 				Integer maybe = OrderUtils.getOrder(field);
 				if (maybe != null) {
 					orders.put(maybe, property);
-				} else {
+				}
+				else {
 					orders.put(order, property);
 				}
 			}
 			// Not an error if the explicit orders leave gaps
 			if (orders.size() != declarations.size()) {
 				// Some properties were not assigned an order
-				throw new IllegalStateException(
-						"Some properties were assigned a duplicate order in " + clazz);
+				throw new IllegalStateException("Some properties were assigned a duplicate order in " + clazz);
 			}
 			return orders;
 		}
@@ -248,7 +257,7 @@ public interface DescriptorMapper {
 			int count = 1;
 			Collections.reverse(classes);
 			for (Class<?> owner : classes) {
-				// Order of declaration is not defined in Java reflection, but it 
+				// Order of declaration is not defined in Java reflection, but it
 				// usually works the way you expect anyway, at least for openjdk.
 				for (Field field : owner.getDeclaredFields()) {
 					if (owners.containsKey(field.getName())) {
@@ -281,19 +290,26 @@ public interface DescriptorMapper {
 			}
 			if (type == String.class) {
 				return DescriptorProtos.FieldDescriptorProto.Type.TYPE_STRING;
-			} else if (type == float.class || type == Float.class) {
+			}
+			else if (type == float.class || type == Float.class) {
 				return DescriptorProtos.FieldDescriptorProto.Type.TYPE_FLOAT;
-			} else if (type == double.class || type == Double.class) {
+			}
+			else if (type == double.class || type == Double.class) {
 				return DescriptorProtos.FieldDescriptorProto.Type.TYPE_DOUBLE;
-			} else if (type == int.class || type == Integer.class) {
+			}
+			else if (type == int.class || type == Integer.class) {
 				return DescriptorProtos.FieldDescriptorProto.Type.TYPE_INT32;
-			} else if (type == long.class || type == Long.class) {
+			}
+			else if (type == long.class || type == Long.class) {
 				return DescriptorProtos.FieldDescriptorProto.Type.TYPE_INT64;
-			} else if (type == boolean.class || type == Boolean.class) {
+			}
+			else if (type == boolean.class || type == Boolean.class) {
 				return DescriptorProtos.FieldDescriptorProto.Type.TYPE_BOOL;
-			} else if (type == byte[].class) {
+			}
+			else if (type == byte[].class) {
 				return DescriptorProtos.FieldDescriptorProto.Type.TYPE_BYTES;
-			} else if (type.isEnum()) {
+			}
+			else if (type.isEnum()) {
 				return DescriptorProtos.FieldDescriptorProto.Type.TYPE_ENUM;
 			}
 			return DescriptorProtos.FieldDescriptorProto.Type.TYPE_MESSAGE;
@@ -302,13 +318,13 @@ public interface DescriptorMapper {
 		static DescriptorProto mapType(String name, PropertyDescriptor field) {
 			DescriptorProto.Builder type = DescriptorProto.newBuilder().setName(name);
 			FieldDescriptorProto.Builder key = FieldDescriptorProto.newBuilder()
-					.setName("key")
-					.setNumber(1)
-					.setType(findKeyType(field.getReadMethod().getGenericReturnType()));
+				.setName("key")
+				.setNumber(1)
+				.setType(findKeyType(field.getReadMethod().getGenericReturnType()));
 			FieldDescriptorProto.Builder value = FieldDescriptorProto.newBuilder()
-					.setName("value")
-					.setNumber(2)
-					.setType(findValueType(field.getReadMethod().getGenericReturnType()));
+				.setName("value")
+				.setNumber(2)
+				.setType(findValueType(field.getReadMethod().getGenericReturnType()));
 			if (value.getType() == FieldDescriptorProto.Type.TYPE_MESSAGE
 					|| value.getType() == FieldDescriptorProto.Type.TYPE_ENUM) {
 				value.setTypeName(findGenericTypeName(field.getReadMethod().getGenericReturnType(), 1));

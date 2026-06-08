@@ -59,6 +59,8 @@ public class GrpcServerApplicationTests {
 
 	@TestConfiguration
 	@ImportGrpcClients(types = SimpleGrpc.SimpleBlockingStub.class)
-	static class ExtraConfiguration {}
+	static class ExtraConfiguration {
+
+	}
 
 }

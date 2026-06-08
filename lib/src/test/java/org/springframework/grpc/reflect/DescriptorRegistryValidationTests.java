@@ -80,7 +80,7 @@ public class DescriptorRegistryValidationTests {
 		registry.validate("Simple/SayHello", Foo.class, Response.class);
 		String message = assertThrows(IllegalArgumentException.class,
 				() -> registry.validate("Simple/SayHello", Wrong.class, Response.class))
-				.getMessage();
+			.getMessage();
 		assertThat(message).contains("Field 'name'");
 	}
 

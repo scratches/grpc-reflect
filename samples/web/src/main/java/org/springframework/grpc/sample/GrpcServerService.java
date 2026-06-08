@@ -54,8 +54,9 @@ public class GrpcServerService {
 		if (req.getName().startsWith("internal")) {
 			throw new RuntimeException();
 		}
-		return Flux.interval(Duration.ofMillis(200)).take(5).map(val -> HelloReply.newBuilder()
-				.setMessage("Hello (" + val + ") ==> " + req.getName()).build());
+		return Flux.interval(Duration.ofMillis(200))
+			.take(5)
+			.map(val -> HelloReply.newBuilder().setMessage("Hello (" + val + ") ==> " + req.getName()).build());
 	}
 
 }

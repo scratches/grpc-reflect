@@ -30,6 +30,13 @@ import org.springframework.grpc.parser.FileDescriptorProtoParser;
 
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
 
+/**
+ * {@link DescriptorParser} implementation that reads Protobuf source files
+ * ({@code .proto}) at runtime using {@link FileDescriptorProtoParser}.
+ * <p>
+ * This allows import resolution across multiple {@code .proto} files without requiring a
+ * separate {@code protoc} invocation.
+ */
 public class ProtoDescriptorParser implements DescriptorParser, ResourceLoaderAware {
 
 	private PathMatchingResourcePatternResolver resourceLoader = new PathMatchingResourcePatternResolver(
@@ -67,7 +74,8 @@ public class ProtoDescriptorParser implements DescriptorParser, ResourceLoaderAw
 			Resource[] resources;
 			try {
 				resources = resourceLoader.getResources(location);
-			} catch (IOException e) {
+			}
+			catch (IOException e) {
 				throw new IllegalStateException("Failed to find resources for location: " + location, e);
 			}
 			for (Resource resource : resources) {
@@ -75,19 +83,20 @@ public class ProtoDescriptorParser implements DescriptorParser, ResourceLoaderAw
 					String url;
 					try {
 						url = resource.getURL().getPath();
-					} catch (IOException e) {
+					}
+					catch (IOException e) {
 						throw new IllegalStateException("Failed to get URL for resource: " + resource, e);
 					}
 					url = url.substring(url.lastIndexOf(rootDir));
 					if (hasBase && url.startsWith(bare)) {
 						url = url.substring(bare.length());
 					}
-					if (url.startsWith("/")
-							&& (resource instanceof ClassPathResource || bare.length() > 0)) {
+					if (url.startsWith("/") && (resource instanceof ClassPathResource || bare.length() > 0)) {
 						url = url.substring(1);
 					}
 					paths.add(url);
-				} else {
+				}
+				else {
 					throw new IllegalArgumentException("Resource does not exist: " + resource);
 				}
 			}
@@ -103,8 +112,7 @@ public class ProtoDescriptorParser implements DescriptorParser, ResourceLoaderAw
 			return location;
 		}
 		int rootDirEnd = location.length();
-		while (rootDirEnd > 0
-				&& this.resourceLoader.getPathMatcher().isPattern(location.substring(0, rootDirEnd))) {
+		while (rootDirEnd > 0 && this.resourceLoader.getPathMatcher().isPattern(location.substring(0, rootDirEnd))) {
 			rootDirEnd = location.lastIndexOf('/', rootDirEnd - 2) + 1;
 		}
 		if (rootDirEnd < 0) {

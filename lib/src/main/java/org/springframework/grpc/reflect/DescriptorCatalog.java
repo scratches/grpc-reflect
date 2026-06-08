@@ -34,6 +34,7 @@ import com.google.protobuf.Descriptors.ServiceDescriptor;
 public class DescriptorCatalog implements DescriptorProvider, DescriptorRegistry {
 
 	private Map<String, FileDescriptor> fileDescriptors = new HashMap<>();
+
 	private Map<String, Descriptor> descriptors = new HashMap<>();
 
 	@Override
@@ -45,12 +46,12 @@ public class DescriptorCatalog implements DescriptorProvider, DescriptorRegistry
 			register(type);
 		}
 	}
-	
+
 	@Override
 	public void register(ServiceDescriptor service) {
 		this.fileDescriptors.put(service.getFullName(), service.getFile());
 	}
-	
+
 	private void register(Descriptor type) {
 		this.descriptors.put(type.getFullName(), type);
 	}

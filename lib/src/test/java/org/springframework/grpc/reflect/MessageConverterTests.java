@@ -171,8 +171,7 @@ public class MessageConverterTests {
 		AbstractMessage message = converter.convert(bar, descriptor);
 
 		assertThat(message).isNotNull();
-		AbstractMessage nestedMessage = (AbstractMessage) message
-			.getField(descriptor.findFieldByName("foo"));
+		AbstractMessage nestedMessage = (AbstractMessage) message.getField(descriptor.findFieldByName("foo"));
 		assertThat(nestedMessage.getField(desc.findFieldByName("name"))).isEqualTo("foo");
 		assertThat(nestedMessage.getField(desc.findFieldByName("age"))).isEqualTo(30);
 	}

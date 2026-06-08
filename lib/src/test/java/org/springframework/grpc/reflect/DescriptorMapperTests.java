@@ -192,6 +192,7 @@ public class DescriptorMapperTests {
 	}
 
 	static class Nested {
+
 		private Cycle cycle;
 
 		public Cycle getCycle() {
@@ -201,6 +202,7 @@ public class DescriptorMapperTests {
 		public void setCycle(Cycle cycle) {
 			this.cycle = cycle;
 		}
+
 	}
 
 	static class Cycle {
@@ -214,6 +216,7 @@ public class DescriptorMapperTests {
 		public void setNested(Nested nested) {
 			this.nested = nested;
 		}
+
 	}
 
 }

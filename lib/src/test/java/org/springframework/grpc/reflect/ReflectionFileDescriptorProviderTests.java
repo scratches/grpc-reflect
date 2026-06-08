@@ -100,7 +100,7 @@ public class ReflectionFileDescriptorProviderTests {
 	public Spam spam(Foo foo) {
 		return new Spam();
 	}
-	
+
 	public Bar translate(Foo foo) {
 		return new Bar();
 	}
