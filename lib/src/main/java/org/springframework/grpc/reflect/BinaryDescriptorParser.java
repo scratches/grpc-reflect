@@ -15,41 +15,86 @@
  */
 package org.springframework.grpc.reflect;
 
+import static org.springframework.web.reactive.function.server.RequestPredicates.path;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.context.ResourceLoaderAware;
+import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.util.StringUtils;
 
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
 
-public class BinaryDescriptorParser implements DescriptorParser {
+public class BinaryDescriptorParser implements DescriptorParser, ResourceLoaderAware {
+
+	private ResourceLoader resourceLoader = new DefaultResourceLoader();
 
 	@Override
-	public FileDescriptorSet resolve(Resource... resources) {
+	public void setResourceLoader(ResourceLoader resourceLoader) {
+		this.resourceLoader = resourceLoader;
+	}
+
+	@Override
+	public FileDescriptorSet resolve(@Nullable String base, String... locations) {
 		Set<String> files = new HashSet<>();
+		PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(resourceLoader);
 		FileDescriptorSet.Builder builder = FileDescriptorSet.newBuilder();
-		for (Resource resource : resources) {
+		if (base == null) {
+			base = "";
+		}
+		for (String location : locations) {
+			String ext = StringUtils.getFilenameExtension(location);
+			if (ext != null && !ext.equals("pb")) {
+				continue;
+			}
+			if (base.length() > 0) {
+				if (!location.contains(":") && !location.startsWith("/")) {
+					location = base + (base.endsWith("/") ? "" : "/") + location;
+				}
+			}
+			if (!location.endsWith(".pb")) {
+				if (location.endsWith("/")) {
+					location = location.substring(0, location.length() - 1);
+				}
+				if (!location.contains("*")) {
+					location = location + "/**/*.pb";
+				} else {
+					location = location + "/*.pb";
+				}
+			}
+			Resource[] resources;
 			try {
-				String suffix = StringUtils.getFilenameExtension(resource.getFilename());
-				if (suffix == null || !suffix.equals("pb")) {
-					continue;
-				}
-				if (!resource.exists() || !resource.getFilename().endsWith(".pb")) {
-					continue;
-				}
-				FileDescriptorSet proto = FileDescriptorSet.parseFrom(resource.getInputStream());
-				for (FileDescriptorProto resolved : proto.getFileList()) {
-					if (files.contains(resolved.getName())) {
+				resources = resolver.getResources(location);
+			} catch (IOException e) {
+				throw new IllegalStateException("Failed to find resources for location: " + location, e);
+			}
+			for (Resource resource : resources) {
+				try {
+					String suffix = StringUtils.getFilenameExtension(resource.getFilename());
+					if (suffix == null || !suffix.equals("pb")) {
 						continue;
 					}
-					files.add(resolved.getName());
-					builder.addFile(resolved);
+					if (!resource.exists() || !resource.getFilename().endsWith(".pb")) {
+						continue;
+					}
+					FileDescriptorSet proto = FileDescriptorSet.parseFrom(resource.getInputStream());
+					for (FileDescriptorProto resolved : proto.getFileList()) {
+						if (files.contains(resolved.getName())) {
+							continue;
+						}
+						files.add(resolved.getName());
+						builder.addFile(resolved);
+					}
+				} catch (IOException e) {
+					throw new IllegalStateException("Failed to read file: " + resource, e);
 				}
-			} catch (IOException e) {
-				throw new IllegalStateException("Failed to read file: " + resource, e);
 			}
 		}
 		return builder.build();

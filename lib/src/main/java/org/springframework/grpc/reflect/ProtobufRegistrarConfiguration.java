@@ -15,10 +15,6 @@
  */
 package org.springframework.grpc.reflect;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -26,16 +22,8 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.type.AnnotationMetadata;
-import org.springframework.grpc.parser.DefaultPathLocator;
-import org.springframework.grpc.parser.FileDescriptorProtoParser;
-import org.springframework.util.ClassUtils;
 
 import com.google.protobuf.Descriptors.FileDescriptor;
 
@@ -56,6 +44,9 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 			registry.registerBeanDefinition(BEAN_NAME,
 					BeanDefinitionBuilder.genericBeanDefinition(ProtobufRegistrarPostProcessor.class)
 							.getBeanDefinition());
+			registry.registerBeanDefinition(BEAN_NAME + ".parser",
+					BeanDefinitionBuilder.genericBeanDefinition(BinaryDescriptorParser.class)
+							.getBeanDefinition());
 		}
 		ImportProtobuf annotation = ImportProtobuf.class
 				.cast(meta.getAnnotations().get(ImportProtobuf.class.getName()).synthesize());
@@ -70,120 +61,28 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 		registry.registerBeanDefinition(BEAN_NAME + (counter++), builder.getBeanDefinition());
 	}
 
-	static class ProtobufRegistrar implements DescriptorRegistrar, ResourceLoaderAware {
+	static class ProtobufRegistrar implements DescriptorRegistrar {
 
 		private String[] locations;
 
 		private String base;
 
-		private PathMatchingResourcePatternResolver resourceLoader;
+		private ObjectProvider<DescriptorParser> parsers;
 
-		public ProtobufRegistrar(String base, String[] locations) {
+		public ProtobufRegistrar(String base, String[] locations, ObjectProvider<DescriptorParser> parsers) {
 			this.locations = locations;
 			this.base = base;
+			this.parsers = parsers;
 		}
 
 		@Override
 		public void register(DescriptorRegistry registry) {
-			String base = this.base;
-			if (base.contains(":")) {
-				while (base.endsWith("/")) {
-					base = base.substring(0, base.length() - 1);
-				}
-				base = base.substring(base.indexOf(':') + 1);
-			}
 			FileDescriptorManager manager = new FileDescriptorManager();
-			BinaryDescriptorParser binary = new BinaryDescriptorParser();
-			if (this.locations != null) {
-				for (String location : this.locations) {
-					boolean hasBase = false;
-					if (this.base.length() > 0) {
-						if (!location.contains(":") && !location.startsWith("/")) {
-							location = this.base + (this.base.endsWith("/") ? "" : "/") + location;
-							hasBase = true;
-						}
-					}
-					String rootDir = determineRootDir(location);
-					Resource[] resources;
-					try {
-						resources = resourceLoader.getResources(location);
-					} catch (IOException e) {
-						throw new IllegalStateException("Failed to find resources for location: " + location, e);
-					}
-					for (FileDescriptor proto : manager.convert(binary.resolve(resources))) {
-						registry.register(proto);
-					}
-					if (PARSER_PRESENT) {
-						DescriptorParser parser = ParserProvider.findReflectiveParser(base, hasBase, rootDir);
-						for (FileDescriptor proto : manager.convert(parser.resolve(resources))) {
-							registry.register(proto);
-						}
-					}
+			for (DescriptorParser parser : this.parsers) {
+				for (FileDescriptor proto : manager.convert(parser.resolve(this.base, this.locations))) {
+					registry.register(proto);
 				}
 			}
-		}
-
-		@Override
-		public void setResourceLoader(ResourceLoader resourceLoader) {
-			this.resourceLoader = new PathMatchingResourcePatternResolver(resourceLoader);
-		}
-
-		private String determineRootDir(String location) {
-			if (location.contains(":")) {
-				location = location.substring(location.indexOf(':') + 1);
-			}
-			if (!this.resourceLoader.getPathMatcher().isPattern(location)) {
-				return location;
-			}
-			int rootDirEnd = location.length();
-			while (rootDirEnd > 0
-					&& this.resourceLoader.getPathMatcher().isPattern(location.substring(0, rootDirEnd))) {
-				rootDirEnd = location.lastIndexOf('/', rootDirEnd - 2) + 1;
-			}
-			if (rootDirEnd < 0) {
-				rootDirEnd = 0;
-			}
-			return location.substring(0, rootDirEnd);
-		}
-
-		private static final boolean PARSER_PRESENT = ClassUtils
-				.isPresent("org.springframework.grpc.parser.FileDescriptorProtoParser", null);
-
-		static class ParserProvider {
-
-			private static DescriptorParser findReflectiveParser(String base, boolean hasBase, String rootDir) {
-				if (PARSER_PRESENT) {
-					FileDescriptorProtoParser fds = new FileDescriptorProtoParser();
-					fds.setPathLocator(new DefaultPathLocator(base));
-					return resources -> {
-						List<String> paths = new ArrayList<>();
-						for (Resource resource : resources) {
-							if (resource.exists()) {
-								String url;
-								try {
-									url = resource.getURL().getPath();
-								} catch (IOException e) {
-									throw new IllegalStateException("Failed to get URL for resource: " + resource, e);
-								}
-								url = url.substring(url.lastIndexOf(rootDir));
-								if (hasBase && url.startsWith(base)) {
-									url = url.substring(base.length());
-								}
-								if (url.startsWith("/")
-										&& (resource instanceof ClassPathResource || base.length() > 0)) {
-									url = url.substring(1);
-								}
-								paths.add(url);
-							} else {
-								throw new IllegalArgumentException("Resource does not exist: " + resource);
-							}
-						}
-						return fds.resolve(paths.toArray(new String[0]));
-					};
-				}
-				return null;
-			}
-
 		}
 
 	}

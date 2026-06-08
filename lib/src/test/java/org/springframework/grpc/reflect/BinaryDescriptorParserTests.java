@@ -18,14 +18,8 @@ package org.springframework.grpc.reflect;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.core.io.DefaultResourceLoader;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
@@ -36,7 +30,7 @@ public class BinaryDescriptorParserTests {
 	@Test
 	public void testDescriptorFile() {
 		BinaryDescriptorParser parser = new BinaryDescriptorParser();
-		FileDescriptorSet files = parser.resolve(resources("binary/multi.pb"));
+		FileDescriptorSet files = parser.resolve(null, "binary/multi.pb");
 		assertThat(files.getFileCount()).isEqualTo(2);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("bar.proto");
@@ -47,7 +41,7 @@ public class BinaryDescriptorParserTests {
 	public void testDescriptorDuplicateFile() {
 		BinaryDescriptorParser parser = new BinaryDescriptorParser();
 		FileDescriptorSet files = parser
-				.resolve(resources("binary/multi.pb", "file:src/test/resources/binary/multi.pb"));
+				.resolve("", "binary/multi.pb", "file:src/test/resources/binary/multi.pb");
 		assertThat(files.getFileCount()).isEqualTo(2);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("bar.proto");
@@ -57,7 +51,7 @@ public class BinaryDescriptorParserTests {
 	@Test
 	public void testDescriptorFileUrl() {
 		BinaryDescriptorParser parser = new BinaryDescriptorParser();
-		FileDescriptorSet files = parser.resolve(resources("file:target/multi.pb"));
+		FileDescriptorSet files = parser.resolve(null, "file:target/multi.pb");
 		assertThat(files.getFileCount()).isEqualTo(2);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("bar.proto");
@@ -67,7 +61,7 @@ public class BinaryDescriptorParserTests {
 	public void testDescriptorDirectory() {
 		BinaryDescriptorParser parser = new BinaryDescriptorParser();
 		// Classpath directory search
-		FileDescriptorSet files = parser.resolve(resources("binary/"));
+		FileDescriptorSet files = parser.resolve(null, "binary/");
 		assertThat(files.getFileCount()).isEqualTo(2);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("bar.proto");
@@ -78,7 +72,7 @@ public class BinaryDescriptorParserTests {
 	public void testDescriptorPattern() {
 		BinaryDescriptorParser parser = new BinaryDescriptorParser();
 		// Classpath directory search
-		FileDescriptorSet files = parser.resolve(resources("binary/**/*.pb"));
+		FileDescriptorSet files = parser.resolve(null, "binary/**/*.pb");
 		assertThat(files.getFileCount()).isEqualTo(2);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("bar.proto");
@@ -88,7 +82,7 @@ public class BinaryDescriptorParserTests {
 	@Test
 	public void testValidateExample() {
 		BinaryDescriptorParser parser = new BinaryDescriptorParser();
-		FileDescriptorSet files = parser.resolve(resources("file:target/validate.pb"));
+		FileDescriptorSet files = parser.resolve("", "file:target/validate.pb");
 		assertThat(files.getFileCount()).isEqualTo(1);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).endsWith("protobuf/validate.proto");
@@ -101,34 +95,8 @@ public class BinaryDescriptorParserTests {
 	public void testNotBinaryDescriptorFile() {
 		BinaryDescriptorParser parser = new BinaryDescriptorParser();
 		assertThat(new File("src/test/resources/proto/bar.proto").exists()).isTrue();
-		FileDescriptorSet files = parser.resolve(resources("proto/bar.proto"));
+		FileDescriptorSet files = parser.resolve(null, "proto/bar.proto");
 		assertThat(files.getFileCount()).isEqualTo(0);
-	}
-
-	private Resource[] resources(String... patterns) {
-		List<Resource> result = new ArrayList<>();
-		PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(
-				new DefaultResourceLoader());
-		for (String input : patterns) {
-			String path = input;
-			// Directory search
-			if (!path.endsWith(".pb")) {
-				if (path.endsWith("/")) {
-					path = path.substring(0, path.length() - 1);
-				}
-				if (!path.contains("*")) {
-					path = path + "/**/*.pb";
-				} else {
-					path = path + "/*.pb";
-				}
-			}
-			try {
-				result.addAll(List.of(resolver.getResources(path)));
-			} catch (IOException e) {
-				throw new IllegalStateException("Failed to read resources for pattern: " + input, e);
-			}
-		}
-		return result.toArray(new Resource[0]);
 	}
 
 	FieldDescriptorProto field(FileDescriptorProto proto, String name, String field) {

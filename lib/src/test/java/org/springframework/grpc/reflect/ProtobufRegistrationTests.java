@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.google.protobuf.Descriptors.FileDescriptor;
@@ -34,7 +35,7 @@ public class ProtobufRegistrationTests {
 		// The file is not on the classpath, so it should fail to load without the "file:" scheme prefix
 		assertThrows(BeanCreationException.class, () -> {
 			ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(
-					FileSystemExampleNoScheme.class);
+					FileSystemExampleNoScheme.class, Parsers.class);
 			DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 			assertThat(file(registry, "Simple")).isNull();
 			context.close();
@@ -43,7 +44,7 @@ public class ProtobufRegistrationTests {
 
 	@Test
 	public void testFileSystem() {
-		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(FileSystemExample.class);
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(FileSystemExample.class, Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "Simple")).isNotNull();
 		assertThat(registry.type("HelloRequest")).isNotNull();
@@ -52,7 +53,7 @@ public class ProtobufRegistrationTests {
 
 	@Test
 	public void testClasspath() {
-		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(ClasspathExample.class);
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(ClasspathExample.class, Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "Simple")).isNotNull();
 		assertThat(registry.type("HelloRequest")).isNotNull();
@@ -61,7 +62,7 @@ public class ProtobufRegistrationTests {
 
 	@Test
 	public void testBase() {
-		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(BaseExample.class);
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(BaseExample.class, Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "Simple").getName()).isEqualTo("simple.proto");
 		context.close();
@@ -69,7 +70,7 @@ public class ProtobufRegistrationTests {
 
 	@Test
 	public void testBaseUrl() {
-		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(BaseUrlExample.class);
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(BaseUrlExample.class, Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "Simple").getName()).isEqualTo("simple.proto");
 		context.close();
@@ -77,7 +78,7 @@ public class ProtobufRegistrationTests {
 
 	@Test
 	public void testMultiple() {
-		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(MultipleExample.class);
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(MultipleExample.class, Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "Simple")).isNotNull();
 		assertThat(file(registry, "Foo")).isNotNull();
@@ -87,7 +88,7 @@ public class ProtobufRegistrationTests {
 	@Test
 	public void testMultipleImports() {
 		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(OtherExample.class,
-				FileSystemExample.class);
+				FileSystemExample.class, Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "Simple")).isNotNull();
 		assertThat(file(registry, "Foo")).isNotNull();
@@ -96,7 +97,7 @@ public class ProtobufRegistrationTests {
 
 	@Test
 	public void testPatternImports() {
-		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(PatternExample.class);
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(PatternExample.class, Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "Simple").getName()).isEqualTo("proto/simple.proto");
 		assertThat(file(registry, "Foo").getName()).isEqualTo("proto/bar.proto");
@@ -105,7 +106,7 @@ public class ProtobufRegistrationTests {
 
 	@Test
 	public void testBasePatternImports() {
-		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(BasePatternExample.class);
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(BasePatternExample.class, Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "Simple").getName()).isEqualTo("simple.proto");
 		assertThat(file(registry, "Foo").getName()).isEqualTo("bar.proto");
@@ -114,7 +115,7 @@ public class ProtobufRegistrationTests {
 
 	@Test
 	public void testJarFileImport() {
-		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(JarFileExample.class);
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(JarFileExample.class, Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "grpc.reflection.v1.ServerReflection").getName())
 				.isEqualTo("grpc/reflection/v1/reflection.proto");
@@ -125,7 +126,7 @@ public class ProtobufRegistrationTests {
 
 	@Test
 	public void testJarFileBaseImport() {
-		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(JarFileBaseExample.class);
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(JarFileBaseExample.class, Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "grpc.reflection.v1.ServerReflection").getName())
 				.isEqualTo("grpc/reflection/v1/reflection.proto");
@@ -136,7 +137,7 @@ public class ProtobufRegistrationTests {
 
 	@Test
 	public void testClasspathPrefix() {
-		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(ClasspathPrefixExample.class);
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(ClasspathPrefixExample.class, Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "grpc.reflection.v1.ServerReflection").getName())
 				.isEqualTo("grpc/reflection/v1/reflection.proto");
@@ -145,7 +146,7 @@ public class ProtobufRegistrationTests {
 
 	@Test
 	public void testBinary() {
-		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(BinaryExample.class);
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(BinaryExample.class, Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(registry.type("EchoRequest").getFile().getName()).isEqualTo("foo.proto");
 		context.close();
@@ -154,6 +155,14 @@ public class ProtobufRegistrationTests {
 	private FileDescriptor file(DefaultDescriptorRegistry registry, String serviceName) {
 		ServiceDescriptor service = registry.service(serviceName);
 		return service == null ? null : service.getFile();
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	static class Parsers {
+		@Bean
+		ProtoDescriptorParser protoParser() {
+			return new ProtoDescriptorParser();
+		}
 	}
 
 	@Configuration(proxyBeanMethods = false)
