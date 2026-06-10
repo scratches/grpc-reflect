@@ -15,8 +15,6 @@
  */
 package org.springframework.grpc.reflect;
 
-import static org.springframework.web.reactive.function.server.RequestPredicates.path;
-
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -31,19 +29,33 @@ import org.springframework.util.StringUtils;
 
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
+import com.google.protobuf.ExtensionRegistry;
 
 /**
- * {@link DescriptorParser} implementation that reads pre-compiled Protobuf binary
- * descriptor files ({@code .pb} files produced by {@code protoc --descriptor_set_out}).
+ * {@link DescriptorParser} implementation that reads pre-compiled Protobuf
+ * binary
+ * descriptor files ({@code .pb} files produced by
+ * {@code protoc --descriptor_set_out}).
  * <p>
- * If a location does not already end in {@code .pb} it is treated as a directory and
- * {@code /**&#47;*.pb} is appended automatically. Files are deduplicated by their
- * {@link com.google.protobuf.DescriptorProtos.FileDescriptorProto#getName() name} so that
+ * If a location does not already end in {@code .pb} it is treated as a
+ * directory and
+ * {@code /**&#47;*.pb} is appended automatically. Files are deduplicated by
+ * their
+ * {@link com.google.protobuf.DescriptorProtos.FileDescriptorProto#getName()
+ * name} so that
  * the same descriptor is never added twice.
  */
 public class BinaryDescriptorParser implements DescriptorParser, ResourceLoaderAware {
 
 	private ResourceLoader resourceLoader = new DefaultResourceLoader();
+	private ExtensionRegistry extensions;
+
+	public BinaryDescriptorParser() {
+	}
+
+	public BinaryDescriptorParser(ExtensionRegistry extensions) {
+		this.extensions = extensions;
+	}
 
 	@Override
 	public void setResourceLoader(ResourceLoader resourceLoader) {
@@ -74,16 +86,14 @@ public class BinaryDescriptorParser implements DescriptorParser, ResourceLoaderA
 				}
 				if (!location.contains("*")) {
 					location = location + "/**/*.pb";
-				}
-				else {
+				} else {
 					location = location + "/*.pb";
 				}
 			}
 			Resource[] resources;
 			try {
 				resources = resolver.getResources(location);
-			}
-			catch (IOException e) {
+			} catch (IOException e) {
 				throw new IllegalStateException("Failed to find resources for location: " + location, e);
 			}
 			for (Resource resource : resources) {
@@ -95,16 +105,17 @@ public class BinaryDescriptorParser implements DescriptorParser, ResourceLoaderA
 					if (!resource.exists() || !resource.getFilename().endsWith(".pb")) {
 						continue;
 					}
-					FileDescriptorSet proto = FileDescriptorSet.parseFrom(resource.getInputStream());
+					FileDescriptorSet proto = extensions == null
+							? FileDescriptorSet.parseFrom(resource.getInputStream())
+							: FileDescriptorSet.parseFrom(resource.getInputStream(), extensions);
 					for (FileDescriptorProto resolved : proto.getFileList()) {
 						if (files.contains(resolved.getName())) {
 							continue;
 						}
-						files.add(resolved.getName());
 						builder.addFile(resolved);
+						files.add(resolved.getName());
 					}
-				}
-				catch (IOException e) {
+				} catch (IOException e) {
 					throw new IllegalStateException("Failed to read file: " + resource, e);
 				}
 			}

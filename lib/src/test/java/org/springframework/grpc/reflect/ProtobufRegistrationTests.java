@@ -25,14 +25,17 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.google.api.AnnotationsProto;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.Descriptors.ServiceDescriptor;
+import com.google.protobuf.ExtensionRegistry;
 
 public class ProtobufRegistrationTests {
 
 	@Test
 	public void testFileSystemNoScheme() {
-		// The file is not on the classpath, so it should fail to load without the "file:"
+		// The file is not on the classpath, so it should fail to load without the
+		// "file:"
 		// scheme prefix
 		assertThrows(BeanCreationException.class, () -> {
 			ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(
@@ -127,7 +130,7 @@ public class ProtobufRegistrationTests {
 				Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "grpc.reflection.v1.ServerReflection").getName())
-			.isEqualTo("grpc/reflection/v1/reflection.proto");
+				.isEqualTo("grpc/reflection/v1/reflection.proto");
 		assertThat(registry.service("grpc.reflection.v1.ServerReflection").getFile().getName()).isNotNull();
 		assertThat(registry.type("grpc.reflection.v1.ServerReflectionRequest")).isNotNull();
 		context.close();
@@ -139,7 +142,7 @@ public class ProtobufRegistrationTests {
 				Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "grpc.reflection.v1.ServerReflection").getName())
-			.isEqualTo("grpc/reflection/v1/reflection.proto");
+				.isEqualTo("grpc/reflection/v1/reflection.proto");
 		assertThat(registry.service("grpc.reflection.v1.ServerReflection").getFile().getName()).isNotNull();
 		assertThat(registry.type("grpc.reflection.v1.ServerReflectionRequest")).isNotNull();
 		context.close();
@@ -151,7 +154,7 @@ public class ProtobufRegistrationTests {
 				Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "grpc.reflection.v1.ServerReflection").getName())
-			.isEqualTo("grpc/reflection/v1/reflection.proto");
+				.isEqualTo("grpc/reflection/v1/reflection.proto");
 		context.close();
 	}
 
@@ -161,6 +164,17 @@ public class ProtobufRegistrationTests {
 				Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(registry.type("EchoRequest").getFile().getName()).isEqualTo("foo.proto");
+		context.close();
+	}
+
+	@Test
+	public void testExtensions() {
+		ConfigurableApplicationContext context = new AnnotationConfigApplicationContext(ExtensionsExample.class,
+				Parsers.class);
+		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
+		assertThat(registry.type("HelloRequest").getFile().getName()).isEqualTo("hello.proto");
+		assertThat(registry.service("Simple").findMethodByName("SayHello").getOptions()
+				.getExtension(AnnotationsProto.http).getPost()).isNotEmpty();
 		context.close();
 	}
 
@@ -257,4 +271,14 @@ public class ProtobufRegistrationTests {
 
 	}
 
+	@Configuration(proxyBeanMethods = false)
+	@ImportProtobuf(locations = "file:target/hello.pb")
+	static class ExtensionsExample {
+		@Bean
+		public ExtensionRegistry extensionRegistry() {
+			ExtensionRegistry registry = ExtensionRegistry.newInstance();
+			registry.add(AnnotationsProto.http);
+			return registry;
+		}
+	}
 }

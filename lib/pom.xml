@@ -31,7 +31,7 @@
 		<maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
 		<java.version>17</java.version>
 		<spring-javaformat-maven-plugin.version>0.0.47</spring-javaformat-maven-plugin.version>
-		<protobuf-java.version>4.33.1</protobuf-java.version>
+		<protobuf-java.version>4.33.2</protobuf-java.version>
 		<grpc.version>1.81.0</grpc.version>
 	</properties>
 	<dependencies>
@@ -149,6 +149,19 @@
 								<sourceDirectory>src/test/resources/proto</sourceDirectory>
 							</sourceDirectories>
 							<outputDescriptorFile>target/multi.pb</outputDescriptorFile>
+							<outputDescriptorIncludeImports>true</outputDescriptorIncludeImports>
+						</configuration>
+					</execution>
+					<execution>
+						<id>hello</id>
+						<goals>
+							<goal>generate-test</goal>
+						</goals>
+						<configuration>
+							<sourceDirectories>
+								<sourceDirectory>src/test/resources/hello</sourceDirectory>
+							</sourceDirectories>
+							<outputDescriptorFile>target/hello.pb</outputDescriptorFile>
 							<outputDescriptorIncludeImports>true</outputDescriptorIncludeImports>
 						</configuration>
 					</execution>

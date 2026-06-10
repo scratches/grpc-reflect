@@ -22,9 +22,12 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
 
+import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.Descriptors.FileDescriptor;
 
 public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegistrar {
@@ -45,7 +48,7 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 					BeanDefinitionBuilder.genericBeanDefinition(ProtobufRegistrarPostProcessor.class)
 						.getBeanDefinition());
 			registry.registerBeanDefinition(BEAN_NAME + ".parser",
-					BeanDefinitionBuilder.genericBeanDefinition(BinaryDescriptorParser.class).getBeanDefinition());
+					BeanDefinitionBuilder.genericBeanDefinition(ParserConfiguration.class).getBeanDefinition());
 		}
 		ImportProtobuf annotation = ImportProtobuf.class
 			.cast(meta.getAnnotations().get(ImportProtobuf.class.getName()).synthesize());
@@ -59,6 +62,21 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 		builder.addConstructorArgValue(locations);
 		registry.registerBeanDefinition(BEAN_NAME + (counter++), builder.getBeanDefinition());
 	}
+
+	@Configuration(proxyBeanMethods = false)
+	// TODO: would be better as autoconfiguration?
+	static class ParserConfiguration {
+
+		@Bean
+		public BinaryDescriptorParser binaryDescriptorParser(ObjectProvider<ExtensionRegistry> registry) {
+			ExtensionRegistry extensions = registry.getIfAvailable();
+			if (extensions != null) {
+				return new BinaryDescriptorParser(extensions);
+			}
+			return new BinaryDescriptorParser();
+		}
+
+	}	
 
 	static class ProtobufRegistrar implements DescriptorRegistrar {
 
