@@ -17,12 +17,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.grpc.client.GrpcChannelFactory;
 import org.springframework.grpc.reflect.DynamicServiceFactory;
 import org.springframework.grpc.reflect.Foo;
-import org.springframework.grpc.sample.proto.HelloReply;
-import org.springframework.grpc.sample.proto.HelloRequest;
-import org.springframework.grpc.sample.proto.SimpleGrpc;
-import org.springframework.grpc.sample.proto.SimpleGrpc.SimpleBlockingStub;
-import org.springframework.grpc.sample.proto.SimpleGrpc.SimpleStub;
 import org.springframework.test.annotation.DirtiesContext;
+
+import com.example.hello.HelloReply;
+import com.example.hello.HelloRequest;
+import com.example.hello.SimpleGrpc;
+import com.example.hello.SimpleGrpc.SimpleBlockingStub;
+import com.example.hello.SimpleGrpc.SimpleStub;
 
 import io.grpc.BindableService;
 import io.grpc.stub.StreamObserver;

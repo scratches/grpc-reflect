@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "com.example.demo.proto";
+option java_package = "com.example.http";
 option java_outer_classname = "HelloWorldProto";
 
 import "google/api/annotations.proto";
@@ -15,6 +15,7 @@ service Simple {
       };
     }
     rpc StreamHello(HelloRequest) returns (stream HelloReply) {}
+    rpc ParallelHello(stream HelloRequest) returns (stream HelloReply) {}
 }
 
 // The request message containing the user's name.
