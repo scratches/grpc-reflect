@@ -30,18 +30,23 @@ import org.springframework.grpc.parser.v3.ProtobufBaseListener;
 import org.springframework.grpc.parser.v3.ProtobufBaseVisitor;
 import org.springframework.grpc.parser.v3.ProtobufLexer;
 import org.springframework.grpc.parser.v3.ProtobufParser;
+import org.springframework.grpc.parser.v3.ProtobufParser.BlockLitContext;
+import org.springframework.grpc.parser.v3.ProtobufParser.ConstantContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.EnumDefContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.EnumFieldContext;
+import org.springframework.grpc.parser.v3.ProtobufParser.ExtendDefContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.FieldContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.FieldLabelContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.ImportStatementContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.KeyTypeContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.MapFieldContext;
+import org.springframework.grpc.parser.v3.ProtobufParser.OptionStatementContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.PackageStatementContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.RpcContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.ServiceDefContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.TypeContext;
 
+import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.EnumDescriptorProto;
 import com.google.protobuf.DescriptorProtos.EnumValueDescriptorProto;
@@ -49,7 +54,10 @@ import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto.Builder;
 import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
+import com.google.protobuf.DescriptorProtos.MethodOptions;
 import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
+import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.FieldDescriptor;
 
 public class ProtoParserV3 {
 
@@ -63,7 +71,7 @@ public class ProtoParserV3 {
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
 		ProtobufParser parser = new ProtobufParser(tokens);
 
-		FileDescriptorProto.Builder builder = FileDescriptorProto.newBuilder();
+		Builder builder = FileDescriptorProto.newBuilder();
 		builder.setName(name);
 		builder.setSyntax("proto3");
 
@@ -92,8 +100,7 @@ public class ProtoParserV3 {
 				localEnumNames.add(ctx.enumName().getText());
 				if (this.packageName != null) {
 					enumNames.add(this.packageName + "." + ctx.enumName().getText());
-				}
-				else {
+				} else {
 					enumNames.add(ctx.enumName().getText());
 				}
 			}
@@ -110,14 +117,14 @@ public class ProtoParserV3 {
 		});
 		parser.reset();
 		FileDescriptorProto proto = parser.proto()
-			.accept(new ProtobufDescriptorVisitor(builder, localEnumNames, importHandler))
-			.build();
+				.accept(new ProtobufDescriptorVisitor(builder, localEnumNames, importHandler))
+				.build();
 		return proto;
 	}
 
-	class ProtobufDescriptorVisitor extends ProtobufBaseVisitor<FileDescriptorProto.Builder> {
+	class ProtobufDescriptorVisitor extends ProtobufBaseVisitor<Builder> {
 
-		private final FileDescriptorProto.Builder builder;
+		private final Builder builder;
 
 		private Stack<DescriptorProto.Builder> type = new Stack<>();
 
@@ -129,7 +136,7 @@ public class ProtoParserV3 {
 
 		private Consumer<String> importHandler;
 
-		public ProtobufDescriptorVisitor(FileDescriptorProto.Builder builder, Set<String> localEnumNames,
+		public ProtobufDescriptorVisitor(Builder builder, Set<String> localEnumNames,
 				Consumer<String> importHandler) {
 			this.builder = builder;
 			this.localEnumNames = localEnumNames;
@@ -137,7 +144,7 @@ public class ProtoParserV3 {
 		}
 
 		@Override
-		protected FileDescriptorProto.Builder defaultResult() {
+		protected Builder defaultResult() {
 			return builder;
 		}
 
@@ -151,7 +158,7 @@ public class ProtoParserV3 {
 		}
 
 		@Override
-		public FileDescriptorProto.Builder visitFieldLabel(FieldLabelContext ctx) {
+		public Builder visitFieldLabel(FieldLabelContext ctx) {
 			this.field.peek().setLabel(findLabel(ctx));
 			return super.visitFieldLabel(ctx);
 		}
@@ -167,19 +174,30 @@ public class ProtoParserV3 {
 		}
 
 		@Override
-		public FileDescriptorProto.Builder visitField(FieldContext ctx) {
+		public Builder visitExtendDef(ExtendDefContext ctx) {
+			DescriptorProto.Builder type = DescriptorProto.newBuilder().setName(ctx.messageType().getText());
+			this.type.push(type);
+			Builder result = super.visitExtendDef(ctx);
+			FieldDescriptorProto field = type.getField(0);
+			builder.addExtension(field.toBuilder().setExtendee(ctx.messageType().getText()).build());
+			this.type.pop();
+			return result;
+		}
+
+		@Override
+		public Builder visitField(FieldContext ctx) {
 			// TODO: handle field options if needed
 			FieldDescriptorProto.Type fieldType = findType(ctx.type());
 			FieldDescriptorProto.Builder field = FieldDescriptorProto.newBuilder()
-				.setName(ctx.fieldName().getText())
-				.setNumber(parseInt(ctx.fieldNumber().getText()))
-				.setType(fieldType);
+					.setName(ctx.fieldName().getText())
+					.setNumber(parseInt(ctx.fieldNumber().getText()))
+					.setType(fieldType);
 			this.field.push(field);
 			if (fieldType == FieldDescriptorProto.Type.TYPE_MESSAGE
 					|| fieldType == FieldDescriptorProto.Type.TYPE_ENUM) {
 				field.setTypeName(ctx.type().messageType().getText());
 			}
-			FileDescriptorProto.Builder result = super.visitField(ctx);
+			Builder result = super.visitField(ctx);
 			this.type.peek().addField(field.build());
 			this.field.pop();
 			return result;
@@ -200,13 +218,13 @@ public class ProtoParserV3 {
 			FieldDescriptorProto.Type fieldType = FieldDescriptorProto.Type.TYPE_MESSAGE;
 			DescriptorProto mapType = mapType(ctx);
 			FieldDescriptorProto.Builder field = FieldDescriptorProto.newBuilder()
-				.setName(ctx.mapName().getText())
-				.setNumber(Integer.valueOf(ctx.fieldNumber().getText()))
-				.setLabel(FieldDescriptorProto.Label.LABEL_REPEATED)
-				.setTypeName(mapType.getName())
-				.setType(fieldType);
+					.setName(ctx.mapName().getText())
+					.setNumber(Integer.valueOf(ctx.fieldNumber().getText()))
+					.setLabel(FieldDescriptorProto.Label.LABEL_REPEATED)
+					.setTypeName(mapType.getName())
+					.setType(fieldType);
 			this.field.push(field);
-			FileDescriptorProto.Builder result = super.visitMapField(ctx);
+			Builder result = super.visitMapField(ctx);
 			this.type.peek().addNestedType(mapType);
 			this.type.peek().addField(field.build());
 			this.field.pop();
@@ -215,15 +233,15 @@ public class ProtoParserV3 {
 
 		private DescriptorProto mapType(MapFieldContext ctx) {
 			DescriptorProto.Builder type = DescriptorProto.newBuilder()
-				.setName(capitalize(ctx.mapName().getText()) + "Entry");
+					.setName(capitalize(ctx.mapName().getText()) + "Entry");
 			FieldDescriptorProto.Builder key = FieldDescriptorProto.newBuilder()
-				.setName("key")
-				.setNumber(1)
-				.setType(findKeyType(ctx.keyType()));
+					.setName("key")
+					.setNumber(1)
+					.setType(findKeyType(ctx.keyType()));
 			FieldDescriptorProto.Builder value = FieldDescriptorProto.newBuilder()
-				.setName("value")
-				.setNumber(2)
-				.setType(findType(ctx.type()));
+					.setName("value")
+					.setNumber(2)
+					.setType(findType(ctx.type()));
 			if (value.getType() == FieldDescriptorProto.Type.TYPE_MESSAGE
 					|| value.getType() == FieldDescriptorProto.Type.TYPE_ENUM) {
 				value.setTypeName(ctx.type().getText());
@@ -335,40 +353,51 @@ public class ProtoParserV3 {
 		}
 
 		@Override
-		public FileDescriptorProto.Builder visitEnumDef(EnumDefContext ctx) {
+		public Builder visitEnumDef(EnumDefContext ctx) {
 			EnumDescriptorProto.Builder enumType = EnumDescriptorProto.newBuilder().setName(ctx.enumName().getText());
+			DescriptorProto.Builder owner = this.type.isEmpty() ? null : this.type.peek();
 			this.enumType.push(enumType);
-			FileDescriptorProto.Builder result = super.visitEnumDef(ctx);
-			builder.addEnumType(enumType.build());
+			Builder result = super.visitEnumDef(ctx);
+			if (owner != null) {
+				owner.addEnumType(enumType);
+			} else {
+				builder.addEnumType(enumType.build());
+			}
 			this.enumType.pop();
 			return result;
 		}
 
 		@Override
-		public FileDescriptorProto.Builder visitEnumField(EnumFieldContext ctx) {
+		public Builder visitEnumField(EnumFieldContext ctx) {
 			// System.err.println("Enum field: " + ctx.enumFieldName().getText());
 			String name = ctx.ident().IDENTIFIER() == null ? ctx.ident().keywords().getText()
 					: ctx.ident().IDENTIFIER().getText();
 			EnumValueDescriptorProto.Builder field = EnumValueDescriptorProto.newBuilder()
-				.setName(name)
-				.setNumber(Integer.valueOf(ctx.intLit().INT_LIT().getText()));
+					.setName(name)
+					.setNumber(Integer.valueOf(ctx.intLit().INT_LIT().getText()));
 			this.enumType.peek().addValue(field.build());
 			return super.visitEnumField(ctx);
 		}
 
 		@Override
-		public FileDescriptorProto.Builder visitMessageDef(ProtobufParser.MessageDefContext ctx) {
+		public Builder visitMessageDef(ProtobufParser.MessageDefContext ctx) {
 			// System.err.println("Message: " + ctx.messageName().getText());
-			DescriptorProto.Builder type = DescriptorProto.newBuilder().setName(ctx.messageName().getText());
+			String name = ctx.messageName().getText();
+			DescriptorProto.Builder type = DescriptorProto.newBuilder().setName(name);
+			DescriptorProto.Builder owner = this.type.isEmpty() ? null : this.type.peek();
 			this.type.push(type);
-			FileDescriptorProto.Builder result = super.visitMessageDef(ctx);
-			builder.addMessageType(type);
+			Builder result = super.visitMessageDef(ctx);
+			if (owner != null) {
+				owner.addNestedType(type);
+			} else {
+				builder.addMessageType(type);
+			}
 			this.type.pop();
 			return result;
 		}
 
 		@Override
-		public FileDescriptorProto.Builder visitImportStatement(ImportStatementContext ctx) {
+		public Builder visitImportStatement(ImportStatementContext ctx) {
 			String path = ctx.strLit().getText();
 			path = path.replace("\"", "").replace("'", "");
 			importHandler.accept(path);
@@ -392,16 +421,50 @@ public class ProtoParserV3 {
 		private MethodDescriptorProto buildRpc(RpcContext rpc) {
 			String rpcName = rpc.rpcName().getText();
 			MethodDescriptorProto.Builder method = MethodDescriptorProto.newBuilder()
-				.setName(rpcName)
-				.setInputType(rpc.messageType(0).messageName().getText())
-				.setOutputType(rpc.messageType(1).messageName().getText());
+					.setName(rpcName)
+					.setInputType(rpc.messageType(0).messageName().getText())
+					.setOutputType(rpc.messageType(1).messageName().getText());
 			if (rpc.STREAM(0) != null) {
 				method.setServerStreaming(true);
 			}
 			if (rpc.STREAM(1) != null) {
 				method.setClientStreaming(true);
 			}
+			if (rpc.optionStatement() != null && rpc.optionStatement().size() > 0) {
+				MethodOptions.Builder options = MethodOptions.newBuilder();
+				for (OptionStatementContext option : rpc.optionStatement()) {
+					Object value = extractConstant(option.constant(), MethodOptions.getDescriptor());
+					String name = option.optionName().getText();
+					name = name.replace("(", "").replace(")", "");
+					FieldDescriptor field = MethodOptions.getDescriptor().findFieldByName(name);
+					if (field == null) {
+						// It's an extension
+					} else {
+						options.setField(field, value);
+					}
+				}
+			}
 			return method.build();
+		}
+
+		private Object extractConstant(ConstantContext constant, Descriptor descriptor) {
+			if (constant.intLit() != null) {
+				return Integer.valueOf(constant.intLit().INT_LIT().getText());
+			}
+			if (constant.strLit() != null) {
+				return constant.strLit().getText().replace("\"", "").replace("'", "");
+			}
+			if (constant.boolLit() != null) {
+				return Boolean.valueOf(constant.boolLit().BOOL_LIT().getText());
+			}
+			if (constant.blockLit() != null) {
+				return extractBlockLit(constant.blockLit());
+			}
+			throw new IllegalStateException("Unknown constant: " + constant.getText());
+		}
+
+		private AbstractMessage extractBlockLit(BlockLitContext blockLit) {
+			return null;
 		}
 
 	}

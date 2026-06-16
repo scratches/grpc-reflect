@@ -26,6 +26,7 @@ import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Label;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
+import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
 
 public class DescriptorParserV3Tests {
 
@@ -164,13 +165,41 @@ public class DescriptorParserV3Tests {
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		FileDescriptorProto proto = parser.resolve("test.proto", input.getBytes()).getFile(0);
-		assertThat(proto.getMessageTypeList()).hasSize(2);
-		DescriptorProto type = proto.getMessageTypeList().get(1);
+		assertThat(proto.getMessageTypeList()).hasSize(1);
+		DescriptorProto type = proto.getMessageTypeList().get(0);
 		assertThat(type.getName().toString()).isEqualTo("TestMessage");
+		assertThat(type.getNestedTypeList()).hasSize(1);
 		assertThat(type.getFieldList()).hasSize(2);
 		assertThat(type.getField(1).getName()).isEqualTo("foo");
 		assertThat(type.getField(1).getNumber()).isEqualTo(2);
 		assertThat(type.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_MESSAGE);
+		assertThat(type.getField(1).getTypeName()).isEqualTo("Foo");
+	}
+
+	@Test
+	public void testParseNestedEnumType() {
+		String input = """
+				syntax = "proto3";
+				message TestMessage {
+					string name = 1;
+					enum Foo {
+						UNKNOWN = 0;
+						FOO = 1;
+						BAR = 2;
+					}
+					Foo foo = 2;
+				}
+				""";
+		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		FileDescriptorProto proto = parser.resolve("test.proto", input.getBytes()).getFile(0);
+		assertThat(proto.getMessageTypeList()).hasSize(1);
+		DescriptorProto type = proto.getMessageTypeList().get(0);
+		assertThat(type.getName().toString()).isEqualTo("TestMessage");
+		assertThat(type.getEnumTypeList()).hasSize(1);
+		assertThat(type.getFieldList()).hasSize(2);
+		assertThat(type.getField(1).getName()).isEqualTo("foo");
+		assertThat(type.getField(1).getNumber()).isEqualTo(2);
+		assertThat(type.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_ENUM);
 		assertThat(type.getField(1).getTypeName()).isEqualTo("Foo");
 	}
 
@@ -230,10 +259,29 @@ public class DescriptorParserV3Tests {
 	}
 
 	@Test
+	public void testParseSimpleRpc() {
+		String input = """
+				syntax = "proto3";
+				service TestService {
+					rpc Echo (TestMessage) returns (TestMessage);
+				}
+				message TestMessage {
+					TestEnum value = 1;
+				}
+				""";
+		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		FileDescriptorProto proto = parser.resolve("test.proto", input.getBytes()).getFile(0);
+		assertThat(proto.getMessageTypeList()).hasSize(1);
+		DescriptorProto type = proto.getMessageTypeList().get(0);
+		assertThat(type.getName().toString()).isEqualTo("TestMessage");
+		ServiceDescriptorProto service = proto.getService(0);
+		assertThat(service.getMethodList()).hasSize(1);
+	}
+
+	@Test
 	public void testParseTrickyOptions() {
 		String input = """
 				syntax = "proto3";
-				package statustest;
 
 				import "protobuf/validate.proto";
 				import "google/rpc/status.proto";
@@ -264,10 +312,10 @@ public class DescriptorParserV3Tests {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		FileDescriptorProto proto = parser.resolve("test.proto", input.getBytes()).getFile(6);
 		DescriptorProto type = proto.getMessageTypeList()
-			.stream()
-			.filter(msg -> msg.getName().equals("HelloReply"))
-			.findAny()
-			.get();
+				.stream()
+				.filter(msg -> msg.getName().equals("HelloReply"))
+				.findAny()
+				.get();
 		assertThat(type.getFieldList()).hasSize(2);
 		assertThat(type.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_MESSAGE);
 		assertThat(type.getField(1).getTypeName()).isEqualTo("google.rpc.Status");
@@ -364,6 +412,70 @@ public class DescriptorParserV3Tests {
 		assertThat(type.getField(1).getName()).isEqualTo("age");
 		assertThat(type.getField(1).getNumber()).isEqualTo(2);
 		assertThat(type.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_INT32);
+	}
+
+	@Test
+	public void testParseExtensions() {
+		String input = """
+				syntax = "proto3";
+				package optionstest;
+
+				import "google/api/annotations.proto";
+
+				service Greeter {
+					rpc SayHello (HelloRequest) returns (HelloReply) {
+						option (google.api.http) = {
+							post: "/hello"
+							body: "*"
+						};
+					}
+				}
+				message HelloRequest {
+					string name = 1;
+				}
+				message HelloReply {
+					string message = 1;
+				}
+				""";
+		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		FileDescriptorProto proto = parser.resolve("test.proto", input.getBytes()).getFileList().stream()
+				.filter(file -> file.getName().equals("test.proto"))
+				.findAny()
+				.get();
+		ServiceDescriptorProto service = proto.getServiceList()
+				.stream()
+				.filter(msg -> msg.getName().equals("Greeter"))
+				.findAny()
+				.get();
+		assertThat(service).isNotNull();
+		assertThat(service.getMethodList()).hasSize(1);
+		assertThat(service.getMethod(0).getName()).isEqualTo("SayHello");
+		assertThat(service.getMethod(0).getOptions().getUnknownFields().asMap()).isEmpty();
+	}
+
+	@Test
+	public void testParseNestedDescriptor() {
+		String input = """
+				syntax = "proto3";
+				message Foo {
+					message Declaration {
+					}
+					repeated Declaration declaration = 2;
+					FeatureSet features = 50;
+					enum VerificationState {
+						DECLARATION = 0;
+						UNVERIFIED = 1;
+					}
+					VerificationState verification = 3;
+				}
+				""";
+		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		FileDescriptorProto proto = parser.resolve("test.proto", input.getBytes()).getFile(0);
+		assertThat(proto.getMessageTypeList()).hasSize(1);
+		DescriptorProto type = proto.getMessageTypeList().get(0);
+		assertThat(type.getName().toString()).isEqualTo("Foo");
+		type = type.getNestedType(0);
+		assertThat(type.getName().toString()).isEqualTo("Declaration");
 	}
 
 }

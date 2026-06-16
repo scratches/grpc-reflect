@@ -161,13 +161,40 @@ public class DescriptorParserV2Tests {
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		FileDescriptorProto proto = parser.resolve("test.proto", input.getBytes()).getFile(0);
-		assertThat(proto.getMessageTypeList()).hasSize(2);
-		DescriptorProto type = proto.getMessageTypeList().get(1);
+		assertThat(proto.getMessageTypeList()).hasSize(1);
+		DescriptorProto type = proto.getMessageTypeList().get(0);
 		assertThat(type.getName().toString()).isEqualTo("TestMessage");
 		assertThat(type.getFieldList()).hasSize(2);
 		assertThat(type.getField(1).getName()).isEqualTo("foo");
 		assertThat(type.getField(1).getNumber()).isEqualTo(2);
 		assertThat(type.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_MESSAGE);
+		assertThat(type.getField(1).getTypeName()).isEqualTo("Foo");
+	}
+
+	@Test
+	public void testParseNestedEnumType() {
+		String input = """
+				syntax = "proto2";
+				message TestMessage {
+					optional string name = 1;
+					enum Foo {
+						UNKNOWN = 0;
+						FOO = 1;
+						BAR = 2;
+					}
+					optional Foo foo = 2;
+				}
+				""";
+		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		FileDescriptorProto proto = parser.resolve("test.proto", input.getBytes()).getFile(0);
+		assertThat(proto.getMessageTypeList()).hasSize(1);
+		DescriptorProto type = proto.getMessageTypeList().get(0);
+		assertThat(type.getName().toString()).isEqualTo("TestMessage");
+		assertThat(type.getEnumTypeList()).hasSize(1);
+		assertThat(type.getFieldList()).hasSize(2);
+		assertThat(type.getField(1).getName()).isEqualTo("foo");
+		assertThat(type.getField(1).getNumber()).isEqualTo(2);
+		assertThat(type.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_ENUM);
 		assertThat(type.getField(1).getTypeName()).isEqualTo("Foo");
 	}
 
@@ -291,6 +318,27 @@ public class DescriptorParserV2Tests {
 		// assertThat(field.getOptions().getAllFields().size()).isEqualTo(1);
 	}
 
+			@Test
+	public void testParseSimpleExtension() throws Exception {
+		String input = """
+				syntax = "proto2";
+				message TestMessage {
+					required int32 value = 1;
+					extensions 100 to 200 [verification = DECLARATION];
+				}
+				""";
+		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
+		FileDescriptorProto proto = parser.resolve("test.proto", input.getBytes()).getFile(0);
+		assertThat(proto.getMessageTypeList()).hasSize(1);
+		DescriptorProto type = proto.getMessageTypeList().get(0);
+		assertThat(type.getName().toString()).isEqualTo("TestMessage");
+		assertThat(type.getExtensionRangeList()).hasSize(1);
+		DescriptorProto.ExtensionRange extension = type.getExtensionRangeList().get(0);
+		assertThat(extension.getStart()).isEqualTo(100);
+		assertThat(extension.getEnd()).isEqualTo(200);
+	}
+
+
 	@Test
 	public void testParseExtension() {
 		String input = """
@@ -345,7 +393,7 @@ public class DescriptorParserV2Tests {
 	}
 
 	@Test
-	public void testParseDescriptor() {
+	public void testParseNestedDescriptor() {
 		String input = """
 				syntax = "proto2";
 				message Foo {
@@ -362,11 +410,11 @@ public class DescriptorParserV2Tests {
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		FileDescriptorProto proto = parser.resolve("test.proto", input.getBytes()).getFile(0);
-		assertThat(proto.getMessageTypeList()).hasSize(2);
-		DescriptorProto type = proto.getMessageTypeList().get(1);
+		assertThat(proto.getMessageTypeList()).hasSize(1);
+		DescriptorProto type = proto.getMessageTypeList().get(0);
 		assertThat(type.getName().toString()).isEqualTo("Foo");
-		// TODO: check the extensions
-		// assertThat(type.getExtensionRangeList()).hasSize(1);
+		type = type.getNestedType(0);
+		assertThat(type.getName().toString()).isEqualTo("Declaration");
 	}
 
 }

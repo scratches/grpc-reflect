@@ -129,7 +129,7 @@ public class ClasspathDescriptorTests {
 		assertThat(files.getFileCount()).isEqualTo(1);
 		FileDescriptorProto proto = files.getFile(0);
 		assertThat(proto.getName()).isEqualTo("protobuf/descriptor.proto");
-		assertThat(proto.getMessageTypeList()).hasSize(34);
+		assertThat(proto.getMessageTypeList()).hasSize(23);
 	}
 
 	@Test
