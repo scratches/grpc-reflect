@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.1.0-SNAPSHOT</version>
+		<version>4.1.1-SNAPSHOT</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>org.springframework.grpc</groupId>
@@ -29,9 +29,6 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
-		<protobuf-java.version>4.33.2</protobuf-java.version>
-		<grpc.version>1.81.0</grpc.version>
-		<!--spring-framework.version>7.0.3-SNAPSHOT</spring-framework.version-->
 	</properties>
 	<dependencies>
 		<dependency>
