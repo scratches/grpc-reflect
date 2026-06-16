@@ -16,6 +16,8 @@
 
 package org.springframework.grpc.parser.support;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
@@ -80,14 +82,11 @@ public class ProtoParserV2 {
 		parser.addParseListener(new ProtobufBaseListener() {
 			private String packageName;
 
-			private Stack<String> type = new Stack<>();
+			private Deque<MessageDefContext> type = new ArrayDeque<>();
 
 			@Override
 			public void enterMessageDef(MessageDefContext ctx) {
-				if (ctx.messageName() == null) {
-					return;
-				}
-				this.type.push(ctx.messageName().getText());
+				this.type.push(ctx);
 			}
 
 			@Override
@@ -108,12 +107,15 @@ public class ProtoParserV2 {
 			@Override
 			public void exitEnumDef(EnumDefContext ctx) {
 				String name = ctx.enumName().getText();
+				localEnumNames.add(name);
 				if (!this.type.isEmpty()) {
-					for (String parent : this.type) {
-						name = parent + "." + name;
+					for (MessageDefContext parent : this.type) {
+						if (parent.messageName() != null) {
+							name = parent.messageName().getText() + "." + name;
+							localEnumNames.add(name);
+						}
 					}
 				}
-				localEnumNames.add(name);
 				if (this.packageName != null) {
 					enumNames.add(this.packageName + "." + name);
 				} else {

@@ -16,6 +16,8 @@
 
 package org.springframework.grpc.parser.support;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
@@ -40,6 +42,7 @@ import org.springframework.grpc.parser.v3.ProtobufParser.FieldLabelContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.ImportStatementContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.KeyTypeContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.MapFieldContext;
+import org.springframework.grpc.parser.v3.ProtobufParser.MessageDefContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.OptionStatementContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.PackageStatementContext;
 import org.springframework.grpc.parser.v3.ProtobufParser.RpcContext;
@@ -87,6 +90,20 @@ public class ProtoParserV3 {
 		parser.addParseListener(new ProtobufBaseListener() {
 			private String packageName;
 
+			private Deque<MessageDefContext> type = new ArrayDeque<>();
+
+			@Override
+			public void enterMessageDef(MessageDefContext ctx) {
+				this.type.push(ctx);
+			}
+
+			@Override
+			public void exitMessageDef(MessageDefContext ctx) {
+				if (!this.type.isEmpty()) {
+					this.type.pop();
+				}
+			}
+
 			@Override
 			public void exitPackageStatement(PackageStatementContext ctx) {
 				String packageName = ctx.fullIdent().getText();
@@ -97,11 +114,20 @@ public class ProtoParserV3 {
 
 			@Override
 			public void exitEnumDef(EnumDefContext ctx) {
-				localEnumNames.add(ctx.enumName().getText());
+				String name = ctx.enumName().getText();
+				localEnumNames.add(name);
+				if (!this.type.isEmpty()) {
+					for (MessageDefContext parent : this.type) {
+						if (parent.messageName() != null) {
+							name = parent.messageName().getText() + "." + name;
+							localEnumNames.add(name);
+						}
+					}
+				}
 				if (this.packageName != null) {
-					enumNames.add(this.packageName + "." + ctx.enumName().getText());
+					enumNames.add(this.packageName + "." + name);
 				} else {
-					enumNames.add(ctx.enumName().getText());
+					enumNames.add(name);
 				}
 			}
 		});
