@@ -72,36 +72,57 @@ public class ProtoConstantParserTests {
 					name: "bar"
 				}
 				""";
-		FieldDescriptorProto field = FieldDescriptorProto.newBuilder()
-				.setName("foo").setTypeName("TestMessage").setExtendee("Bar").setNumber(10)
-				.setType(FieldDescriptorProto.Type.TYPE_MESSAGE).build();
-		DescriptorProto descriptor = DescriptorProto.newBuilder().setName("TestMessage")
-				.addField(FieldDescriptorProto.newBuilder()
-						.setName("name")
-						.setNumber(1)
-						.setType(FieldDescriptorProto.Type.TYPE_STRING)
-						.build())
-				.build();
-		FileDescriptorProto proto = FileDescriptorProto.newBuilder().setName("test.proto")
-				.addExtension(field)
-				.addMessageType(descriptor)
-				.addMessageType(DescriptorProto.newBuilder().setName("Bar")
-						.addField(FieldDescriptorProto.newBuilder()
-								.setName("value")
-								.setNumber(1)
-								.setType(FieldDescriptorProto.Type.TYPE_INT32)
-								.build())
-						.addExtensionRange(ExtensionRange.newBuilder().setStart(10).setEnd(20).build())
-						.build())
-				.build();
+		FileDescriptorProto proto = new ProtoParserV3().parse("test.proto", CharStreams.fromString("""
+				syntax = "proto3";
+				message Foo {
+					string name = 1;
+				}
+				message Bar {
+					Foo foo = 1;
+				}
+				"""));
 		FileDescriptor file = FileDescriptor.buildFrom(proto, new FileDescriptor[] {});
-		ProtoConstantParser parser = new ProtoConstantParser(file.getExtension(0));
+		ProtoConstantParser parser = new ProtoConstantParser(file.getMessageType(1).getField(0));
 		DynamicMessage msg = (DynamicMessage) parser.parse(CharStreams.fromString(input));
 		assertThat(msg).isNotNull();
 		assertThat(msg.getAllFields()).hasSize(1);
-		FieldDescriptor next = file.getExtension(0).getMessageType().getField(0);
+		FieldDescriptor next = file.getMessageType(0).getField(0);
 		assertThat(next.getName()).isEqualTo("name");
 		assertThat(msg.getField(next)).isEqualTo("bar");
+	}
+
+	@Test
+	public void testNestedMessageLiteral() throws Exception {
+		String input = """
+				{
+					foo: { name: "bar" }
+				}
+				""";
+		FileDescriptorProto proto = new ProtoParserV3().parse("test.proto", CharStreams.fromString("""
+				syntax = "proto3";
+				message Foo {
+					string name = 1;
+				}
+				message Bar {
+					Foo foo = 1;
+				}
+				message Spam {
+					int32 id = 1;
+					Bar bar = 2;
+				}
+				"""));
+		FileDescriptor file = FileDescriptor.buildFrom(proto, new FileDescriptor[] {});
+		ProtoConstantParser parser = new ProtoConstantParser(file.getMessageType(2).getField(1));
+		DynamicMessage msg = (DynamicMessage) parser.parse(CharStreams.fromString(input));
+		assertThat(msg).isNotNull();
+		assertThat(msg.getAllFields()).hasSize(1);
+		FieldDescriptor field = file.getMessageType(1).getField(0);
+		assertThat(field.getName()).isEqualTo("foo");
+		assertThat(msg.getField(field)).isNotNull();
+		msg = (DynamicMessage) msg.getField(field);
+		field = file.getMessageType(0).getField(0);
+		assertThat(field.getName()).isEqualTo("name");
+		assertThat(msg.getField(field)).isEqualTo("bar");
 	}
 
 	@Test
@@ -166,6 +187,5 @@ public class ProtoConstantParserTests {
 		FileDescriptor file = FileDescriptor.buildFrom(proto, new FileDescriptor[] {});
 		return file.getExtension(0);
 	}
-
 
 }
