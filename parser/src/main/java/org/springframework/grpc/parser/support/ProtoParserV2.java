@@ -135,7 +135,7 @@ public class ProtoParserV2 {
 		});
 		parser.reset();
 		FileDescriptorProto proto = parser.proto()
-				.accept(new ProtobufDescriptorVisitor(builder, localEnumNames, importHandler))
+				.accept(new ProtobufDescriptorVisitor(builder, localEnumNames))
 				.build();
 		return proto;
 	}
@@ -154,13 +154,9 @@ public class ProtoParserV2 {
 
 		private final Set<String> localEnumNames;
 
-		private Consumer<String> importHandler;
-
-		public ProtobufDescriptorVisitor(FileDescriptorProto.Builder builder, Set<String> localEnumNames,
-				Consumer<String> importHandler) {
+		public ProtobufDescriptorVisitor(FileDescriptorProto.Builder builder, Set<String> localEnumNames) {
 			this.builder = builder;
 			this.localEnumNames = localEnumNames;
-			this.importHandler = importHandler;
 		}
 
 		@Override
@@ -459,7 +455,6 @@ public class ProtoParserV2 {
 		public FileDescriptorProto.Builder visitImportStatement(ImportStatementContext ctx) {
 			String path = ctx.strLit().getText();
 			path = path.replace("\"", "").replace("'", "");
-			importHandler.accept(path);
 			builder.addDependency(path);
 			return super.visitImportStatement(ctx);
 		}
