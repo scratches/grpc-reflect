@@ -60,7 +60,32 @@ public class ProtoParserV2 {
 
 	private Set<String> enumNames = new HashSet<>();
 
-	public FileDescriptorProto parse(String name, CharStream stream, Consumer<String> importHandler) {
+	public Set<String> imports(CharStream stream) {
+		Set<String> imports = new HashSet<>();
+		ProtobufLexer lexer = new ProtobufLexer(stream);
+		CommonTokenStream tokens = new CommonTokenStream(lexer);
+		ProtobufParser parser = new ProtobufParser(tokens);
+		parser.removeErrorListeners(); // Remove default error listeners
+		parser.addErrorListener(new BaseErrorListener() {
+			@Override
+			public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
+					int charPositionInLine, String msg, RecognitionException e) {
+				throw new IllegalStateException("Syntax error at line " + line + ": " + msg, e);
+			}
+		});
+		parser.proto().accept(new ProtobufBaseVisitor<>() {
+			@Override
+			public Object visitImportStatement(ImportStatementContext ctx) {
+				String path = ctx.strLit().getText();
+				path = path.replace("\"", "").replace("'", "");
+				imports.add(path);
+				return super.visitImportStatement(ctx);
+			}
+		});
+		return imports;
+	}
+
+	public FileDescriptorProto parse(String name, CharStream stream) {
 
 		ProtobufLexer lexer = new ProtobufLexer(stream);
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -124,16 +149,6 @@ public class ProtoParserV2 {
 			}
 		});
 
-		parser.proto().accept(new ProtobufBaseVisitor<>() {
-			@Override
-			public Object visitImportStatement(ImportStatementContext ctx) {
-				String path = ctx.strLit().getText();
-				path = path.replace("\"", "").replace("'", "");
-				importHandler.accept(path);
-				return super.visitImportStatement(ctx);
-			}
-		});
-		parser.reset();
 		FileDescriptorProto proto = parser.proto()
 				.accept(new ProtobufDescriptorVisitor(builder, localEnumNames))
 				.build();

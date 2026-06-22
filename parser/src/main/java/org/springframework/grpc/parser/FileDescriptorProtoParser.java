@@ -250,9 +250,11 @@ public class FileDescriptorProtoParser {
 	private FileDescriptorProto parse(String name, byte[] bytes) {
 		String content = new String(bytes);
 		if (content.matches("(?s).*syntax\\s*=\\s*\"proto2\".*")) {
-			return v2.parse(name, CharStreams.fromString(content), path -> resolve(path, findImport(path)));
+			v2.imports(CharStreams.fromString(content)).forEach(path -> resolve(path, findImport(path)));
+			return v2.parse(name, CharStreams.fromString(content));
 		}
-		return v3.parse(name, CharStreams.fromString(content), path -> resolve(path, findImport(path)));
+		v3.imports(CharStreams.fromString(content)).forEach(path -> resolve(path, findImport(path)));
+		return v3.parse(name, CharStreams.fromString(content));
 	}
 
 }
