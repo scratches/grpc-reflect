@@ -21,7 +21,6 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
-import java.util.function.Consumer;
 
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStream;
