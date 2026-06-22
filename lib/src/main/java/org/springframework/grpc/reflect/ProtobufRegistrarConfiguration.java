@@ -76,7 +76,7 @@ public class ProtobufRegistrarConfiguration implements ImportBeanDefinitionRegis
 			return new BinaryDescriptorParser();
 		}
 
-	}	
+	}
 
 	static class ProtobufRegistrar implements DescriptorRegistrar {
 

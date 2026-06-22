@@ -130,7 +130,7 @@ public class ProtobufRegistrationTests {
 				Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "grpc.reflection.v1.ServerReflection").getName())
-				.isEqualTo("grpc/reflection/v1/reflection.proto");
+			.isEqualTo("grpc/reflection/v1/reflection.proto");
 		assertThat(registry.service("grpc.reflection.v1.ServerReflection").getFile().getName()).isNotNull();
 		assertThat(registry.type("grpc.reflection.v1.ServerReflectionRequest")).isNotNull();
 		context.close();
@@ -142,7 +142,7 @@ public class ProtobufRegistrationTests {
 				Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "grpc.reflection.v1.ServerReflection").getName())
-				.isEqualTo("grpc/reflection/v1/reflection.proto");
+			.isEqualTo("grpc/reflection/v1/reflection.proto");
 		assertThat(registry.service("grpc.reflection.v1.ServerReflection").getFile().getName()).isNotNull();
 		assertThat(registry.type("grpc.reflection.v1.ServerReflectionRequest")).isNotNull();
 		context.close();
@@ -154,7 +154,7 @@ public class ProtobufRegistrationTests {
 				Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(file(registry, "grpc.reflection.v1.ServerReflection").getName())
-				.isEqualTo("grpc/reflection/v1/reflection.proto");
+			.isEqualTo("grpc/reflection/v1/reflection.proto");
 		context.close();
 	}
 
@@ -173,8 +173,11 @@ public class ProtobufRegistrationTests {
 				Parsers.class);
 		DefaultDescriptorRegistry registry = context.getBean(DefaultDescriptorRegistry.class);
 		assertThat(registry.type("HelloRequest").getFile().getName()).isEqualTo("hello.proto");
-		assertThat(registry.service("Simple").findMethodByName("SayHello").getOptions()
-				.getExtension(AnnotationsProto.http).getPost()).isNotEmpty();
+		assertThat(registry.service("Simple")
+			.findMethodByName("SayHello")
+			.getOptions()
+			.getExtension(AnnotationsProto.http)
+			.getPost()).isNotEmpty();
 		context.close();
 	}
 
@@ -274,11 +277,14 @@ public class ProtobufRegistrationTests {
 	@Configuration(proxyBeanMethods = false)
 	@ImportProtobuf(locations = "file:target/hello.pb")
 	static class ExtensionsExample {
+
 		@Bean
 		public ExtensionRegistry extensionRegistry() {
 			ExtensionRegistry registry = ExtensionRegistry.newInstance();
 			registry.add(AnnotationsProto.http);
 			return registry;
 		}
+
 	}
+
 }

@@ -151,15 +151,16 @@ public class ProtoParserV3 {
 				}
 				if (this.packageName != null) {
 					enumNames.add(this.packageName + "." + name);
-				} else {
+				}
+				else {
 					enumNames.add(name);
 				}
 			}
 		});
 
 		FileDescriptorProto proto = parser.proto()
-				.accept(new ProtobufDescriptorVisitor(builder, localEnumNames))
-				.build();
+			.accept(new ProtobufDescriptorVisitor(builder, localEnumNames))
+			.build();
 		return proto;
 	}
 
@@ -226,9 +227,9 @@ public class ProtoParserV3 {
 			// TODO: handle field options if needed
 			FieldDescriptorProto.Type fieldType = findType(ctx.type());
 			FieldDescriptorProto.Builder field = FieldDescriptorProto.newBuilder()
-					.setName(ctx.fieldName().getText())
-					.setNumber(parseInt(ctx.fieldNumber().getText()))
-					.setType(fieldType);
+				.setName(ctx.fieldName().getText())
+				.setNumber(parseInt(ctx.fieldNumber().getText()))
+				.setType(fieldType);
 			this.field.push(field);
 			if (fieldType == FieldDescriptorProto.Type.TYPE_MESSAGE
 					|| fieldType == FieldDescriptorProto.Type.TYPE_ENUM) {
@@ -255,11 +256,11 @@ public class ProtoParserV3 {
 			FieldDescriptorProto.Type fieldType = FieldDescriptorProto.Type.TYPE_MESSAGE;
 			DescriptorProto mapType = mapType(ctx);
 			FieldDescriptorProto.Builder field = FieldDescriptorProto.newBuilder()
-					.setName(ctx.mapName().getText())
-					.setNumber(Integer.valueOf(ctx.fieldNumber().getText()))
-					.setLabel(FieldDescriptorProto.Label.LABEL_REPEATED)
-					.setTypeName(mapType.getName())
-					.setType(fieldType);
+				.setName(ctx.mapName().getText())
+				.setNumber(Integer.valueOf(ctx.fieldNumber().getText()))
+				.setLabel(FieldDescriptorProto.Label.LABEL_REPEATED)
+				.setTypeName(mapType.getName())
+				.setType(fieldType);
 			this.field.push(field);
 			Builder result = super.visitMapField(ctx);
 			this.type.peek().addNestedType(mapType);
@@ -270,15 +271,15 @@ public class ProtoParserV3 {
 
 		private DescriptorProto mapType(MapFieldContext ctx) {
 			DescriptorProto.Builder type = DescriptorProto.newBuilder()
-					.setName(capitalize(ctx.mapName().getText()) + "Entry");
+				.setName(capitalize(ctx.mapName().getText()) + "Entry");
 			FieldDescriptorProto.Builder key = FieldDescriptorProto.newBuilder()
-					.setName("key")
-					.setNumber(1)
-					.setType(findKeyType(ctx.keyType()));
+				.setName("key")
+				.setNumber(1)
+				.setType(findKeyType(ctx.keyType()));
 			FieldDescriptorProto.Builder value = FieldDescriptorProto.newBuilder()
-					.setName("value")
-					.setNumber(2)
-					.setType(findType(ctx.type()));
+				.setName("value")
+				.setNumber(2)
+				.setType(findType(ctx.type()));
 			if (value.getType() == FieldDescriptorProto.Type.TYPE_MESSAGE
 					|| value.getType() == FieldDescriptorProto.Type.TYPE_ENUM) {
 				value.setTypeName(ctx.type().getText());
@@ -397,7 +398,8 @@ public class ProtoParserV3 {
 			Builder result = super.visitEnumDef(ctx);
 			if (owner != null) {
 				owner.addEnumType(enumType);
-			} else {
+			}
+			else {
 				builder.addEnumType(enumType.build());
 			}
 			this.enumType.pop();
@@ -410,8 +412,8 @@ public class ProtoParserV3 {
 			String name = ctx.ident().IDENTIFIER() == null ? ctx.ident().keywords().getText()
 					: ctx.ident().IDENTIFIER().getText();
 			EnumValueDescriptorProto.Builder field = EnumValueDescriptorProto.newBuilder()
-					.setName(name)
-					.setNumber(Integer.valueOf(ctx.intLit().INT_LIT().getText()));
+				.setName(name)
+				.setNumber(Integer.valueOf(ctx.intLit().INT_LIT().getText()));
 			this.enumType.peek().addValue(field.build());
 			return super.visitEnumField(ctx);
 		}
@@ -426,7 +428,8 @@ public class ProtoParserV3 {
 			Builder result = super.visitMessageDef(ctx);
 			if (owner != null) {
 				owner.addNestedType(type);
-			} else {
+			}
+			else {
 				builder.addMessageType(type);
 			}
 			this.type.pop();
@@ -457,9 +460,9 @@ public class ProtoParserV3 {
 		private MethodDescriptorProto buildRpc(RpcContext rpc) {
 			String rpcName = rpc.rpcName().getText();
 			MethodDescriptorProto.Builder method = MethodDescriptorProto.newBuilder()
-					.setName(rpcName)
-					.setInputType(rpc.messageType(0).messageName().getText())
-					.setOutputType(rpc.messageType(1).messageName().getText());
+				.setName(rpcName)
+				.setInputType(rpc.messageType(0).messageName().getText())
+				.setOutputType(rpc.messageType(1).messageName().getText());
 			if (rpc.STREAM(0) != null) {
 				method.setServerStreaming(true);
 			}

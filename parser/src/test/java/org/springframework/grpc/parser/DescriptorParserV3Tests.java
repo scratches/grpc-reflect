@@ -312,10 +312,10 @@ public class DescriptorParserV3Tests {
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
 		FileDescriptorProto proto = parser.resolve("test.proto", input.getBytes()).getFile(6);
 		DescriptorProto type = proto.getMessageTypeList()
-				.stream()
-				.filter(msg -> msg.getName().equals("HelloReply"))
-				.findAny()
-				.get();
+			.stream()
+			.filter(msg -> msg.getName().equals("HelloReply"))
+			.findAny()
+			.get();
 		assertThat(type.getFieldList()).hasSize(2);
 		assertThat(type.getField(1).getType()).isEqualTo(FieldDescriptorProto.Type.TYPE_MESSAGE);
 		assertThat(type.getField(1).getTypeName()).isEqualTo("google.rpc.Status");
@@ -438,15 +438,17 @@ public class DescriptorParserV3Tests {
 				}
 				""";
 		FileDescriptorProtoParser parser = new FileDescriptorProtoParser();
-		FileDescriptorProto proto = parser.resolve("test.proto", input.getBytes()).getFileList().stream()
-				.filter(file -> file.getName().equals("test.proto"))
-				.findAny()
-				.get();
+		FileDescriptorProto proto = parser.resolve("test.proto", input.getBytes())
+			.getFileList()
+			.stream()
+			.filter(file -> file.getName().equals("test.proto"))
+			.findAny()
+			.get();
 		ServiceDescriptorProto service = proto.getServiceList()
-				.stream()
-				.filter(msg -> msg.getName().equals("Greeter"))
-				.findAny()
-				.get();
+			.stream()
+			.filter(msg -> msg.getName().equals("Greeter"))
+			.findAny()
+			.get();
 		assertThat(service).isNotNull();
 		assertThat(service.getMethodList()).hasSize(1);
 		assertThat(service.getMethod(0).getName()).isEqualTo("SayHello");

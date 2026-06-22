@@ -318,7 +318,7 @@ public class DescriptorParserV2Tests {
 		// assertThat(field.getOptions().getAllFields().size()).isEqualTo(1);
 	}
 
-			@Test
+	@Test
 	public void testParseSimpleExtension() throws Exception {
 		String input = """
 				syntax = "proto2";
@@ -337,7 +337,6 @@ public class DescriptorParserV2Tests {
 		assertThat(extension.getStart()).isEqualTo(100);
 		assertThat(extension.getEnd()).isEqualTo(200);
 	}
-
 
 	@Test
 	public void testParseExtension() {
