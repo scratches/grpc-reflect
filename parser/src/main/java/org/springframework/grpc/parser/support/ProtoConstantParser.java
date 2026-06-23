@@ -33,6 +33,7 @@ import org.springframework.grpc.parser.ConstantParser.IntLitContext;
 import org.springframework.grpc.parser.ConstantParser.StrLitContext;
 
 import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.DynamicMessage.Builder;
@@ -112,12 +113,15 @@ public class ProtoConstantParser {
 
 		@Override
 		public Object visitStrLit(StrLitContext ctx) {
-			value = ctx.getText().substring(1, ctx.getText().length() - 1);
+			String text = ctx.getText();
+			String delimiter = text.substring(0, 1);
+			value = text.replace(delimiter, "");
 			return value;
 		}
 
 		@Override
 		public Object visitFullIdent(FullIdentContext ctx) {
+			// Probably this is an error, but we can return the text for now
 			value = new Identifier(ctx.getText());
 			return value;
 		}
@@ -150,10 +154,13 @@ public class ProtoConstantParser {
 				if (field.getType() == FieldDescriptor.Type.MESSAGE) {
 					Builder nestedBuilder = DynamicMessage.newBuilder(field.getMessageType());
 					builder.setField(field, ctx.constant(i).accept(new BlockVisitor(nestedBuilder)).build());
+				} else if (field.getType() == FieldDescriptor.Type.ENUM) {
+					EnumValueDescriptor value = field.getEnumType().findValueByName(ctx.constant(i).getText());
+					builder.setField(field, value);
 				} else {
 					Object value = ctx.constant(i).accept(new LiteralVisitor());
 					builder.setField(field, value);
-				} // TODO enum types
+				}
 				i++;
 			}
 			return builder;

@@ -35,6 +35,7 @@ import com.google.protobuf.DescriptorProtos.DescriptorProto.ExtensionRange;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
+import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.DynamicMessage;
@@ -167,6 +168,51 @@ public class ProtoConstantParserTests {
 		String value = (String) parser.parse(CharStreams.fromString(input));
 		assertThat(value).isNotNull();
 		assertThat(value).isEqualTo("foo");
+	}
+
+	@Test
+	public void testLongStringLiteral() throws Exception {
+		String input = """
+				"foo"
+				"bar"
+				""";
+		ProtoConstantParser parser = new ProtoConstantParser(field(Type.TYPE_STRING));
+		String value = (String) parser.parse(CharStreams.fromString(input));
+		assertThat(value).isNotNull();
+		assertThat(value).isEqualTo("foobar");
+	}
+
+	@Test
+	public void testEnumLiteral() throws Exception {
+		String input = """
+				{
+					foo: SPAM
+				}
+				""";
+		FileDescriptorProto proto = new ProtoParserV3().parse("test.proto", CharStreams.fromString("""
+				syntax = "proto3";
+				enum Foo {
+					BAR = 0;
+					SPAM = 1;
+				}
+				message Bar {
+					Foo foo = 1;
+				}
+				message Spam {
+					int32 id = 1;
+					Bar bar = 2;
+				}
+				"""));
+		FileDescriptor file = FileDescriptor.buildFrom(proto, new FileDescriptor[] {});
+		ProtoConstantParser parser = new ProtoConstantParser(file.getMessageType(1).getField(1));
+		DynamicMessage msg = (DynamicMessage) parser.parse(CharStreams.fromString(input));
+		assertThat(msg).isNotNull();
+		assertThat(msg.getAllFields()).hasSize(1);
+		FieldDescriptor next = file.getMessageType(0).getField(0);
+		assertThat(next.getName()).isEqualTo("foo");
+		Object value = msg.getField(next);
+		assertThat(value).isInstanceOf(EnumValueDescriptor.class);
+		assertThat(value.toString()).isEqualTo("SPAM");
 	}
 
 	private FieldDescriptor field(Type type) throws Exception {
