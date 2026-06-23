@@ -195,6 +195,8 @@ public class ProtoParserV2 {
 				extensions.setStart(Integer.valueOf(range.intLit(0).getText()));
 				if (range.intLit().size() > 1) {
 					extensions.setEnd(Integer.valueOf(range.intLit(1).getText()));
+				} else {
+					extensions.setEnd(Integer.MAX_VALUE);
 				}
 			}
 			return super.visitExtensions(ctx);

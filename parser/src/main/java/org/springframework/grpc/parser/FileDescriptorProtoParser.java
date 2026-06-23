@@ -218,6 +218,9 @@ public class FileDescriptorProtoParser {
 	}
 
 	private byte[] findImport(String path) {
+		if (cache.containsKey(path)) {
+			return new byte[0]; // Already parsed, return empty content to avoid re-parsing;
+		}
 		if (path.startsWith("/")) {
 			path = path.substring(1);
 		}
@@ -229,6 +232,9 @@ public class FileDescriptorProtoParser {
 	}
 
 	private FileDescriptorSet parse(String path) {
+		if (cache.containsKey(path)) {
+			return cached(path);
+		}
 		FileDescriptorSet.Builder builder = FileDescriptorSet.newBuilder();
 		Set<String> names = new HashSet<>();
 		for (NamedBytes named : this.locator.find(path)) {
@@ -247,14 +253,38 @@ public class FileDescriptorProtoParser {
 		return builder.build();
 	}
 
+
+	private FileDescriptorSet cached(String path) {
+		FileDescriptorSet.Builder builder = FileDescriptorSet.newBuilder();
+		Set<String> names = new HashSet<>();
+		if (cache.containsKey(path)) {
+			builder.addFile(cache.get(path));
+			cache.get(path).getDependencyList().forEach(dependency -> {
+				if (!names.contains(dependency)) {
+					names.add(dependency);
+					builder.addFile(cache.get(dependency));
+				}
+			});
+			return builder.build();
+		}
+		return builder.build();
+	}
+
 	private FileDescriptorProto parse(String name, byte[] bytes) {
+		FileDescriptorProto result = cache.get(name);
+		if (result != null) {
+			return result;
+		}
 		String content = new String(bytes);
 		if (content.matches("(?s).*syntax\\s*=\\s*\"proto2\".*")) {
 			v2.imports(CharStreams.fromString(content)).forEach(path -> resolve(path, findImport(path)));
-			return v2.parse(name, CharStreams.fromString(content));
+			result = v2.parse(name, CharStreams.fromString(content));
+		} else {
+			v3.imports(CharStreams.fromString(content)).forEach(path -> resolve(path, findImport(path)));
+			result = v3.parse(name, CharStreams.fromString(content));
 		}
-		v3.imports(CharStreams.fromString(content)).forEach(path -> resolve(path, findImport(path)));
-		return v3.parse(name, CharStreams.fromString(content));
+		cache.put(name, result);
+		return result;
 	}
 
 }
