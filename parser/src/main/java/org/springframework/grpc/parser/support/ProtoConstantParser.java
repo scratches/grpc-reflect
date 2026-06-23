@@ -17,9 +17,12 @@ package org.springframework.grpc.parser.support;
 
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.misc.Interval;
 import org.springframework.grpc.parser.ConstantBaseListener;
 import org.springframework.grpc.parser.ConstantBaseVisitor;
 import org.springframework.grpc.parser.ConstantLexer;
@@ -44,6 +47,13 @@ public class ProtoConstantParser {
 
 	public ProtoConstantParser(FieldDescriptor field) {
 		this.field = field;
+	}
+
+	public Object parse(ParserRuleContext context) {
+		CharStream stream = context.getStart().getInputStream();
+		String input = stream
+				.getText(Interval.of(context.getStart().getStartIndex(), context.getStop().getStopIndex()));
+		return parse(CharStreams.fromString(input));
 	}
 
 	public Object parse(CharStream stream) {
