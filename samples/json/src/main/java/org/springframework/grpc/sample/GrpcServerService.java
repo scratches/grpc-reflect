@@ -49,30 +49,7 @@ public class GrpcServerService {
 		return response;
 	}
 
-	@PostMapping(path = "Simple/StreamHello", produces = "application/json")
-	public ResponseBodyEmitter streamHello(@RequestBody HelloRequest req) {
-		if (req.getName().startsWith("error")) {
-			throw new IllegalArgumentException("Bad name: " + req.getName());
-		}
-		if (req.getName().startsWith("internal")) {
-			throw new RuntimeException();
-		}
-		ResponseBodyEmitter emitter = new ResponseBodyEmitter();
-		Flux.interval(Duration.ofMillis(200))
-				.take(5)
-				.map(val -> HelloReply.newBuilder().setMessage("Hello (" + val + ") ==> " + req.getName()).build())
-				.subscribe(t -> {
-					try {
-						emitter.send(t, MediaType.APPLICATION_JSON);
-						emitter.send("\n", MediaType.TEXT_PLAIN);
-					} catch (IOException e) {
-						throw new IllegalStateException(e);
-					}
-				}, emitter::completeWithError, emitter::complete);
-		return emitter;
-	}
-
-	@PostMapping(path = "Flux/StreamHello", produces = "application/jsonl+x-ndjson")
+	@PostMapping(path = "Simple/StreamHello", produces = "application/jsonl+x-ndjson")
 	public Flux<HelloReply> stream(@RequestBody HelloRequest req) {
 		if (req.getName().startsWith("error")) {
 			throw new IllegalArgumentException("Bad name: " + req.getName());
