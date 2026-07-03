@@ -49,8 +49,8 @@ public class GrpcWebmvcAutoConfiguration implements WebMvcConfigurer {
 
 	@Override
 	public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-		GrpcHttpMessageConverter converter = new GrpcHttpMessageConverter();
-		converters.add(converter);
+		converters.add(new GrpcHttpMessageConverter());
+		converters.add(new GrpcJsonHttpMessageConverter());
 	}
 
 	@Bean
