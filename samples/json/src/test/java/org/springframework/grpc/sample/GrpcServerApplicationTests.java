@@ -12,7 +12,9 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.webclient.test.autoconfigure.AutoConfigureWebClient;
 import org.springframework.grpc.sample.proto.HelloReply;
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.json.JacksonJsonDecoder;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.util.MimeType;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.google.gson.Gson;
@@ -20,6 +22,7 @@ import com.google.gson.GsonBuilder;
 import com.google.protobuf.util.JsonFormat;
 
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = { "spring.grpc.server.enabled=false" })
 @DirtiesContext
@@ -34,7 +37,16 @@ public class GrpcServerApplicationTests {
 
 	@BeforeEach
 	void setUp(@Autowired WebClient.Builder builder, @LocalServerPort int port) {
-		this.rest = builder.baseUrl("http://localhost:" + port).build();
+		this.rest = builder.codecs(config -> {
+			MimeType[] mimeTypes = new MimeType[] {
+					MediaType.APPLICATION_JSON,
+					new MediaType("application", "*+json"),
+					MediaType.APPLICATION_NDJSON,
+					MediaType.valueOf("application/*+x-ndjson")
+			};
+			JacksonJsonDecoder decoder = new JacksonJsonDecoder(JsonMapper.builder(), mimeTypes);
+			config.defaultCodecs().jacksonJsonDecoder(decoder);
+		}).baseUrl("http://localhost:" + port).build();
 	}
 
 	@Test

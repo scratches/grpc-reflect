@@ -16,18 +16,15 @@
 
 package org.springframework.grpc.sample;
 
-import java.io.IOException;
 import java.time.Duration;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.grpc.sample.proto.HelloReply;
 import org.springframework.grpc.sample.proto.HelloRequest;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 
 import reactor.core.publisher.Flux;
 
@@ -49,7 +46,7 @@ public class GrpcServerService {
 		return response;
 	}
 
-	@PostMapping(path = "Simple/StreamHello", produces = "application/x-ndjson")
+	@PostMapping(path = "Simple/StreamHello", produces = "application/jsonl+x-ndjson")
 	public Flux<HelloReply> stream(@RequestBody HelloRequest req) {
 		if (req.getName().startsWith("error")) {
 			throw new IllegalArgumentException("Bad name: " + req.getName());
