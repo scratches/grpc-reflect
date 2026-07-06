@@ -49,7 +49,7 @@ public class GrpcServerService {
 		return response;
 	}
 
-	@PostMapping(path = "Simple/StreamHello", produces = "application/jsonl+x-ndjson")
+	@PostMapping(path = "Simple/StreamHello", produces = "application/x-ndjson")
 	public Flux<HelloReply> stream(@RequestBody HelloRequest req) {
 		if (req.getName().startsWith("error")) {
 			throw new IllegalArgumentException("Bad name: " + req.getName());

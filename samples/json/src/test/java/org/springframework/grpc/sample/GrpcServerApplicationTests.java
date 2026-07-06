@@ -15,6 +15,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.protobuf.util.JsonFormat;
 
 import tools.jackson.databind.ObjectMapper;
@@ -54,16 +56,15 @@ public class GrpcServerApplicationTests {
 
 	@Test
 	void serverStreams() {
-		String response = rest
+		Bar response = rest
 				.post()
 				.uri("Simple/StreamHello")
 				.contentType(MediaType.APPLICATION_JSON)
 				.bodyValue(new Foo("Alien"))
 				.retrieve()
-				.bodyToFlux(String.class)
+				.bodyToFlux(Bar.class)
 				.blockFirst();
-		Bar bar = new ObjectMapper().readValue(response, Bar.class);
-		assertEquals("Hello (0) ==> Alien", bar.getMessage());
+		assertEquals("Hello (0) ==> Alien", response.getMessage());
 	}
 
 	@Test
@@ -72,7 +73,18 @@ public class GrpcServerApplicationTests {
 				.print(HelloReply.newBuilder().setMessage("Hello ==> Alien & Martian").build());
 		Bar bar = new ObjectMapper().readValue(response, Bar.class);
 		assertEquals("Hello ==> Alien & Martian", bar.getMessage());
-		// assertEquals("{\"message\":\"Hello \u003d\u003d\u003e Alien \u0026 Martian\"}", response);
+		assertEquals("{\"message\":\"Hello \\u003d\\u003d\\u003e Alien \\u0026 Martian\"}", response);
+	}
+
+	@Test
+	void gsonEncoding() throws Exception {
+		Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+		// Gson escapes HTML by default, which is why the Protobuf JSON encoding is
+		// different.
+		String response = gson.toJson(new Bar("Hello ==> Alien & Martian"));
+		Bar bar = new ObjectMapper().readValue(response, Bar.class);
+		assertEquals("Hello ==> Alien & Martian", bar.getMessage());
+		assertEquals("{\"message\":\"Hello ==> Alien & Martian\"}", response);
 	}
 
 	static class Foo {
@@ -93,6 +105,13 @@ public class GrpcServerApplicationTests {
 
 	static class Bar {
 		private String message;
+
+		public Bar() {
+		}
+
+		public Bar(String message) {
+			this.message = message;
+		}
 
 		public String getMessage() {
 			return message;
