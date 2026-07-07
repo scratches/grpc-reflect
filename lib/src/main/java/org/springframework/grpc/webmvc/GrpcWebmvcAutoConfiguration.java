@@ -21,15 +21,12 @@ import org.apache.coyote.UpgradeProtocol;
 import org.apache.coyote.http2.Http2Protocol;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.tomcat.TomcatConnectorCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import io.grpc.BindableService;
 
 /**
  * Auto-configuration for gRPC integration with Spring WebMVC.
@@ -42,7 +39,6 @@ import io.grpc.BindableService;
  * @since 1.0.0
  */
 @Configuration
-@ConditionalOnMissingBean(BindableService.class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @AutoConfiguration(afterName = "org.springframework.boot.grpc.server.autoconfigure.GrpcServerFactoryAutoConfiguration")
 public class GrpcWebmvcAutoConfiguration implements WebMvcConfigurer {

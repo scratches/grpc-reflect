@@ -24,7 +24,7 @@ import com.google.protobuf.util.JsonFormat;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = { "spring.grpc.server.enabled=false" })
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = { "spring.grpc.server.enabled=false", "debug=true" })
 @DirtiesContext
 @AutoConfigureWebClient
 public class GrpcServerApplicationTests {
@@ -76,7 +76,7 @@ public class GrpcServerApplicationTests {
 				.retrieve()
 				.bodyToFlux(Bar.class)
 				.blockFirst();
-		assertEquals("Hello (0) ==> Alien", response.getMessage());
+		assertEquals("Hello(0) ==> Alien", response.getMessage());
 	}
 
 	@Test
