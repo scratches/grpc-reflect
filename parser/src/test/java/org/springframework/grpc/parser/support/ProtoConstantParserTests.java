@@ -39,7 +39,6 @@ import com.google.protobuf.DescriptorProtos.DescriptorProto.ExtensionRange;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
-import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;

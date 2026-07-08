@@ -1,5 +1,6 @@
 package org.springframework.grpc.sample;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -10,21 +11,32 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.webclient.test.autoconfigure.AutoConfigureWebClient;
+import org.springframework.grpc.reflect.DescriptorCatalog;
 import org.springframework.grpc.sample.proto.HelloReply;
+import org.springframework.grpc.sample.proto.HelloRequest;
+import org.springframework.grpc.sample.proto.HelloWorldProto;
+import org.springframework.grpc.sample.proto.SimpleGrpc;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.json.JacksonJsonDecoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.util.MimeType;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.google.api.AnnotationsProto;
+import com.google.api.HttpRule;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.protobuf.Descriptors.MethodDescriptor;
+import com.google.protobuf.Descriptors.ServiceDescriptor;
 import com.google.protobuf.util.JsonFormat;
 
+import io.grpc.MethodDescriptor.PrototypeMarshaller;
+import io.grpc.protobuf.ProtoMethodDescriptorSupplier;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = { "spring.grpc.server.enabled=false", "debug=true" })
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = { "spring.grpc.server.enabled=false",
+		"debug=true" })
 @DirtiesContext
 @AutoConfigureWebClient
 public class GrpcServerApplicationTests {
@@ -77,6 +89,36 @@ public class GrpcServerApplicationTests {
 				.bodyToFlux(Bar.class)
 				.blockFirst();
 		assertEquals("Hello(0) ==> Alien", response.getMessage());
+	}
+
+	@Test
+	void testDescriptorWithExtension() {
+		DescriptorCatalog catalog = new DescriptorCatalog();
+		catalog.register(HelloWorldProto.getDescriptor());
+		assertEquals("HelloRequest", catalog.type("HelloRequest").getFullName());
+		ServiceDescriptor descriptor = catalog.service("Simple");
+		assertEquals("Simple", descriptor.getName());
+		MethodDescriptor method = descriptor.getMethods().stream().filter(item -> item.getName().equals("SayHello"))
+				.findFirst().get();
+		assertEquals("Simple.SayHello", method.getFullName());
+		HttpRule rule = method.getOptions().getExtension(AnnotationsProto.http);
+		assertThat(rule).isNotNull();
+		assertThat(rule.getPost()).isEqualTo("/hello/{name=*}");
+		method = descriptor.getMethods().stream().filter(item -> item.getName().equals("StreamHello"))
+				.findFirst().get();
+		rule = method.getOptions().getExtension(AnnotationsProto.http);
+		assertThat(rule).isNotNull();
+		assertThat(rule.getPatternCase()).isEqualTo(HttpRule.PatternCase.PATTERN_NOT_SET);
+	}
+
+	@Test
+	void testGrpcDescriptorWithExtension() {
+		io.grpc.MethodDescriptor<?,?> method = SimpleGrpc.getSayHelloMethod();
+		ProtoMethodDescriptorSupplier supplier = (ProtoMethodDescriptorSupplier) method.getSchemaDescriptor();
+		HttpRule rule = supplier.getMethodDescriptor().getOptions().getExtension(AnnotationsProto.http);
+		assertThat(rule.getPost()).isEqualTo("/hello/{name=*}");
+		PrototypeMarshaller<?> marshaller = (PrototypeMarshaller<?>)method.getRequestMarshaller();
+		assertThat(marshaller.getMessageClass()).isEqualTo(HelloRequest.class);
 	}
 
 	@Test

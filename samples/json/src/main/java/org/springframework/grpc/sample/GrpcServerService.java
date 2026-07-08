@@ -60,6 +60,30 @@ public class GrpcServerService extends SimpleGrpc.SimpleImplBase {
 				.subscribe(responseObserver::onNext, responseObserver::onError, responseObserver::onCompleted);
 	}
 
+	@Override
+	public StreamObserver<HelloRequest> parallelHello(StreamObserver<HelloReply> responseObserver) {
+		return new StreamObserver<HelloRequest>() {
+
+			@Override
+			public void onNext(HelloRequest value) {
+				log.info("Hello " + value.getName());
+				HelloReply reply = HelloReply.newBuilder().setMessage("Hello ==> " + value.getName()).build();
+				responseObserver.onNext(reply);
+			}
+
+			@Override
+			public void onError(Throwable t) {
+				responseObserver.onError(t);
+			}
+
+			@Override
+			public void onCompleted() {
+				responseObserver.onCompleted();
+			}
+
+		};
+	}
+
 	@PostMapping(path = "Simple/SayHello", produces = "application/json")
 	public HelloReply sayHello(@RequestBody HelloRequest req) {
 		SingleValueObserver<HelloReply> observer = new SingleValueObserver<>();
