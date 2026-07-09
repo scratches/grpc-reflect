@@ -41,6 +41,6 @@ public final class BidiValueObserver<S, T> implements StreamObserver<T> {
 		return source.doOnNext(result::onNext)
 				.doOnError(result::onError)
 				.doOnComplete(result::onCompleted)
-				.thenMany(this.sink.asFlux());
+				.publish(s -> this.sink.asFlux());
 	}
 }

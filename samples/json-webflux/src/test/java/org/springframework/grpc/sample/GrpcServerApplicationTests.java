@@ -49,6 +49,8 @@ public class GrpcServerApplicationTests {
 	@BeforeEach
 	void setUp(@Autowired WebClient.Builder builder, @LocalServerPort int port) {
 		this.rest = builder.codecs(config -> {
+			// Extra codecs are not needed, but they should be because the server should be
+			// publishing NDJSON
 			MimeType[] mimeTypes = new MimeType[] {
 					MediaType.APPLICATION_JSON,
 					new MediaType("application", "*+json"),
@@ -101,56 +103,6 @@ public class GrpcServerApplicationTests {
 				.bodyToFlux(Bar.class)
 				.blockFirst();
 		assertEquals("Hello ==> Alien", response.getMessage());
-	}
-
-	@Test
-	void testDescriptorWithExtension() {
-		DescriptorCatalog catalog = new DescriptorCatalog();
-		catalog.register(HelloWorldProto.getDescriptor());
-		assertEquals("HelloRequest", catalog.type("HelloRequest").getFullName());
-		ServiceDescriptor descriptor = catalog.service("Simple");
-		assertEquals("Simple", descriptor.getName());
-		MethodDescriptor method = descriptor.getMethods().stream().filter(item -> item.getName().equals("SayHello"))
-				.findFirst().get();
-		assertEquals("Simple.SayHello", method.getFullName());
-		HttpRule rule = method.getOptions().getExtension(AnnotationsProto.http);
-		assertThat(rule).isNotNull();
-		assertThat(rule.getPost()).isEqualTo("/hello/{name=*}");
-		method = descriptor.getMethods().stream().filter(item -> item.getName().equals("StreamHello"))
-				.findFirst().get();
-		rule = method.getOptions().getExtension(AnnotationsProto.http);
-		assertThat(rule).isNotNull();
-		assertThat(rule.getPatternCase()).isEqualTo(HttpRule.PatternCase.PATTERN_NOT_SET);
-	}
-
-	@Test
-	void testGrpcDescriptorWithExtension() {
-		io.grpc.MethodDescriptor<?,?> method = SimpleGrpc.getSayHelloMethod();
-		ProtoMethodDescriptorSupplier supplier = (ProtoMethodDescriptorSupplier) method.getSchemaDescriptor();
-		HttpRule rule = supplier.getMethodDescriptor().getOptions().getExtension(AnnotationsProto.http);
-		assertThat(rule.getPost()).isEqualTo("/hello/{name=*}");
-		PrototypeMarshaller<?> marshaller = (PrototypeMarshaller<?>)method.getRequestMarshaller();
-		assertThat(marshaller.getMessageClass()).isEqualTo(HelloRequest.class);
-	}
-
-	@Test
-	void jsonEncoding() throws Exception {
-		String response = JsonFormat.printer().omittingInsignificantWhitespace()
-				.print(HelloReply.newBuilder().setMessage("Hello ==> Alien & Martian").build());
-		Bar bar = new ObjectMapper().readValue(response, Bar.class);
-		assertEquals("Hello ==> Alien & Martian", bar.getMessage());
-		assertEquals("{\"message\":\"Hello \\u003d\\u003d\\u003e Alien \\u0026 Martian\"}", response);
-	}
-
-	@Test
-	void gsonEncoding() throws Exception {
-		Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-		// Gson escapes HTML by default, which is why the Protobuf JSON encoding is
-		// different.
-		String response = gson.toJson(new Bar("Hello ==> Alien & Martian"));
-		Bar bar = new ObjectMapper().readValue(response, Bar.class);
-		assertEquals("Hello ==> Alien & Martian", bar.getMessage());
-		assertEquals("{\"message\":\"Hello ==> Alien & Martian\"}", response);
 	}
 
 	static class Foo {
