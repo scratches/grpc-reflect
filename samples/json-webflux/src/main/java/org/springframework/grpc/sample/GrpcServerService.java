@@ -92,14 +92,14 @@ public class GrpcServerService extends SimpleGrpc.SimpleImplBase {
 		return observer.getValue();
 	}
 
-	@PostMapping(path = "Simple/StreamHello")
+	@PostMapping(path = "Simple/StreamHello", produces = "application/x-ndjson")
 	public Flux<HelloReply> stream(@RequestBody HelloRequest req) {
 		MultiValueObserver<HelloReply> observer = new MultiValueObserver<>();
 		streamHello(req, observer);
 		return observer.getValue();
 	}
 
-	@PostMapping(path = "Simple/ParallelHello")
+	@PostMapping(path = "Simple/ParallelHello", produces = "application/x-ndjson")
 	public Flux<HelloReply> parallel(@RequestBody Flux<HelloRequest> req) {
 		BidiValueObserver<HelloRequest, HelloReply> observer = new BidiValueObserver<>();
 		StreamObserver<HelloRequest> result = parallelHello(observer);
