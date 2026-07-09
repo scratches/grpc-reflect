@@ -1,7 +1,8 @@
 package org.springframework.grpc.sample;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.time.Duration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,28 +12,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.webclient.test.autoconfigure.AutoConfigureWebClient;
-import org.springframework.grpc.reflect.DescriptorCatalog;
-import org.springframework.grpc.sample.proto.HelloReply;
-import org.springframework.grpc.sample.proto.HelloRequest;
-import org.springframework.grpc.sample.proto.HelloWorldProto;
-import org.springframework.grpc.sample.proto.SimpleGrpc;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.json.JacksonJsonDecoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.util.MimeType;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.google.api.AnnotationsProto;
-import com.google.api.HttpRule;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.protobuf.Descriptors.MethodDescriptor;
-import com.google.protobuf.Descriptors.ServiceDescriptor;
-import com.google.protobuf.util.JsonFormat;
-
-import io.grpc.MethodDescriptor.PrototypeMarshaller;
-import io.grpc.protobuf.ProtoMethodDescriptorSupplier;
-import tools.jackson.databind.ObjectMapper;
+import reactor.core.publisher.Flux;
 import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = { "spring.grpc.server.enabled=false" })
@@ -97,12 +83,16 @@ public class GrpcServerApplicationTests {
 		Bar response = rest
 				.post()
 				.uri("Simple/ParallelHello")
-				.contentType(MediaType.APPLICATION_JSON)
-				.bodyValue(new Foo("Alien"))
+				.contentType(MediaType.APPLICATION_NDJSON)
+				.body(Flux.interval(Duration.ofSeconds(1))
+						.take(10)
+						.map(count -> new Foo("Alien(" + count + ")")), Foo.class)
 				.retrieve()
 				.bodyToFlux(Bar.class)
+				.doOnNext(bar -> System.out.println("Received: " + bar.getMessage()))
+				// Use blockLast() to see the arrival of the entire stream
 				.blockFirst();
-		assertEquals("Hello ==> Alien", response.getMessage());
+		assertEquals("Hello ==> Alien(0)", response.getMessage());
 	}
 
 	static class Foo {
