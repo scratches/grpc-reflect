@@ -41,11 +41,21 @@ public abstract class GrpcCodecSupport {
 
 	static final String DELIMITED_VALUE = "true";
 
+	private MimeType[] mimeTypes;
+
+	public GrpcCodecSupport() {
+		this.mimeTypes = MIME_TYPES;
+	}
+
+	public GrpcCodecSupport(MimeType[] mimeTypes) {
+		this.mimeTypes = mimeTypes;
+	}
+
 	protected boolean supportsMimeType(@Nullable MimeType mimeType) {
 		if (mimeType == null) {
 			return true;
 		}
-		for (MimeType m : MIME_TYPES) {
+		for (MimeType m : this.mimeTypes) {
 			if (m.isCompatibleWith(mimeType)) {
 				return true;
 			}
@@ -54,7 +64,7 @@ public abstract class GrpcCodecSupport {
 	}
 
 	protected List<MimeType> getMimeTypes() {
-		return Arrays.asList(MIME_TYPES);
+		return Arrays.asList(this.mimeTypes);
 	}
 
 }

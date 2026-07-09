@@ -37,8 +37,10 @@ public class GrpcWebfluxAutoConfiguration implements WebFluxConfigurer {
 
 	@Override
 	public void configureHttpMessageCodecs(ServerCodecConfigurer configurer) {
-		configurer.customCodecs().register(new GrpcHttpMessageWriter());
+		configurer.customCodecs().register(new GrpcJsonDecoder());
 		configurer.customCodecs().register(new GrpcDecoder());
+		configurer.customCodecs().register(new GrpcJsonEncoder());
+		configurer.customCodecs().register(new GrpcHttpMessageWriter());
 	}
 
 	@Bean

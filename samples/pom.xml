@@ -18,7 +18,8 @@
 	<modules>
 		<module>app</module>
 		<module>web</module>
-		<module>json</module>
+		<module>json-webmvc</module>
+		<module>json-webflux</module>
 		<module>webflux</module>
 		<module>bindable</module>
 	</modules>
